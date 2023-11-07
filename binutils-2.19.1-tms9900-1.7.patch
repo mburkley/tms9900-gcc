@@ -1,0 +1,2370 @@
+diff -rupN binutils-2.19.1/bfd/archures.c binutils-2.19.1-tms9900/bfd/archures.c
+--- binutils-2.19.1/bfd/archures.c	2008-08-09 01:35:12.000000000 -0400
++++ binutils-2.19.1-tms9900/bfd/archures.c	2014-12-03 01:03:53.180005096 -0500
+@@ -407,6 +407,8 @@ DESCRIPTION
+ .#define bfd_mach_z80            3 {* With ixl, ixh, iyl, and iyh.  *}
+ .#define bfd_mach_z80full        7 {* All undocumented instructions.  *}
+ .#define bfd_mach_r800           11 {* R800: successor with multiplication.  *}
++.  bfd_arch_tms9900,   {* Texas Instruments TMS9900 archetecture.  *}
++.#define bfd_mach_tms9900       1
+ .  bfd_arch_last
+ .  };
+ */
+@@ -501,6 +503,7 @@ extern const bfd_arch_info_type bfd_tic3
+ extern const bfd_arch_info_type bfd_tic4x_arch;
+ extern const bfd_arch_info_type bfd_tic54x_arch;
+ extern const bfd_arch_info_type bfd_tic80_arch;
++extern const bfd_arch_info_type bfd_tms9900_arch;
+ extern const bfd_arch_info_type bfd_v850_arch;
+ extern const bfd_arch_info_type bfd_vax_arch;
+ extern const bfd_arch_info_type bfd_we32k_arch;
+@@ -570,6 +573,7 @@ static const bfd_arch_info_type * const
+     &bfd_tic4x_arch,
+     &bfd_tic54x_arch,
+     &bfd_tic80_arch,
++    &bfd_tms9900_arch,
+     &bfd_v850_arch,
+     &bfd_vax_arch,
+     &bfd_w65_arch,
+diff -rupN binutils-2.19.1/bfd/bfd-in2.h binutils-2.19.1-tms9900/bfd/bfd-in2.h
+--- binutils-2.19.1/bfd/bfd-in2.h	2008-08-20 19:28:57.000000000 -0400
++++ binutils-2.19.1-tms9900/bfd/bfd-in2.h	2014-12-03 01:03:52.720002804 -0500
+@@ -2029,6 +2029,8 @@ enum bfd_architecture
+ #define bfd_mach_z80            3 /* With ixl, ixh, iyl, and iyh.  */
+ #define bfd_mach_z80full        7 /* All undocumented instructions.  */
+ #define bfd_mach_r800           11 /* R800: successor with multiplication.  */
++  bfd_arch_tms9900,   /* Texas Instruments TMS9900 archetecture.  */
++#define bfd_mach_tms9900       1
+   bfd_arch_last
+   };
+ 
+diff -rupN binutils-2.19.1/bfd/config.bfd binutils-2.19.1-tms9900/bfd/config.bfd
+--- binutils-2.19.1/bfd/config.bfd	2008-04-16 14:02:01.000000000 -0400
++++ binutils-2.19.1-tms9900/bfd/config.bfd	2014-12-03 01:03:52.184000157 -0500
+@@ -102,6 +102,7 @@ sparc*)		 targ_archs=bfd_sparc_arch ;;
+ spu*)            targ_archs=bfd_spu_arch ;;
+ strongarm*)	 targ_archs=bfd_arm_arch ;;
+ thumb*)		 targ_archs=bfd_arm_arch ;;
++tms9900*)	 targ_archs=bfd_tms9900_arch ;;
+ v850*)		 targ_archs=bfd_v850_arch ;;
+ x86_64*)	 targ_archs=bfd_i386_arch ;;
+ xscale*)	 targ_archs=bfd_arm_arch ;;
+@@ -1432,6 +1433,10 @@ case "${targ}" in
+     targ_underscore=yes
+     ;;
+ 
++  tms9900-*-*)
++    targ_defvec=bfd_elf32_tms9900_vec
++    ;;
++
+   v850-*-*)
+     targ_defvec=bfd_elf32_v850_vec
+     ;;
+diff -rupN binutils-2.19.1/bfd/configure binutils-2.19.1-tms9900/bfd/configure
+--- binutils-2.19.1/bfd/configure	2009-02-02 05:44:37.000000000 -0500
++++ binutils-2.19.1-tms9900/bfd/configure	2014-12-03 01:03:52.107999775 -0500
+@@ -19740,6 +19740,7 @@ do
+     bfd_elf32_sparc_vec)	tb="$tb elf32-sparc.lo elfxx-sparc.lo elf-vxworks.lo elf32.lo $elf" ;;
+     bfd_elf32_sparc_vxworks_vec) tb="$tb elf32-sparc.lo elfxx-sparc.lo elf-vxworks.lo elf32.lo $elf" ;;
+     bfd_elf32_spu_vec)		tb="$tb elf32-spu.lo elf32.lo $elf" ;;
++    bfd_elf32_tms9900_vec)	tb="$tb elf32-tms9900.lo elf32.lo $elf" ;;
+     bfd_elf32_tradbigmips_vec)  tb="$tb elf32-mips.lo elfxx-mips.lo elf-vxworks.lo elf32.lo $elf ecofflink.lo" ;;
+     bfd_elf32_tradlittlemips_vec) tb="$tb elf32-mips.lo elfxx-mips.lo elf-vxworks.lo elf32.lo $elf ecofflink.lo" ;;
+     bfd_elf32_us_cris_vec)	tb="$tb elf32-cris.lo elf32.lo $elf" ;;
+diff -rupN binutils-2.19.1/bfd/cpu-tms9900.c binutils-2.19.1-tms9900/bfd/cpu-tms9900.c
+--- binutils-2.19.1/bfd/cpu-tms9900.c	1969-12-31 19:00:00.000000000 -0500
++++ binutils-2.19.1-tms9900/bfd/cpu-tms9900.c	2014-12-03 01:03:52.115999810 -0500
+@@ -0,0 +1,57 @@
++/* BFD library support routines for the TMS9900 architecture.
++   Copyright 2009 Eric Welser
++
++   This file is part of BFD, the Binary File Descriptor library.
++
++   This program is free software; you can redistribute it and/or modify
++   it under the terms of the GNU General Public License as published by
++   the Free Software Foundation; either version 3 of the License, or
++   (at your option) any later version.
++
++   This program is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU General Public License for more details.
++
++   You should have received a copy of the GNU General Public License
++   along with this program; if not, write to the Free Software
++   Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston,
++   MA 02110-1301, USA.  */
++
++#include "sysdep.h"
++#include "bfd.h"
++#include "libbfd.h"
++
++const bfd_arch_info_type bfd_tms9900_arch;
++
++/* This routine is provided two arch_infos and
++   returns whether they'd be compatible.  */
++
++static const bfd_arch_info_type *
++compatible (const bfd_arch_info_type *a, const bfd_arch_info_type *b)
++{
++  if (a->arch != b->arch)
++    return NULL;
++
++  if (a->mach == b->mach)
++    return a;
++
++  return (a->arch == bfd_arch_tms9900) ? & bfd_tms9900_arch : NULL;
++}
++
++
++const bfd_arch_info_type bfd_tms9900_arch = 
++{
++  16,                /* Bits per word */
++  16,                /* Bits per address */
++  8,                 /* Bits per byte */
++  bfd_arch_tms9900,  /* Architecture ID */
++  bfd_mach_tms9900,  /* Machine ID */
++  "tms9900",         /* Architecture name */
++  "tms9900",         /* Printable name */
++  0,                 /* Section align power */
++  TRUE,              /* Is this the default machine for this arch? */
++  compatible,        /* Function to determine object file compatibility */
++  bfd_default_scan,  /* Scan function */
++  NULL               /* Next record */
++};
+diff -rupN binutils-2.19.1/bfd/doc/archures.texi binutils-2.19.1-tms9900/bfd/doc/archures.texi
+--- binutils-2.19.1/bfd/doc/archures.texi	2008-09-10 03:50:16.000000000 -0400
++++ binutils-2.19.1-tms9900/bfd/doc/archures.texi	2014-12-03 01:03:53.064004516 -0500
+@@ -372,6 +372,8 @@ enum bfd_architecture
+ #define bfd_mach_z80            3 /* With ixl, ixh, iyl, and iyh.  */
+ #define bfd_mach_z80full        7 /* All undocumented instructions.  */
+ #define bfd_mach_r800           11 /* R800: successor with multiplication.  */
++  bfd_arch_tms9900,   /* Texas Instruments TMS9900 archetecture.  */
++#define bfd_mach_tms9900       1
+   bfd_arch_last
+   @};
+ @end example
+diff -rupN binutils-2.19.1/bfd/elf32-tms9900.c binutils-2.19.1-tms9900/bfd/elf32-tms9900.c
+--- binutils-2.19.1/bfd/elf32-tms9900.c	1969-12-31 19:00:00.000000000 -0500
++++ binutils-2.19.1-tms9900/bfd/elf32-tms9900.c	2014-12-03 01:03:53.044004426 -0500
+@@ -0,0 +1,128 @@
++#include "sysdep.h"
++#include "bfd.h"
++#include "bfdlink.h"
++#include "libbfd.h"
++#include "elf-bfd.h"
++#include "bfd_stdint.h"
++
++#include "elf/tms9900.h"
++
++
++#ifdef DEBUG_GEN_RELOC
++#define TRACE(str) \
++  fprintf (stderr, "tms9900 bfd reloc lookup %d (%s)\n", code, str)
++#else
++#define TRACE(str)
++#endif
++
++extern const bfd_target bfd_elf32_tms9900_vec;
++
++static reloc_howto_type elf_howto_table[]=
++{
++  /* Invalid record, do nothing */
++  HOWTO(R_TMS9900_NONE,             /* type */
++        0,                          /* rightshift */
++        0,                          /* size (0 = byte, 1 = short, 2 = long) */
++        0,                          /* bitsize */
++        FALSE,                      /* pc_relative */
++        0,                          /* bitpos */
++        complain_overflow_bitfield, /* complain on overflow */
++	bfd_elf_generic_reloc,      /* special_function */
++        "R_TMS9900_NONE",           /* name */
++	FALSE,                      /* partial_inplace */
++        0x00000000,                 /* src_mask */
++        0x00000000,                 /* dst_mask */
++        FALSE),                     /* pcrel_offset */
++
++  /* 8-bit offset from current PC, used in jump commands */
++  HOWTO(R_TMS9900_PC8,              /* type */
++        1,                          /* rightshift */
++        0,                          /* size (0 = byte, 1 = short, 2 = long) */
++        8,                          /* bitsize */
++        TRUE,                       /* pc_relative */
++        0,                          /* bitpos */
++        complain_overflow_signed,   /* complain on overflow */
++        bfd_elf_generic_reloc,      /* special_function */
++        "R_TMS9900_PC8",            /* name */
++        FALSE,                      /* partial_inplace */
++        0x00000000,                 /* src_mask */
++        0x000000FF,                 /* dst_mask */
++        TRUE),                      /* pcrel_offset */
++
++  /* Generic 16-bit constant */
++  HOWTO(R_TMS9900_16,               /* type */
++        0,                          /* rightshift */
++        1,                          /* size (0 = byte, 1 = short, 2 = long) */
++        16,                         /* bitsize */
++        FALSE,                      /* pc_relative */
++        0,                          /* bitpos */
++        complain_overflow_bitfield, /* complain on overflow */
++        bfd_elf_generic_reloc,      /* special_function */
++        "R_TMS9900_16",             /* name */
++        FALSE,                      /* partial_inplace */
++        0x00000000,                 /* src_mask */
++        0x0000FFFF,                 /* dst_mask */
++        FALSE),                     /* pcrel_offset */
++};  
++
++
++static reloc_howto_type *
++elf_tms9900_reloc_type_lookup (bfd *abfd ATTRIBUTE_UNUSED,
++				bfd_reloc_code_real_type code)
++{
++  switch (code)
++    {
++    case BFD_RELOC_NONE:
++      TRACE ("BFD_RELOC_NONE");
++      return &elf_howto_table[R_TMS9900_NONE];
++
++    case BFD_RELOC_16:
++      TRACE ("BFD_RELOC_16");
++      return &elf_howto_table[R_TMS9900_16];
++
++    case BFD_RELOC_8_PCREL:
++      TRACE ("BFD_RELOC_8_PCREL");
++      return &elf_howto_table[R_TMS9900_PC8];
++
++    default:
++      break;
++    }
++
++  TRACE ("Unknown");
++  return 0;
++}
++
++static reloc_howto_type *
++elf_tms9900_reloc_name_lookup (bfd *abfd ATTRIBUTE_UNUSED,
++				const char *r_name)
++{
++  unsigned int i;
++
++  for (i = 0; i < sizeof (elf_howto_table) / sizeof (elf_howto_table[0]); i++)
++    if (elf_howto_table[i].name != NULL
++	&& strcasecmp (elf_howto_table[i].name, r_name) == 0)
++      return &elf_howto_table[i];
++
++  return NULL;
++}
++
++static void
++tms9900_elf_info_to_howto (bfd *abfd ATTRIBUTE_UNUSED,
++		           arelent *cache_ptr,
++		           Elf_Internal_Rela *dst)
++{
++  cache_ptr->howto = &elf_howto_table[ELF32_R_TYPE (dst->r_info)];
++}
++
++#define TARGET_BIG_SYM			bfd_elf32_tms9900_vec
++#define TARGET_BIG_NAME			"elf32-tms9900"
++#define ELF_ARCH			bfd_arch_tms9900
++#define ELF_MACHINE_CODE		EM_TMS9900
++#define ELF_MAXPAGESIZE			0x200
++
++#define bfd_elf32_bfd_reloc_type_lookup	      elf_tms9900_reloc_type_lookup
++#define bfd_elf32_bfd_reloc_name_lookup	      elf_tms9900_reloc_name_lookup
++#define elf_info_to_howto                     tms9900_elf_info_to_howto
++#define elf_info_to_howto_rel                 _bfd_elf_no_info_to_howto
++
++#include "elf32-target.h"
+diff -rupN binutils-2.19.1/bfd/Makefile.in binutils-2.19.1-tms9900/bfd/Makefile.in
+--- binutils-2.19.1/bfd/Makefile.in	2009-02-02 05:44:39.000000000 -0500
++++ binutils-2.19.1-tms9900/bfd/Makefile.in	2014-12-03 01:03:52.596002190 -0500
+@@ -546,6 +546,7 @@ BFD32_BACKENDS = \
+ 	elfxx-sparc.lo \
+ 	elf32-sparc.lo \
+ 	elf32-spu.lo \
++	elf32-tms9900.lo\
+ 	elf32-v850.lo \
+ 	elf32-vax.lo \
+ 	elf32-xstormy16.lo \
+@@ -2140,6 +2141,9 @@ elf32-spu.lo: elf32-spu.c $(INCDIR)/file
+   $(INCDIR)/bfdlink.h $(INCDIR)/hashtab.h elf-bfd.h $(INCDIR)/elf/common.h \
+   $(INCDIR)/elf/external.h $(INCDIR)/elf/internal.h $(INCDIR)/elf/spu.h \
+   $(INCDIR)/elf/reloc-macros.h elf32-spu.h elf32-target.h
++elf32-tms9900.lo: elf32-tms9900.c $(INCDIR)/filenames.h $(INCDIR)/bfdlink.h\
++  $(INCDIR)/elf/external.h $(INCDIR)/elf/internal.h $(INCDIR)/elf/tms9900.h \
++  $(INCDIR)/elf/reloc-macros.h elf32-spu.h elf32-target.h
+ elf32-v850.lo: elf32-v850.c $(INCDIR)/filenames.h $(INCDIR)/bfdlink.h \
+   $(INCDIR)/hashtab.h elf-bfd.h $(INCDIR)/elf/common.h \
+   $(INCDIR)/elf/external.h $(INCDIR)/elf/internal.h $(INCDIR)/elf/v850.h \
+diff -rupN binutils-2.19.1/bfd/targets.c binutils-2.19.1-tms9900/bfd/targets.c
+--- binutils-2.19.1/bfd/targets.c	2008-02-14 10:20:26.000000000 -0500
++++ binutils-2.19.1-tms9900/bfd/targets.c	2014-12-03 01:03:52.180000128 -0500
+@@ -660,6 +660,7 @@ extern const bfd_target bfd_elf32_shvxwo
+ extern const bfd_target bfd_elf32_sparc_vec;
+ extern const bfd_target bfd_elf32_sparc_vxworks_vec;
+ extern const bfd_target bfd_elf32_spu_vec;
++extern const bfd_target bfd_elf32_tms9900_vec;
+ extern const bfd_target bfd_elf32_tradbigmips_vec;
+ extern const bfd_target bfd_elf32_tradlittlemips_vec;
+ extern const bfd_target bfd_elf32_us_cris_vec;
+diff -rupN binutils-2.19.1/binutils/readelf.c binutils-2.19.1-tms9900/binutils/readelf.c
+--- binutils-2.19.1/binutils/readelf.c	2008-09-17 05:00:44.000000000 -0400
++++ binutils-2.19.1-tms9900/binutils/readelf.c	2014-12-03 01:04:07.808077626 -0500
+@@ -152,6 +152,7 @@
+ #include "elf/sh.h"
+ #include "elf/sparc.h"
+ #include "elf/spu.h"
++#include "elf/tms9900.h"
+ #include "elf/v850.h"
+ #include "elf/vax.h"
+ #include "elf/x86-64.h"
+@@ -1198,6 +1199,10 @@ dump_relocations (FILE *file,
+ 	case EM_CR16_OLD:
+ 	  rtype = elf_cr16_reloc_type (type);
+ 	  break;
++
++        case EM_TMS9900:
++          rtype = elf_tms9900_reloc_type (type);
++          break;
+ 	}
+ 
+       if (rtype == NULL)
+@@ -1825,6 +1830,7 @@ get_machine_name (unsigned e_machine)
+     case EM_CYGNUS_MEP:         return "Toshiba MeP Media Engine";
+     case EM_CR16:		
+     case EM_CR16_OLD:		return "National Semiconductor's CR16";
++    case EM_TMS9900:            return "Texas Instruments TMS9900";
+     default:
+       snprintf (buff, sizeof (buff), _("<unknown>: 0x%x"), e_machine);
+       return buff;
+diff -rupN binutils-2.19.1/config.sub binutils-2.19.1-tms9900/config.sub
+--- binutils-2.19.1/config.sub	2008-04-14 05:28:35.000000000 -0400
++++ binutils-2.19.1-tms9900/config.sub	2014-12-03 01:04:06.228069782 -0500
+@@ -148,7 +148,7 @@ case $os in
+ 	-convergent* | -ncr* | -news | -32* | -3600* | -3100* | -hitachi* |\
+ 	-c[123]* | -convex* | -sun | -crds | -omron* | -dg | -ultra | -tti* | \
+ 	-harris | -dolphin | -highlevel | -gould | -cbm | -ns | -masscomp | \
+-	-apple | -axis | -knuth | -cray)
++	-apple | -axis | -knuth | -cray | -tms9900)
+ 		os=
+ 		basic_machine=$1
+ 		;;
+@@ -284,7 +284,7 @@ case $basic_machine in
+ 	| sparc | sparc64 | sparc64b | sparc64v | sparc86x | sparclet | sparclite \
+ 	| sparcv8 | sparcv9 | sparcv9b | sparcv9v \
+ 	| spu | strongarm \
+-	| tahoe | thumb | tic4x | tic80 | tron \
++	| tahoe | thumb | tic4x | tic80 | tron | tms9900 \
+ 	| v850 | v850e \
+ 	| we32k \
+ 	| x86 | xc16x | xscale | xscalee[bl] | xstormy16 | xtensa \
+diff -rupN binutils-2.19.1/gas/config/tc-tms9900.c binutils-2.19.1-tms9900/gas/config/tc-tms9900.c
+--- binutils-2.19.1/gas/config/tc-tms9900.c	1969-12-31 19:00:00.000000000 -0500
++++ binutils-2.19.1-tms9900/gas/config/tc-tms9900.c	2014-12-03 01:04:04.932063364 -0500
+@@ -0,0 +1,1276 @@
++/* tc-tms9900.c -- Assemble code for the Texas Instruments TMS9900
++   Copyright 2009 Eric Welser
++
++   This file is part of GAS, the GNU Assembler.
++
++   GAS is free software; you can redistribute it and/or modify
++   it under the terms of the GNU General Public License as published by
++   the Free Software Foundation; either version 3, or (at your option)
++   any later version.
++
++   GAS is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU General Public License for more details.
++
++   You should have received a copy of the GNU General Public License
++   along with GAS; see the file COPYING.  If not, write to the Free
++   Software Foundation, 51 Franklin Street - Fifth Floor, Boston, MA
++   02110-1301, USA.  */
++
++#include "as.h"
++#include "safe-ctype.h"
++#include "subsegs.h"
++
++
++/* Exported constants.  */
++const char line_separator_chars[] = "\0";
++const char EXP_CHARS[] = "eE\0";
++const char FLT_CHARS[] = "RrFf\0";
++const char line_comment_chars[] = "#\0";
++
++/* The TMS9900 assembly format specifies "*" for the start of comments.
++   Unfortunately, that character is also used in register expressions.
++   So we have to manually handle comments here, and cannot rely on GAS's
++   normal comment parsing */
++const char tms9900_comment_chars[] = "#;\0";
++
++/* List of chars besides those in app.c:symbol_chars that can start an
++   operand.  Used to prevent the scrubber eating vital white-space.
++   We use this to determine if the asterisk is the start of a comment */
++const char tms9900_symbol_chars[] = "+*\0";
++
++/* For machine specific options.  */
++const char * md_shortopts = ""; /* None yet.  */
++
++struct option md_longopts[] =
++{
++  { NULL, no_argument, NULL, 0 }
++};
++
++size_t md_longopts_size = sizeof (md_longopts);
++
++extern int coff_flags;
++
++
++int
++md_parse_option (int c, char* arg ATTRIBUTE_UNUSED)
++{
++  switch (c)
++    {
++    default:
++      return 0;
++    }
++}
++
++
++void
++md_show_usage (FILE * f)
++{
++  fprintf(f,"\n");
++}
++
++static symbolS * zero;
++
++
++void
++md_begin (void)
++{
++  expressionS nul;
++  char * p;
++
++  p = input_line_pointer;
++  input_line_pointer = "0";
++  nul.X_md=0;
++  expression (& nul);
++  input_line_pointer = p;
++  zero = make_expr_symbol (& nul);
++  /* We do not use relaxation (yet).  */
++  linkrelax = 0;
++}
++
++
++void
++tms9900_md_end (void)
++{
++  bfd_set_arch_mach (stdoutput, TARGET_ARCH, bfd_mach_tms9900);
++}
++
++
++static const char *
++skip_space (const char *s)
++{
++  while (*s == ' ' || *s == '\t')
++    ++s;
++  return s;
++}
++
++
++symbolS *
++md_undefined_symbol (char *name ATTRIBUTE_UNUSED)
++{
++  return NULL;
++}
++
++
++char *
++md_atof (int type ATTRIBUTE_UNUSED, char *litP ATTRIBUTE_UNUSED,
++	 int *sizeP ATTRIBUTE_UNUSED)
++{
++  return _("floating point numbers are not implemented");
++}
++
++
++valueT
++md_section_align (segT seg ATTRIBUTE_UNUSED, valueT size)
++{
++  return size;
++}
++
++
++long
++md_pcrel_from (fixS * fixp)
++{
++  return fixp->fx_where +
++    fixp->fx_frag->fr_address + 1;
++}
++
++
++/* Compares the key for structs that start with a char * to the key.  */
++static int
++key_cmp (const void * a, const void * b)
++{
++  const char *str_a, *str_b;
++
++  str_a = *((const char**)a);
++  str_b = *((const char**)b);
++  return strcmp (str_a, str_b);
++}
++
++
++static int
++key_regcmp (const void * a, const void * b)
++{
++  const char *str_a, *str_b;
++
++  str_a = *((const char**)a);
++  str_b = *((const char**)b);
++  return strncasecmp (str_a, str_b, strlen(str_b));
++}
++
++
++#define BUFLEN 8 /* Large enough for any keyword.  */
++
++char buf[BUFLEN];
++const char *key = buf;
++
++static const struct reg_entry
++{
++  char* name;
++  int number;
++} regtable[] =
++{
++  {"cb",  12 },  /* CRU base */
++  {"lp",  14 },  /* Old Program Counter register after BLWP */
++  {"lr",  11 },  /* Return address after BL */
++  {"ls",  15 },  /* Old Status Register after BLWP */
++  {"lw",  13 },  /* Old Workspace Register after BLWP */
++  {"r0",   0 },
++  {"r1",   1 },
++  {"r10", 10 },
++  {"r11", 11 },
++  {"r12", 12 },
++  {"r13", 13 },
++  {"r14", 14 },
++  {"r15", 15 },
++  {"r2",   2 },
++  {"r3",   3 },
++  {"r4",   4 },
++  {"r5",   5 },
++  {"r6",   6 },
++  {"r7",   7 },
++  {"r8",   8 },
++  {"r9",   9 },
++  {"sp",  10 }   /* Stack pointer */
++} ;
++
++/* Prevent an error on a line from also generating
++   a "junk at end of line" error message.  */
++static char err_flag;
++
++static void tms9900_bss (int unused ATTRIBUTE_UNUSED);
++
++
++int
++tms9900_start_line_hook (void)
++{
++  /* Elements of code grammar */
++  enum
++    {
++      ST_START,         /* Start of line */
++      ST_LABEL,         /* Code label */
++      ST_PRE_DIRECTIVE, /* Space before directive or mnemonic*/
++      ST_DIRECTIVE,     /* Assembly directive */
++      ST_PRE_OPTION,    /* Space before directive option */
++      ST_OPTION,        /* Directive option */
++      ST_MNEMONIC,      /* Opcode mnemonic */
++      ST_PRE_ARGUMENT,  /* Space before argument */
++      ST_ARGUMENT,      /* Non-string argument */
++      ST_POST_ARGUMENT, /* Space or comma after argument */
++      ST_TI_STRING,     /* TI-style string */
++      ST_GAS_STRING,    /* GAS-style string */
++      ST_POST_STRING,   /* Space or comma after string */
++      ST_COMMENT        /* Comment at end of line */
++    };
++  int state = ST_START;
++  char *p;
++
++  for (p = input_line_pointer; *p && *p != '\n'; ++p)
++    {
++      switch(state)
++        {
++          case ST_START:
++          if(strchr(" \t",*p)) state = ST_PRE_DIRECTIVE;
++          else if(*p == '*') state = ST_COMMENT;
++          else state = ST_LABEL;
++          p--;
++          break;
++
++          case ST_LABEL:
++          if(strchr(" \t",p[1])) state = ST_PRE_DIRECTIVE;
++          break;
++
++          case ST_PRE_DIRECTIVE:
++          if(strchr(" \t",p[1]) == NULL)
++            {
++              if(p[1] == '.') state = ST_DIRECTIVE;
++              else if(p[1] == '*') state = ST_COMMENT;
++              else state = ST_MNEMONIC;
++            }
++          break;
++
++          case ST_DIRECTIVE:
++          if(strchr(" \t",p[1])) state = ST_PRE_OPTION;
++          break;
++
++          case ST_PRE_OPTION:
++          if(strchr(" \t",p[1]) == NULL) state = ST_OPTION;
++          break;
++
++          case ST_OPTION:
++          if(strchr(" \t",p[1])) state = ST_OPTION;
++          if(p[0] == '*') {p--; state = ST_COMMENT;}
++          break;
++
++          case ST_MNEMONIC:
++          if(strchr(" \t",p[1])) state = ST_PRE_ARGUMENT;
++          break;
++
++          case ST_PRE_ARGUMENT:
++          if(strchr(" \t",p[0]) == NULL)
++            {
++              if(p[0] == '\'') state = ST_TI_STRING;
++              else if(p[0] == '"') state = ST_GAS_STRING;              
++              else {state = ST_ARGUMENT; p--;}
++            }
++          break;
++
++          case ST_ARGUMENT:
++          if(p[0] == '>' && strchr("0123456789abcdefABCDEF",p[1])) p[0] = '$';
++          if(strchr(" \t,",p[1]))
++            {
++              if(p[0] == '*') {p--; state = ST_COMMENT;}
++              else state = ST_POST_ARGUMENT;
++            }
++          break;
++
++          case ST_POST_ARGUMENT:
++          if(strchr(" \t",p[0]) == NULL)
++            {
++              if(p[0] == ',') state = ST_PRE_ARGUMENT;
++              else {p--; state = ST_COMMENT;}
++            }
++          break;
++
++          case ST_TI_STRING:
++          if(p[0] == '\'' && p[1] == '\'') p++;  /* Skip escaped quote */
++          else if(p[0] == '\'') state = ST_POST_STRING;
++          break;
++
++          case ST_GAS_STRING:
++          if(p[0] == '\\' && p[1] == '"') p++;  /* Skip escaped quote */
++          else if(p[0] == '"') state = ST_POST_STRING;
++          break;
++
++          case ST_POST_STRING:
++          if(strchr(" \t",*p) == NULL)
++            {
++              if(*p == ',') state = ST_PRE_ARGUMENT;
++              else {p--; state = ST_COMMENT;}
++            }
++          break;
++
++          case ST_COMMENT:
++          memset(p, ' ', strcspn(p,"\n"));
++          state = ST_PRE_ARGUMENT;
++          break;
++        }
++    }
++  /* Remove trailing whitespace */
++  p = input_line_pointer;
++  p += strcspn(p,"\n");
++  char *line_end = p;
++  while(p > input_line_pointer && strchr(" \t\n",p[0])) p--;
++  if(p > input_line_pointer)
++    {
++      /* Remove characters occupied by trailing whitespace */
++      p++;
++      memmove(p,line_end,strlen(line_end)+1);
++      memset(&p[strlen(p)],0,line_end-p);
++    }
++
++  /* Check for <label>[:] [.](EQU|BES) <value>.  */
++  if (is_name_beginner (*input_line_pointer))
++    {
++      char c, *rest, *line_start;
++      int code;
++      int len = 3;  /* Length of directive */
++      symbolS * symbolP;
++
++      line_start = input_line_pointer;
++      LISTING_NEWLINE ();
++      if (ignore_input ())
++	return 0;
++
++      c = get_symbol_end ();
++      rest = input_line_pointer + 1;
++
++      if (*rest == ':')
++	++rest;
++      if (*rest == ' ' || *rest == '\t')
++	++rest;
++      if (*rest == '.')
++	++rest;
++      if (strncasecmp (rest, "EQU", 3) == 0)
++	code = 1;
++      else if (strncasecmp (rest, "BES", 3) == 0)
++        code = 2;
++      else
++	code = 0;
++
++      if (code && (rest[len] == ' ' || rest[len] == '\t'))
++	{
++          if ( code == 1)
++            {
++              /* This is an EQU operative */
++              /* Handle assignment here.  */
++              input_line_pointer = rest + len;
++              if (line_start[-1] == '\n')
++                bump_line_counters ();
++              /* Make sure we don't redefine an existing equate */
++              if ((symbolP = symbol_find (line_start)) != NULL) 
++                {
++                  if (S_IS_DEFINED (symbolP) || symbol_equated_p (symbolP))
++                    as_bad (_("symbol `%s' is already defined"), line_start);
++                }
++              equals (line_start, 1);
++              return 1;
++            }
++          else if ( code == 2)
++            {
++              /* This is a BES operative */
++              /* Allocate space */
++              input_line_pointer = rest + 3;
++              tms9900_bss(0);
++              /* Move label to after allocation */
++              while(rest-- > line_start)
++                {
++                  (input_line_pointer--)[-1] = rest[-1];
++                }
++            }
++	}
++      else
++	{
++	  /* Restore line and pointer.  */
++	  *input_line_pointer = c;
++	  input_line_pointer = line_start;
++	}
++    }
++  return 0;
++}
++
++
++int tms9900_parse_name(const char* name, struct expressionS* expr)
++{
++    struct reg_entry* regp;
++    regp = bsearch (&name, regtable, ARRAY_SIZE (regtable),
++                    sizeof (regtable[0]), key_regcmp);
++    if(regp && strcmp(name, regp->name)==0)
++    {
++      expr->X_op = O_register;
++      expr->X_add_number = regp->number;
++      input_line_pointer = (char*)name + strlen(regp->name);
++      return(1); 
++    }
++  return(0);
++}
++
++
++static char* assemble_mode(const char *line, short* opcode, expressionS* exp)
++{
++/*
++ Encodings for the Ts field of the opcode
++ 00 -  REG
++ 01 - *REG
++ 11 - *REG+
++ 10 - @EXP      reg=0
++ 10 - @EXP(REG)
++*/
++  char *p = (char*)line;
++  int open = 0;  /* No open paren around register */
++  int maybe_increment = 0;
++  *opcode = 0;
++  exp->X_op = O_absent;
++
++  if(*p == '*')
++    {
++      /* Indirect by register */
++      *opcode = 0x10;
++      maybe_increment = 1;
++      p++;
++    }
++  else if(*p == '@')
++    {
++      /* Indirect by expression */
++      *opcode = 0x20;
++      /* This is an expression, parse it */
++      input_line_pointer = ++p;
++      expression(exp);
++      p=input_line_pointer;
++      if(*p == '(')
++        {
++          open = 1;
++          p++;
++        }
++    }
++
++  if(*p != '*' &&
++     *p != ',' &&
++     *p != 0)
++    {
++      /* This term uses a register, let's find out which one */
++      struct reg_entry* regp;
++      regp = bsearch (&p, regtable, ARRAY_SIZE (regtable),
++                      sizeof (regtable[0]), key_regcmp);
++      if(regp)
++        {
++          *opcode |= regp->number;
++          p += strlen(regp->name);
++        }
++      else
++        {
++          /* Handle registers in numeric format */
++          unsigned int regnum=256;
++          if(sscanf(p,"%u", &regnum) && regnum < 16)
++            {
++              p++;
++              if(regnum > 9) p++;
++              *opcode |= regnum;
++            }
++          else
++            {
++              printf("Invalid register starting at \"%s\"\n",p);
++            }
++        }
++    }
++
++  /* Do we have register post increment? */
++  if(maybe_increment == 1 && *p == '+')
++    {
++      *opcode |= 0x20;
++      p++;
++    }
++  
++  /* Cleanup end of parameter */
++  if(open == 1)
++    {
++      if(*p == ')')  p++;
++        else printf("Unclosed paren around register\n");
++    }
++
++  input_line_pointer = p;        
++  return(p);
++}
++
++
++void tms9900_cons_fix_new (fragS *frag_p, int offset, int nbytes, expressionS *exp)
++{
++  bfd_reloc_code_real_type type = BFD_RELOC_16;
++  int pcrel = 0;
++  switch(nbytes)
++    {
++      case 1:
++        type = BFD_RELOC_8_PCREL;
++        pcrel = 1;
++      case 2:
++        fix_new_exp (frag_p, offset, nbytes, exp, pcrel, type);
++        break;
++
++      case 4:
++        /* Place relocation into low word. Leave high word as zero */
++        fix_new_exp (frag_p, offset+2, nbytes, exp, 0, type);
++        break;
++
++      default:
++        as_bad (_("unsupported BFD relocation size %u"), nbytes);
++    }
++}
++
++
++enum
++{
++  TEXT_DATAONLY = -1,
++  TEXT_PRESIZE  = -2,
++  TEXT_ZEROTERM = -3
++};
++
++
++static void
++tms9900_data (int size)
++{
++  const char *p;
++  char *u, quote;
++  int cnt;
++  expressionS exp;
++
++  if (is_it_end_of_statement ())
++    {
++      /* Handle instructions which only allocate space */
++      demand_empty_rest_of_line ();
++      if(size > 0)
++        {
++          u = frag_more (size);
++          memset (u, 0, size);
++        }
++      return;
++    }
++
++  /* Skip to data value */  
++  p = skip_space (input_line_pointer);
++
++  do
++    {
++      if (*p == '\"' || *p == '\'')
++	{
++          /* String constant, remove escape codes from string */
++          char q[1024];
++          char *out = q;
++          quote = *p++;
++          if(quote == '\'')
++          {
++            /* TI-style quote, only handle escaped quote character */
++            while(p[0] && (p[0] != '\'' || (p[0] == '\'' && p[1] == '\'')))
++              {
++                if(p[0] == '\'' && p[1] == '\'') p++;
++                *out++ = *p++;
++              }
++            if(p[0] == '\'') p++;
++          }
++          else
++          {
++             /* GAS-style quote, handle standard escape sequences */
++             int c;
++             input_line_pointer = p;
++             while (is_a_char (c = next_char_of_string ()))
++             {
++               *out++ = c;
++             }
++             p = input_line_pointer;
++          }
++          *out = 0;
++          cnt = out - q;
++
++          /* Check for length and validity */
++          if(size > 0)
++            {
++              if(cnt > size)
++                {
++                  as_warn(_("string constant too long"));
++                  cnt = size;
++                }
++              u = frag_more (size);
++              if(size == 2 && cnt == 1) u[1] = q[0];
++                else  memcpy (u, q, cnt);
++            }
++          else if(size == TEXT_DATAONLY)
++            {
++              u = frag_more (cnt);
++              memcpy (u, q, cnt);
++            }
++          else if(size == TEXT_PRESIZE)
++            {
++              if(cnt > 255)
++                {
++                  as_warn(_("string constant too long"));
++                  cnt = 255;
++                }
++              u = frag_more (cnt+1);
++              *u = cnt;             
++              memcpy (u + 1, q, cnt);
++            }
++          else if(size == TEXT_ZEROTERM)
++            {
++              u = frag_more (cnt + 1);
++              memcpy (u, q, cnt);
++              u[cnt] = 0;
++            }
++          if (!*p)
++            as_warn (_("unterminated string"));
++	}
++      else
++	{
++          /* This is a non-string value */
++          input_line_pointer = (char*)p;
++	  expression(&exp);
++          p = (const char*)input_line_pointer;
++	  if (exp.X_op == O_register)
++	    {
++	      break;
++	    }
++	  if (exp.X_op == O_constant)
++            {
++              int max;
++              int val = exp.X_add_number;
++              if(size < 0)
++                {
++                  break;
++                }
++              max = (1 << (size * 8)) - 1;
++              if(val > max || val < -max)
++                {
++                  as_warn(_("constant too big"));
++                  val = val & ((1 << (size * 8)) - 1);
++                }
++              u = frag_more (size);
++              if(size == 1)
++                {
++                  u[0] = val & 0xFF;
++                }
++              else
++                {
++                  u[0] = (val >> 8) & 0xFF;
++                  u[1] = val & 0xFF;
++                }
++            }
++          else if(exp.X_op == O_symbol &&
++                  size == 2)
++            {
++              u = frag_more(2);
++              fix_new_exp (frag_now,
++                           u - frag_now->fr_literal,
++                           2, &exp, 0,
++                           BFD_RELOC_16);
++
++            }
++	}
++       p = skip_space (p);
++    }
++  while (*p++ == ',');
++  input_line_pointer = (char *)(p-1);
++}
++
++static void
++tms9900_even (int unused ATTRIBUTE_UNUSED)
++{
++  /* Align to 16 bit boundary, fill with zeroes */
++  s_align_ptwo(1);
++}
++
++static void
++tms9900_bss (int unused ATTRIBUTE_UNUSED)
++{
++  expressionS exp;
++  expression(&exp);
++  if(exp.X_op == O_constant)
++    {
++      char* p = frag_more(exp.X_add_number);
++      memset(p, 0, exp.X_add_number);      
++    }
++  else
++    {
++      as_bad (_("junk at end of line, first unrecognized character is `%c'"),
++              *input_line_pointer);
++    }
++}
++
++static void
++tms9900_seg_bss (int unused ATTRIBUTE_UNUSED)
++{
++  subseg_set (bss_section,  now_subseg);
++  demand_empty_rest_of_line ();
++}
++
++static void
++tms9900_seg_data (int unused ATTRIBUTE_UNUSED)
++{
++  subseg_set (data_section,  now_subseg);
++  demand_empty_rest_of_line ();
++}
++
++static void
++tms9900_seg_text (int unused ATTRIBUTE_UNUSED)
++{
++  subseg_set (text_section,  now_subseg);
++  demand_empty_rest_of_line ();
++}
++
++/* Port specific pseudo ops.  */
++const pseudo_typeS md_pseudo_table[] =
++{
++  { ".bss",  tms9900_seg_bss, 0},
++  { ".data", tms9900_seg_data, 0},
++  { ".text", tms9900_seg_text, 0},
++
++
++  /* AORG is a commonly-used directive, but we will have to handle that
++     in the linker, since we can't assign a value for the target address
++     from within GAS. */
++  { "aorg",  s_ignore, 0},
++
++  /* TI convention for segments */
++  { "pseg",  tms9900_seg_text, 0},
++  { "pend",  s_ignore, 0},
++  { "cseg",  tms9900_seg_bss, 0},
++  { "cend",  tms9900_seg_text, 0},
++  { "dseg",  tms9900_seg_data, 0},
++  { "dend",  tms9900_seg_text, 0},
++
++  /* Reservation for data values */
++  { "bes",   tms9900_bss, 0},
++  { "bss",   tms9900_bss, 0},
++  { "byte",  tms9900_data, 1},
++  { "data",  tms9900_data, 2}, 
++  { "end",   s_ignore, 0},
++  { "def",   s_globl, 0},
++  { "even",  tms9900_even, 0},
++  { "ref",   s_ignore, 0},
++  
++  /* The SYM directive displays a list of all symbols, and their values */
++  { "sym",   s_ignore, 0},
++  { "ntext", tms9900_data, TEXT_PRESIZE},
++  { "text",  tms9900_data, TEXT_DATAONLY},
++  { "textz", tms9900_data, TEXT_ZEROTERM},
++
++  /* Aliases for the text drirectives */
++  { "nstring", tms9900_data, TEXT_PRESIZE},
++  { "string",  tms9900_data, TEXT_DATAONLY},
++  { "stringz", tms9900_data, TEXT_ZEROTERM},
++
++  { NULL, 0, 0 }
++} ;
++
++enum
++{
++  ARG_NONE,       /* No argument            */
++  ARG_MODE,       /* Addressing mode        */
++  ARG_OFFSET,     /* Branch offset          */
++  ARG_REGISTER,   /* Register number        */
++  ARG_IMMEDIATE,  /* 16-bit immediate value */
++  ARG_SHIFT,      /* Bit shift count        */
++  ARG_CRU_COUNT,  /* CRU bit count          */
++  ARG_CRU_DISP    /* CRU displacement       */
++};
++
++typedef struct _table_t
++{
++  char* name;
++  short opcode;
++  int arg[2];
++} table_t;
++
++static table_t instab[] =
++{
++  { "a",    0xA000, {ARG_MODE,      ARG_MODE}},
++  { "ab",   0xB000, {ARG_MODE,      ARG_MODE}},
++  { "abs",  0x0740, {ARG_MODE,      ARG_NONE}},
++  { "ai",   0x0220, {ARG_REGISTER,  ARG_IMMEDIATE}},
++  { "andi", 0x0240, {ARG_REGISTER,  ARG_IMMEDIATE}},
++  { "b",    0x0440, {ARG_MODE,      ARG_NONE}},
++  { "bl",   0x0680, {ARG_MODE,      ARG_NONE}},
++  { "blwp", 0x0400, {ARG_MODE,      ARG_NONE}},
++  { "c",    0x8000, {ARG_MODE,      ARG_MODE}},
++  { "cb",   0x9000, {ARG_MODE,      ARG_MODE}},
++  { "ci",   0x0280, {ARG_REGISTER,  ARG_IMMEDIATE}},
++  { "ckof", 0x03C0, {ARG_NONE,      ARG_NONE}},
++  { "ckon", 0x03A0, {ARG_NONE,      ARG_NONE}},
++  { "clr",  0x04C0, {ARG_MODE,      ARG_NONE}},
++  { "coc",  0x2000, {ARG_MODE,      ARG_REGISTER}},
++  { "czc",  0x2400, {ARG_MODE,      ARG_REGISTER}},
++  { "dec",  0x0600, {ARG_MODE,      ARG_NONE}},
++  { "dect", 0x0640, {ARG_MODE,      ARG_NONE}},
++  { "div",  0x3C00, {ARG_MODE,      ARG_REGISTER}},
++  { "idle", 0x0340, {ARG_NONE,      ARG_NONE}},
++  { "inc",  0x0580, {ARG_MODE,      ARG_NONE}},
++  { "inct", 0x05C0, {ARG_MODE,      ARG_NONE}},
++  { "inv",  0x0540, {ARG_MODE,      ARG_NONE}},
++  { "jeq",  0x1300, {ARG_OFFSET,    ARG_NONE}},
++  { "jgt",  0x1500, {ARG_OFFSET,    ARG_NONE}},
++  { "jh",   0x1B00, {ARG_OFFSET,    ARG_NONE}},
++  { "jhe",  0x1400, {ARG_OFFSET,    ARG_NONE}},
++  { "jl",   0x1A00, {ARG_OFFSET,    ARG_NONE}},
++  { "jle",  0x1200, {ARG_OFFSET,    ARG_NONE}},
++  { "jlt",  0x1100, {ARG_OFFSET,    ARG_NONE}},
++  { "jmp",  0x1000, {ARG_OFFSET,    ARG_NONE}},
++  { "jnc",  0x1700, {ARG_OFFSET,    ARG_NONE}},
++  { "jne",  0x1600, {ARG_OFFSET,    ARG_NONE}},
++  { "jno",  0x1900, {ARG_OFFSET,    ARG_NONE}},
++  { "joc",  0x1800, {ARG_OFFSET,    ARG_NONE}},
++  { "jop",  0x1C00, {ARG_OFFSET,    ARG_NONE}},
++  { "ldcr", 0x3000, {ARG_MODE,      ARG_CRU_COUNT}},
++  { "li",   0x0200, {ARG_REGISTER,  ARG_IMMEDIATE}},
++  { "limi", 0x0300, {ARG_IMMEDIATE, ARG_NONE}},
++  { "lrex", 0x03E0, {ARG_NONE,      ARG_NONE}},
++  { "lwpi", 0x02E0, {ARG_IMMEDIATE, ARG_NONE}},
++  { "mov",  0xC000, {ARG_MODE,      ARG_MODE}},
++  { "movb", 0xD000, {ARG_MODE,      ARG_MODE}},
++  { "mpy",  0x3800, {ARG_MODE,      ARG_REGISTER}},
++  { "neg",  0x0500, {ARG_MODE,      ARG_NONE}},
++  { "nop",  0x1000, {ARG_NONE,      ARG_NONE}},  /* Encoded as "jmp 0"  */
++  { "or",   0xE000, {ARG_MODE,      ARG_MODE}},  /* Encoded as "soc"    */
++  { "orb",  0xF000, {ARG_MODE,      ARG_MODE}},  /* Encoded as "socb"   */
++  { "ori",  0x0260, {ARG_REGISTER,  ARG_IMMEDIATE}},
++  { "rset", 0x0360, {ARG_NONE,      ARG_NONE}},
++  { "rt",   0x045B, {ARG_NONE,      ARG_NONE}},  /* Encoded as "b *r11" */
++  { "rtwp", 0x0380, {ARG_NONE,      ARG_NONE}},
++  { "s",    0x6000, {ARG_MODE,      ARG_MODE}},
++  { "sb",   0x7000, {ARG_MODE,      ARG_MODE}},
++  { "sbo",  0x1D00, {ARG_CRU_DISP,  ARG_NONE}},
++  { "sbz",  0x1E00, {ARG_CRU_DISP,  ARG_NONE}},
++  { "seto", 0x0700, {ARG_MODE,      ARG_NONE}},
++  { "sla",  0x0A00, {ARG_REGISTER,  ARG_SHIFT}},
++  { "soc",  0xE000, {ARG_MODE,      ARG_MODE}},
++  { "socb", 0xF000, {ARG_MODE,      ARG_MODE}},
++  { "sra",  0x0800, {ARG_REGISTER,  ARG_SHIFT}},
++  { "src",  0x0B00, {ARG_REGISTER,  ARG_SHIFT}},
++  { "srl",  0x0900, {ARG_REGISTER,  ARG_SHIFT}},
++  { "stcr", 0x3400, {ARG_MODE,      ARG_CRU_COUNT}},
++  { "stst", 0x02C0, {ARG_REGISTER,  ARG_NONE}},
++  { "stwp", 0x02A0, {ARG_REGISTER,  ARG_IMMEDIATE}},
++  { "swpb", 0x06C0, {ARG_MODE,      ARG_NONE}},
++  { "szc",  0x4000, {ARG_MODE,      ARG_MODE}},
++  { "szcb", 0x5000, {ARG_MODE,      ARG_MODE}},
++  { "tb",   0x1F00, {ARG_CRU_DISP,  ARG_NONE}},
++  { "x",    0x0480, {ARG_MODE,      ARG_NONE}},
++  { "xop",  0x2C00, {ARG_MODE,      ARG_REGISTER}},
++  { "xor",  0x2800, {ARG_MODE,      ARG_REGISTER}}
++};
++
++static int
++assemble_arg(int argtype, short *opcode, int *op_size, expressionS *exp)
++{
++  /* argtype - type of argument to parse
++     opcode  - bits to insert into opcode
++     op_size - size of opcode bits
++     expr    - expression for branch target or immediate value
++  */
++
++  char *start = input_line_pointer;
++
++  exp->X_op = O_absent;
++  *opcode = 0;
++  *op_size = 0;  
++  int valid = 0;
++
++  if(argtype == ARG_MODE)
++    {
++      assemble_mode(input_line_pointer, opcode, exp);
++      *op_size = 6;
++      valid = 1;
++    }
++  else if(argtype != ARG_NONE)
++    {
++      char *ptr = input_line_pointer;
++      expression(exp);
++      switch(argtype)
++        {
++          /* Branch offset */
++          case ARG_OFFSET:     
++            if(exp->X_op == O_constant ||
++               exp->X_op == O_symbol)
++              {
++                valid = 1;
++              }
++            if(exp->X_op == O_constant)
++              {
++                *opcode = (exp->X_add_number >> 1) & 0xFF;
++                *op_size = 8;
++                exp->X_op = O_absent;
++              }
++            break;
++
++          /* Register number */
++          case ARG_REGISTER:
++            if(exp->X_op == O_register ||
++               /* The expression parser cannot handle numeric registers.
++                  Instructions like "mov 1,2" must be handled here
++               */
++               (exp->X_op == O_constant &&
++                  (unsigned int)exp->X_add_number < 16))
++              {
++                *opcode = exp->X_add_number;
++                *op_size = 4;
++                exp->X_op = O_absent;
++                valid = 1;
++              }
++            else
++              {
++                as_bad (_("not a register '%s'"), start);
++              }
++            break;
++
++          /* 16-bit immediate value */
++          case ARG_IMMEDIATE:
++            if(exp->X_op == O_constant && *ptr++ == '\'')
++              {
++                /* Could be a constant like 'a' or 'ab'
++                   These values can be no longer than two characters.
++                   Since TI escapes the single quote by duplication,
++                   the code below is uglier than it needs to be.
++
++                   Expected translations:
++                     ''     -> 0x0027
++                     ''''   -> 0x0027
++                     '''''' -> 0x2727
++                */
++                int i, val = 0;
++                for(i = 0; i < 2; i++)
++                  {
++                    if(*ptr == '\'' && ptr[1] == '\'') ptr++;
++                    val = (val << 8) | *ptr++;
++                    if((*ptr == '\'' && ptr[1]!='\'') ||
++                       *ptr == 0    ||
++                       *ptr == '\n') break;
++                  }
++                if(*ptr == '\n' ||
++                   *ptr == 0) as_warn(_("unterminated string"));
++                else if(*ptr != '\'' ||
++                        (*ptr == '\'' && ptr[1] == '\''))
++                  {
++                    as_warn(_("constant too big"));
++                  }
++
++                /* Use the value we found */
++                exp->X_add_number = val;
++                valid = 1;
++              }
++            else if(exp->X_op == O_constant ||
++                    exp->X_op == O_symbol)
++              {
++                valid = 1;
++              }
++            else
++              {
++                as_bad (_("not a constant expression '%s'"), start);
++              }
++            break;
++
++          /* Bit shift count */
++          case ARG_SHIFT:
++            if(exp->X_op == O_constant ||
++               (exp->X_op == O_register && exp->X_add_number == 0))
++              {
++                *opcode = exp->X_add_number;
++                *op_size = 4;
++                exp->X_op = O_absent;
++                valid = 1;
++              }
++            break;
++
++          /* CRU bit count */
++          case ARG_CRU_COUNT:
++            if(exp->X_op == O_constant)
++              {
++                *opcode = exp->X_add_number;
++                *op_size = 4;
++                exp->X_op = O_absent;
++                valid = 1;
++              }
++            else
++              {
++                as_bad (_("not a constant expression '%s'"), input_line_pointer);
++              }
++            break;
++
++          /* CRU displacement */
++          case ARG_CRU_DISP:
++            if(exp->X_op == O_constant)
++              {
++                *opcode = exp->X_add_number;
++                *op_size = 8;
++                exp->X_op = O_absent;
++                valid = 1;
++              }
++            else
++              {
++                as_bad (_("not a constant expression '%s'"), input_line_pointer);
++              }
++            break;
++        }
++    }
++
++  if(input_line_pointer == start)
++    {
++      as_bad (_("missing argument"));
++      return(0);
++    }
++
++  /* If we found an invalid argument, revert everything done here */
++  if(valid == 0)
++    {
++      exp->X_op = O_absent;
++      input_line_pointer = start;
++    }
++  return(valid);
++}
++
++void
++md_assemble (char* str)
++{
++  const char *p;
++  char * old_ptr;
++  int i;
++  table_t *insp;
++  short opcode[2];
++  int op_size[2];
++  expressionS exp[2];              
++  char *out;
++  short insn;
++  int check_unex = 0;
++
++  err_flag = 0;
++  old_ptr = input_line_pointer;
++  p = skip_space (str);
++
++  /* Convert opcode to lowercase */
++  for (i = 0; (i < BUFLEN) && (ISALPHA (*p));)
++    buf[i++] = TOLOWER (*p++);
++
++  if (i == BUFLEN)
++    {
++      /* Opcode too long */
++      buf[BUFLEN-3] = buf[BUFLEN-2] = '.'; /* Mark opcode as abbreviated.  */
++      buf[BUFLEN-1] = 0;
++      as_bad (_("unknown instruction '%s'"), buf);
++    }
++  else if ((*p) && (!ISSPACE (*p)))
++    as_bad (_("syntax error"));
++  else 
++    {
++      /* Check for valid opcode */
++      buf[i] = 0;
++      p = skip_space (p);
++      key = buf;
++      
++      insp = bsearch (&key, instab, ARRAY_SIZE (instab),
++		    sizeof (instab[0]), key_cmp);
++      if (!insp)
++	as_bad (_("unknown instruction '%s'"), buf);
++      else
++	{
++          /* Skip to start of arguments, if we have any */
++          input_line_pointer = str + strlen(insp->name);
++          input_line_pointer = (char*)skip_space (input_line_pointer);
++
++          /* Initialize arguments */
++          for(i=0;i<2;i++)
++            {
++              exp[i].X_op = O_absent;
++              op_size[i] = 0;
++              opcode[i] = 0;
++            }
++
++          /* Parse arguments */
++          if(insp->arg[0] != ARG_NONE)
++            {
++              /* Parse first argument */
++              if(assemble_arg(insp->arg[0], &opcode[0], &op_size[0], &exp[0]) != 0)
++                {
++                  check_unex = 1;
++                  if(insp->arg[1] != ARG_NONE)
++                    {
++                      /* Parse second argument */
++                      if(*input_line_pointer != ',')
++                        {
++                          if(*input_line_pointer == 0)
++                            {
++                              as_bad(_("unexpected end of line"));
++                              check_unex = 0;
++                            }
++                          else
++                            {
++                              char str[64];
++                              sprintf(str, "unexpected character at \"%s\"",
++                                      input_line_pointer);
++                              as_bad(str);
++                              check_unex = 0;
++                            }
++                        }
++                      else
++                        {
++                          input_line_pointer++;
++                          if(assemble_arg(insp->arg[1], &opcode[1], &op_size[1], &exp[1]))
++                              /* Second argument is valid, rest is comment */
++                              check_unex = 0;
++                        }
++                    }
++                }           
++            }
++
++          /* Check for unexpected characters */
++          if(check_unex != 0 && 
++             *input_line_pointer != 0 && 
++             strspn(input_line_pointer, " *") == 0)
++            {
++              char str[64];
++              sprintf(str, "unexpected character at \"%s\"", input_line_pointer);
++              as_bad(str);
++            }
++
++          /* Make output instruction */
++          insn = insp->opcode | 
++                 opcode[0]    |
++                 (opcode[1] << op_size[0]);
++
++          out = frag_more(2);
++          *out++ = ((insn >> 8) & 0xFF);
++          *out   =  (insn       & 0xFF);
++
++          /* Insert extra words and fixups */
++          for(i=0; i<2; i++)
++            {
++              if(exp[i].X_op != O_absent)
++                {
++                  /* Assume no fixup required */
++                  int reloc_type = BFD_RELOC_NONE;
++                  int fix_size = 0;
++
++                  if(insp->arg[i] == ARG_OFFSET)
++                    {
++                      /* 8-bit PC-relative offset, stored in instruction */
++                      reloc_type = BFD_RELOC_8_PCREL;
++                      fix_size = 1;
++                    }
++                  else
++                    {
++                      /* 16-bit constant value, stored after instruction */
++                      unsigned short val = 0;
++                      out = frag_more(2);
++                      reloc_type = BFD_RELOC_16;
++                      fix_size = 2;
++                      if(exp[i].X_op == O_constant)
++                        {
++                          val = (exp[i].X_add_number & 0xFFFF);
++                          fix_size = 0;
++                        }
++                      out[0] = ((val >> 8) & 0xFF);
++                      out[1] =  (val       & 0xFF);      
++                    }
++
++                  if(fix_size != 0)
++                    {
++                      /* Fixup used for this instruction, configure it */
++                      fix_new_exp (frag_now,
++                                   out - frag_now->fr_literal,
++                                   fix_size,
++                                   &exp[i],
++                                   0,
++                                   reloc_type);
++                    }
++                }
++            }
++        }
++    }
++
++  input_line_pointer = old_ptr;
++}
++
++
++void
++md_operand (expressionS* exp ATTRIBUTE_UNUSED)
++{
++  printf("Unrecognized expression: \"%s\"\n", input_line_pointer);
++}
++
++
++void
++md_apply_fix (fixS * fixP, valueT* valP, segT seg ATTRIBUTE_UNUSED)
++{
++  long val = * (long *) valP;
++  char *buf = fixP->fx_where + fixP->fx_frag->fr_literal;
++
++  switch (fixP->fx_r_type)
++    {
++    case BFD_RELOC_8_PCREL:
++      if (fixP->fx_addsy)
++        {
++          fixP->fx_no_overflow = 1;
++          fixP->fx_done = 0;
++        }
++      else
++        {
++	  fixP->fx_no_overflow = (-128 <= val && val < 128);
++	  if (!fixP->fx_no_overflow)
++            as_bad_where (fixP->fx_file, fixP->fx_line,
++			  _("relative jump out of range"));
++	  *buf++ = val;
++          fixP->fx_done = 1;
++        }
++      break;
++
++    case BFD_RELOC_16:
++      *buf++ = (val >> 8);
++      *buf++ = val;
++      fixP->fx_no_overflow = 1; 
++      if (fixP->fx_addsy == NULL)
++	fixP->fx_done = 1;
++      break;
++
++    default:
++      printf (_("md_apply_fix: unknown r_type 0x%x\n"), fixP->fx_r_type);
++      abort ();
++    }
++}
++
++/* GAS will call this to generate a reloc.  GAS will pass the
++   resulting reloc to `bfd_install_relocation'.  This currently works
++   poorly, as `bfd_install_relocation' often does the wrong thing, and
++   instances of `tc_gen_reloc' have been written to work around the
++   problems, which in turns makes it difficult to fix
++   `bfd_install_relocation'.  */
++
++/* If while processing a fixup, a reloc really
++   needs to be created then it is done here.  */
++
++arelent *
++tc_gen_reloc (asection *seg ATTRIBUTE_UNUSED , fixS *fixp)
++{
++  arelent *reloc;
++
++  if (! bfd_reloc_type_lookup (stdoutput, fixp->fx_r_type))
++    {
++      as_bad_where (fixp->fx_file, fixp->fx_line,
++		    _("reloc %d not supported by object file format"),
++		    (int) fixp->fx_r_type);
++      return NULL;
++    }
++
++  reloc               = xmalloc (sizeof (arelent));
++  reloc->sym_ptr_ptr  = xmalloc (sizeof (asymbol *));
++  *reloc->sym_ptr_ptr = symbol_get_bfdsym (fixp->fx_addsy);
++  reloc->address      = fixp->fx_frag->fr_address + fixp->fx_where;
++  reloc->howto        = bfd_reloc_type_lookup (stdoutput, fixp->fx_r_type);
++  reloc->addend       = fixp->fx_offset;
++
++  return reloc;
++}
++
+diff -rupN binutils-2.19.1/gas/config/tc-tms9900.h binutils-2.19.1-tms9900/gas/config/tc-tms9900.h
+--- binutils-2.19.1/gas/config/tc-tms9900.h	1969-12-31 19:00:00.000000000 -0500
++++ binutils-2.19.1-tms9900/gas/config/tc-tms9900.h	2014-12-03 01:04:04.860063007 -0500
+@@ -0,0 +1,118 @@
++/* this is tc-tms9900.h
++   Copyright 2009 Eric Welser
++
++   This file is part of GAS, the GNU Assembler.
++
++   GAS is free software; you can redistribute it and/or modify
++   it under the terms of .the GNU General Public License as published by
++   the Free Software Foundation; either version 3, or (at your option)
++   any later version.
++
++   GAS is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU General Public License for more details.
++
++   You should have received a copy of the GNU General Public License
++   along with GAS; see the file COPYING.  If not, write to the Free
++   Software Foundation, 51 Franklin Street - Fifth Floor, Boston, MA
++   02110-1301, USA.  */
++
++#ifndef TC_TMS9900
++#define TC_TMS9900
++
++#define TARGET_ARCH   bfd_arch_tms9900
++#define BFD_ARCH      TARGET_ARCH
++#define COFF_MAGIC    0x5A80
++#define TARGET_MACH   bfd_mach_tms9900
++#define TARGET_BYTES_BIG_ENDIAN  0
++#define LABELS_WITHOUT_COLONS 1
++
++
++#define TARGET_FORMAT "elf32-tms9900"
++
++/* If you define this macro, GAS will warn about the
++   use of nonstandard escape sequences in a string.  */
++#define ONLY_STANDARD_ESCAPES
++
++/* This should just call either `number_to_chars_bigendian' or
++   `number_to_chars_littleendian', whichever is appropriate.  On
++   targets like the MIPS which support options to change the
++   endianness, which function to call is a runtime decision.  On
++   other targets, `md_number_to_chars' can be a simple macro.  */
++#define md_number_to_chars number_to_chars_littleendian
++
++/* This is called when an unrecognized symbol is encountered while
++   parsing an expression. */
++#define md_parse_name(name, exp, mode, c) tms9900_parse_name (name, exp)
++
++/* This macro permits the processor to specify all characters which
++   may appears in an operand.  This will prevent the scrubber from
++   discarding meaningful whitespace in certain cases. */
++extern const char tms9900_symbol_chars[];
++#define tc_symbol_chars tms9900_symbol_chars
++
++extern const char tms9900_comment_chars[];
++#define tc_comment_chars tms9900_comment_chars
++
++
++#define TC_COUNT_RELOC(x) 1
++
++#define TC_COFF_FIX2RTYPE(fixP) tc_coff_fix2rtype (fixP)
++#define md_convert_frag(b,s,f)   as_fatal ("convert_frag called\n")
++#define md_estimate_size_before_relax(f,s) \
++  (as_fatal (_("estimate_size_before_relax called")), 1)
++
++/* Define some functions to be called by generic code.  */
++#define md_end               tms9900_md_end
++#define md_start_line_hook() { if (tms9900_start_line_hook ()) continue; }
++#define TC_CONS_FIX_NEW tms9900_cons_fix_new
++
++extern void tms9900_md_end (void);
++extern int tms9900_start_line_hook (void);
++extern void tms9900_cons_fix_new (fragS *, int, int, expressionS *);
++extern int tms9900_parse_name(const char *, struct expressionS *);
++
++/* We don't need to handle a broken .word directive. */
++#define WORKING_DOT_WORD
++
++/* If you define this macro, it means that `tc_gen_reloc' may return
++   multiple relocation entries for a single fixup.  In this case, the
++   return value of `tc_gen_reloc' is a pointer to a null terminated
++   array.  */
++#undef RELOC_EXPANSION_POSSIBLE
++
++/* No shared lib support, so we don't need to ensure
++   externally visible symbols can be overridden.  */
++#define EXTERN_FORCE_RELOC 0
++
++/* Values passed to md_apply_fix3 don't include the symbol value.  */
++#define MD_APPLY_SYM_VALUE(FIX) 0
++
++#define LISTING_WORD_SIZE 2
++
++/* A single '=' is accepted as a comparison operator.  */
++#define O_SINGLE_EQ O_eq
++
++/* A '$' is used to refer to the current location or as a hex. prefix.  */
++#define DOLLAR_DOT
++#define DOLLAR_AMBIGU                1
++#define LOCAL_LABELS_FB              1
++#define LITERAL_PREFIXPERCENT_BIN
++#define NUMBERS_WITH_SUFFIX          1
++#define NO_PSEUDO_DOT                1
++/* We allow single quotes to delimit character constants as
++   well, but it is cleaner to handle that in tc-tms9900.c.  */
++#define SINGLE_QUOTE_STRINGS
++#define ONLY_STANDARD_ESCAPES
++
++/* An `.lcomm' directive with no explicit alignment parameter will
++   use this macro to set P2VAR to the alignment that a request for
++   SIZE bytes will have.  The alignment is expressed as a power of
++   two.  If no alignment should take place, the macro definition
++   should do nothing.  Some targets define a `.bss' directive that is
++   also affected by this macro.  The default definition will set
++   P2VAR to the truncated power of two of sizes up to eight bytes.  */
++#define TC_IMPLICIT_LCOMM_ALIGNMENT(SIZE, P2VAR) (P2VAR) = 0
++
++#endif
+diff -rupN binutils-2.19.1/gas/configure.tgt binutils-2.19.1-tms9900/gas/configure.tgt
+--- binutils-2.19.1/gas/configure.tgt	2008-10-02 04:07:17.000000000 -0400
++++ binutils-2.19.1-tms9900/gas/configure.tgt	2014-12-03 01:04:03.168054616 -0500
+@@ -81,6 +81,7 @@ case ${cpu} in
+   strongarm*be)		cpu_type=arm endian=big ;;
+   strongarm*b)		cpu_type=arm endian=big ;;
+   strongarm*)		cpu_type=arm endian=little ;;
++  tsm9900*)             cpu_type=tms9900 endian=big ;;
+   v850*)		cpu_type=v850 ;;
+   x86_64*)		cpu_type=i386 arch=x86_64;;
+   xscale*be|xscale*b)	cpu_type=arm endian=big ;;
+@@ -384,6 +385,8 @@ case ${generic_target} in
+   tic4x-*-* | c4x-*-*)			fmt=coff bfd_gas=yes ;;
+   tic54x-*-* | c54x*-*-*)		fmt=coff bfd_gas=yes need_libm=yes;;
+ 
++  tms9900-*-*)				fmt=elf ;;
++
+   v850-*-*)				fmt=elf ;;
+   v850e-*-*)				fmt=elf ;;
+   v850ea-*-*)				fmt=elf ;;
+diff -rupN binutils-2.19.1/include/dis-asm.h binutils-2.19.1-tms9900/include/dis-asm.h
+--- binutils-2.19.1/include/dis-asm.h	2008-07-07 14:40:13.000000000 -0400
++++ binutils-2.19.1-tms9900/include/dis-asm.h	2014-12-03 01:03:48.155980176 -0500
+@@ -275,6 +275,7 @@ extern int print_insn_tic30		(bfd_vma, d
+ extern int print_insn_tic4x		(bfd_vma, disassemble_info *);
+ extern int print_insn_tic54x		(bfd_vma, disassemble_info *);
+ extern int print_insn_tic80		(bfd_vma, disassemble_info *);
++extern int print_insn_tms9900           (bfd_vma, disassemble_info *);
+ extern int print_insn_v850		(bfd_vma, disassemble_info *);
+ extern int print_insn_vax		(bfd_vma, disassemble_info *);
+ extern int print_insn_w65		(bfd_vma, disassemble_info *);
+diff -rupN binutils-2.19.1/include/elf/common.h binutils-2.19.1-tms9900/include/elf/common.h
+--- binutils-2.19.1/include/elf/common.h	2008-08-03 19:20:42.000000000 -0400
++++ binutils-2.19.1-tms9900/include/elf/common.h	2014-12-03 01:03:48.147980139 -0500
+@@ -334,6 +334,7 @@
+ 
+ #define EM_CYGNUS_MEP		0xF00D  /* Toshiba MeP */
+ 
++#define EM_TMS9900		0xABBA
+ /* See the above comment before you add a new EM_* value here.  */
+ 
+ /* Values for e_version.  */
+diff -rupN binutils-2.19.1/include/elf/tms9900.h binutils-2.19.1-tms9900/include/elf/tms9900.h
+--- binutils-2.19.1/include/elf/tms9900.h	1969-12-31 19:00:00.000000000 -0500
++++ binutils-2.19.1-tms9900/include/elf/tms9900.h	2014-12-03 01:03:48.155980176 -0500
+@@ -0,0 +1,32 @@
++/* ix86 ELF support for BFD.
++   Copyright 1998, 1999, 2000, 2002, 2004, 2005, 2006
++   Free Software Foundation, Inc.
++
++   This file is part of BFD, the Binary File Descriptor library.
++
++   This program is free software; you can redistribute it and/or modify
++   it under the terms of the GNU General Public License as published by
++   the Free Software Foundation; either version 2 of the License, or
++   (at your option) any later version.
++
++   This program is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU General Public License for more details.
++
++   You should have received a copy of the GNU General Public License
++   along with this program; if not, write to the Free Software Foundation,
++   Inc., 51 Franklin Street - Fifth Floor, Boston, MA 02110-1301, USA.  */
++
++#ifndef _ELF_TMS9900_H
++#define _ELF_TMS9900_H
++
++#include "elf/reloc-macros.h"
++
++START_RELOC_NUMBERS (elf_tms9900_reloc_type)
++     RELOC_NUMBER (R_TMS9900_NONE,      0)	/* No reloc */
++     RELOC_NUMBER (R_TMS9900_PC8,       1)	/* PC relative 8 bit */
++     RELOC_NUMBER (R_TMS9900_16,        2)	/* Direct 16 bit  */
++END_RELOC_NUMBERS (R_TMS9900_max)
++
++#endif
+diff -rupN binutils-2.19.1/ld/configure.tgt binutils-2.19.1-tms9900/ld/configure.tgt
+--- binutils-2.19.1/ld/configure.tgt	2008-08-09 01:35:13.000000000 -0400
++++ binutils-2.19.1-tms9900/ld/configure.tgt	2014-12-03 01:03:57.252025278 -0500
+@@ -607,6 +607,8 @@ tic4x-*-* | c4x-*-*)    targ_emul=tic4xc
+ tic54x-*-* | c54x*-*-*)	targ_emul=tic54xcoff ;;
+ tic80-*-*)		targ_emul=tic80coff
+ 			;;
++tms9900-*-*)		targ_emul=tms9900
++			;;
+ v850-*-*)		targ_emul=v850 ;;
+ v850e-*-*)		targ_emul=v850 ;;
+ v850ea-*-*)		targ_emul=v850
+diff -rupN binutils-2.19.1/ld/emulparams/tms9900.sh binutils-2.19.1-tms9900/ld/emulparams/tms9900.sh
+--- binutils-2.19.1/ld/emulparams/tms9900.sh	1969-12-31 19:00:00.000000000 -0500
++++ binutils-2.19.1-tms9900/ld/emulparams/tms9900.sh	2014-12-03 01:03:54.932013784 -0500
+@@ -0,0 +1,6 @@
++SCRIPT_NAME=elf
++OUTPUT_FORMAT="elf32-tms9900"
++OUTPUT_ARCH="tms9900"
++TEXT_START_ADDR=0xA000
++TARGET_PAGE_SIZE=512
++ARCH=tms9900
+diff -rupN binutils-2.19.1/ld/Makefile.in binutils-2.19.1-tms9900/ld/Makefile.in
+--- binutils-2.19.1/ld/Makefile.in	2008-12-23 08:54:52.000000000 -0500
++++ binutils-2.19.1-tms9900/ld/Makefile.in	2014-12-03 01:03:55.180015005 -0500
+@@ -640,6 +640,7 @@ ALL_EMULATIONS = \
+ 	etic4xcoff.o \
+ 	etic54xcoff.o \
+ 	etic80coff.o \
++	etms9900.o \
+ 	evanilla.o \
+ 	evax.o \
+ 	evaxnbsd.o \
+@@ -2520,6 +2521,9 @@ etic54xcoff.c: $(srcdir)/emulparams/tic5
+ etic80coff.c: $(srcdir)/emulparams/tic80coff.sh \
+   $(srcdir)/emultempl/generic.em $(srcdir)/scripttempl/tic80coff.sc ${GEN_DEPENDS}
+ 	${GENSCRIPTS} tic80coff "$(tdir_tic80coff)"
++etms9900.c: $(srcdir)/emulparams/tms9900.sh \
++  $(ELF_DEPS) $(srcdir)/emultempl/generic.em $(srcdir)/scripttempl/elf.sc ${GEN_DEPENDS}
++	${GENSCRIPTS} tms9900 "$(tdir_tms9900)"
+ evanilla.c: $(srcdir)/emulparams/vanilla.sh \
+   $(srcdir)/emultempl/vanilla.em $(srcdir)/scripttempl/vanilla.sc ${GEN_DEPENDS}
+ 	${GENSCRIPTS} vanilla "$(tdir_vanilla)"
+diff -rupN binutils-2.19.1/ld/scripttempl/tms9900.sc binutils-2.19.1-tms9900/ld/scripttempl/tms9900.sc
+--- binutils-2.19.1/ld/scripttempl/tms9900.sc	1969-12-31 19:00:00.000000000 -0500
++++ binutils-2.19.1-tms9900/ld/scripttempl/tms9900.sc	2014-12-03 01:03:57.328025645 -0500
+@@ -0,0 +1,35 @@
++if [ x${LD_FLAG} = x ]
++then
++cat << EOF
++/* Create a cp/m executable; load and execute at 0x100.  */
++OUTPUT_FORMAT("binary")
++. = 0x100;
++__Ltext = .;
++ENTRY (__Ltext)
++EOF
++else 
++    echo "OUTPUT_FORMAT(\"${OUTPUT_FORMAT}\")"
++fi
++cat <<EOF
++OUTPUT_ARCH("${OUTPUT_ARCH}")
++SECTIONS
++{
++.text :	{
++	*(.text)
++	*(text)
++	${RELOCATING+ __Htext = .;}
++	}
++.data :	{
++	${RELOCATING+ __Ldata = .;}
++	*(.data)
++	*(data)
++	${RELOCATING+ __Hdata = .;}
++	}
++.bss :	{
++	${RELOCATING+ __Lbss = .;}
++	*(.bss)
++	*(bss)
++	${RELOCATING+ __Hbss = .;}
++	}
++}
++EOF
+diff -rupN binutils-2.19.1/opcodes/configure binutils-2.19.1-tms9900/opcodes/configure
+--- binutils-2.19.1/opcodes/configure	2008-08-15 04:31:51.000000000 -0400
++++ binutils-2.19.1-tms9900/opcodes/configure	2014-12-03 01:03:48.355981171 -0500
+@@ -11885,6 +11885,7 @@ if test x${all_targets} = xfalse ; then
+         bfd_tic4x_arch)         ta="$ta tic4x-dis.lo" ;;
+ 	bfd_tic54x_arch)	ta="$ta tic54x-dis.lo tic54x-opc.lo" ;;
+ 	bfd_tic80_arch)		ta="$ta tic80-dis.lo tic80-opc.lo" ;;
++        bfd_tms9900_arch)	ta="$ta tms9900-dis.lo" ;;
+ 	bfd_v850_arch)		ta="$ta v850-opc.lo v850-dis.lo" ;;
+ 	bfd_v850e_arch)		ta="$ta v850-opc.lo v850-dis.lo" ;;
+ 	bfd_v850ea_arch)	ta="$ta v850-opc.lo v850-dis.lo" ;;
+diff -rupN binutils-2.19.1/opcodes/disassemble.c binutils-2.19.1-tms9900/opcodes/disassemble.c
+--- binutils-2.19.1/opcodes/disassemble.c	2008-04-10 09:36:43.000000000 -0400
++++ binutils-2.19.1-tms9900/opcodes/disassemble.c	2014-12-03 01:03:50.735992964 -0500
+@@ -77,6 +77,7 @@
+ #define ARCH_tic4x
+ #define ARCH_tic54x
+ #define ARCH_tic80
++#define ARCH_tms9900
+ #define ARCH_v850
+ #define ARCH_vax
+ #define ARCH_w65
+@@ -386,6 +387,11 @@ disassembler (abfd)
+       disassemble = print_insn_tic80;
+       break;
+ #endif
++#ifdef ARCH_tms9900
++    case bfd_arch_tms9900:
++      disassemble = print_insn_tms9900;
++      break;
++#endif
+ #ifdef ARCH_v850
+     case bfd_arch_v850:
+       disassemble = print_insn_v850;
+diff -rupN binutils-2.19.1/opcodes/Makefile.in binutils-2.19.1-tms9900/opcodes/Makefile.in
+--- binutils-2.19.1/opcodes/Makefile.in	2008-09-09 04:02:19.000000000 -0400
++++ binutils-2.19.1-tms9900/opcodes/Makefile.in	2014-12-03 01:03:49.955989115 -0500
+@@ -420,7 +420,8 @@ CFILES = \
+ 	tic54x-opc.c \
+ 	tic80-dis.c \
+ 	tic80-opc.c \
+-	v850-dis.c \
++	tms9900-dis.c \
++        v850-dis.c \
+ 	v850-opc.c \
+ 	vax-dis.c \
+ 	w65-dis.c \
+@@ -1664,6 +1665,8 @@ tic80-dis.lo: tic80-dis.c sysdep.h confi
+   $(INCDIR)/symcat.h
+ tic80-opc.lo: tic80-opc.c sysdep.h config.h $(INCDIR)/ansidecl.h \
+   $(INCDIR)/opcode/tic80.h
++tms9900-dis.lo: tms9900-dis.c sysdep.h config.h $(INCDIR)/ansidecl.h \
++  $(INCDIR)/dis-asm.h
+ v850-dis.lo: v850-dis.c sysdep.h config.h $(INCDIR)/ansidecl.h \
+   $(INCDIR)/opcode/v850.h $(INCDIR)/dis-asm.h $(BFD_H) \
+   $(INCDIR)/symcat.h opintl.h
+diff -rupN binutils-2.19.1/opcodes/tms9900-dis.c binutils-2.19.1-tms9900/opcodes/tms9900-dis.c
+--- binutils-2.19.1/opcodes/tms9900-dis.c	1969-12-31 19:00:00.000000000 -0500
++++ binutils-2.19.1-tms9900/opcodes/tms9900-dis.c	2014-12-03 01:03:51.135994949 -0500
+@@ -0,0 +1,387 @@
++/* Print TMS9900 instructions
++   Copyright 2009 Eric Welser
++
++   This file is part of the GNU opcodes library.
++
++   This library is free software; you can redistribute it and/or modify
++   it under the terms of the GNU General Public License as published by
++   the Free software Foundation; either version 3, or (at your option)
++   any later version.
++
++   It is distributed in the hope that it will be useful, but WITHOUT
++   ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
++   or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
++   License for more details.
++
++   You should have received a copy of the GNU General Public License
++   along with this program; if not, write to the Free Software
++   Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston,
++   MA 02110-1301, USA.  */
++
++#include "sysdep.h"
++#include "dis-asm.h"
++#include <stdio.h>
++
++struct buffer
++{
++  bfd_vma base;
++  unsigned short opcode;
++  int n_fetch;
++  unsigned char data[6];
++} ;
++
++typedef void (*parse_func)(struct buffer *, disassemble_info *, char *);
++
++struct parse_table
++{
++  parse_func func;
++  char* text;
++};
++
++static int
++fetch_data (struct buffer *buf, disassemble_info * info, int n)
++{
++  int r;
++
++  if (buf->n_fetch + n > 6)
++    abort ();
++
++  r = info->read_memory_func (buf->base + buf->n_fetch,
++			      (unsigned char*) buf->data + buf->n_fetch,
++			      n, info);
++  if (r == 0)
++    buf->n_fetch += n;
++  return !r;
++}
++
++static void parse_error(struct buffer *buffer, disassemble_info *info, char *text ATTRIBUTE_UNUSED)
++{
++  info->fprintf_func (info->stream, "data %02X%02X", 
++                      buffer->data[0],  buffer->data[1]);  
++}
++
++static void parse_mode(struct buffer *buffer, disassemble_info *info, char *arg, int code)
++{
++  int mode = (code >> 4) & 0x3;
++  int reg = code & 0xF;
++  if(mode == 2)
++    {
++      unsigned char *data = &buffer->data[buffer->n_fetch];
++      unsigned short value;
++      if (! fetch_data (buffer, info, 2))
++        return;
++      value = ((unsigned short)data[0] << 8) | data[1];
++      if(reg == 0)
++        sprintf(arg, "@>%04X",value);
++      else
++        sprintf(arg, "@>%04X(r%d)", value, reg);
++    }
++  else
++    {
++      char *format[] = { "r%d", "*r%d", "", "*r%d+" };
++      sprintf(arg, format[mode], reg);
++    }
++}
++
++static void parse_type_1(struct buffer *buffer, disassemble_info *info, char *text)
++{
++  //                  |15|14|13|12|11|10| 9| 8| 7| 6| 5| 4| 3| 2| 1| 0|
++  // source, dest     |Opcode  |B |Td   |Dest. Reg. |Ts   |Source Reg.|
++
++  char source[16];
++  char dest[16];
++
++  parse_mode(buffer, info, source, (buffer->opcode & 0x3F));
++  parse_mode(buffer, info, dest, ((buffer->opcode >> 6) & 0x3F));
++
++  info->fprintf_func (info->stream, "%s %s, %s", text, source, dest);
++}
++
++static void parse_type_2(struct buffer *buffer ATTRIBUTE_UNUSED, disassemble_info *info, char *text)
++{
++  //                  |15|14|13|12|11|10| 9| 8| 7| 6| 5| 4| 3| 2| 1| 0|
++  // PC-rel           |Opcode                 |Offset                 |
++
++  char disp = buffer->opcode & 0xFF;
++  info->fprintf_func (info->stream, "%s %d", text, (int)(disp) * 2);
++}
++
++static void parse_type_2a(struct buffer *buffer ATTRIBUTE_UNUSED, disassemble_info *info, char *text)
++{
++  //                  |15|14|13|12|11|10| 9| 8| 7| 6| 5| 4| 3| 2| 1| 0|
++  // CRU disp         |Opcode                 |Offset                 |
++
++  char disp = buffer->opcode & 0xFF;
++  info->fprintf_func (info->stream, "%s %d", text, (int)(disp));
++}
++
++static void parse_type_3(struct buffer *buffer, disassemble_info *info, char *text)
++{
++  //                  |15|14|13|12|11|10| 9| 8| 7| 6| 5| 4| 3| 2| 1| 0|
++  // source, reg      |Opcode           |Register   |Ts   |Source Reg.|
++
++  char source[16];
++  parse_mode(buffer, info, source, (buffer->opcode & 0x3F));
++  info->fprintf_func (info->stream, "%s %s, r%d", 
++                      text, source, (buffer->opcode >> 6) & 0xF);
++}
++
++static void parse_type_4(struct buffer *buffer, disassemble_info *info, char *text)
++{
++  //                  |15|14|13|12|11|10| 9| 8| 7| 6| 5| 4| 3| 2| 1| 0|
++  // source, nbits    |Opcode           |NBits      |Ts   |Source Reg.|
++
++  char source[16];
++  parse_mode(buffer, info, source, (buffer->opcode & 0x3F));
++  info->fprintf_func (info->stream, "%s %s, %d", 
++                      text, source, (buffer->opcode >> 6) & 0xF);
++}
++
++static void parse_type_5(struct buffer *buffer, disassemble_info *info, char *text)
++{
++  //                  |15|14|13|12|11|10| 9| 8| 7| 6| 5| 4| 3| 2| 1| 0|
++  // register, count  |Opcode                 |Count      |Register   |
++
++  info->fprintf_func (info->stream, "%s r%d, %d", 
++                      text, buffer->opcode & 0xF, (buffer->opcode >> 4) & 0xF);
++}
++
++static void parse_type_6(struct buffer *buffer, disassemble_info *info, char *text)
++{
++  //                  |15|14|13|12|11|10| 9| 8| 7| 6| 5| 4| 3| 2| 1| 0|
++  // dest             |Opcode                       |Ts   |Source Reg.|
++
++  char source[16];
++  parse_mode(buffer, info, source, (buffer->opcode & 0x3F));
++  info->fprintf_func (info->stream, "%s %s", text, source);
++}
++
++static void parse_type_7(struct buffer *buffer ATTRIBUTE_UNUSED, disassemble_info *info, char *text)
++{
++  //                  |15|14|13|12|11|10| 9| 8| 7| 6| 5| 4| 3| 2| 1| 0|
++  // dest             |Opcode                             | 0  0  0  0|
++
++  info->fprintf_func (info->stream, "%s", text);
++}
++
++static void parse_type_8(struct buffer *buffer, disassemble_info *info, char *text)
++{
++  //                  |15|14|13|12|11|10| 9| 8| 7| 6| 5| 4| 3| 2| 1| 0|
++  // register, count  |Opcode                          | 0|Register   |
++  // immediate        |Data                                           |
++
++  unsigned char *data = &buffer->data[buffer->n_fetch];
++  unsigned short value;
++  if (! fetch_data (buffer, info, 2))
++    return;
++  value = ((unsigned short)data[0] << 8) | data[1];
++
++  info->fprintf_func (info->stream, "%s r%d, >%04X", 
++                      text, buffer->opcode & 0xF, value);
++}
++
++static void parse_type_8a(struct buffer *buffer, disassemble_info *info, char *text)
++{
++  //                  |15|14|13|12|11|10| 9| 8| 7| 6| 5| 4| 3| 2| 1| 0|
++  // register, count  |Opcode                          | 0|Register   |
++
++  info->fprintf_func (info->stream, "%s r%d", 
++                      text, buffer->opcode & 0xF);
++}
++
++static void parse_type_8b(struct buffer *buffer, disassemble_info *info, char *text)
++{
++  //                  |15|14|13|12|11|10| 9| 8| 7| 6| 5| 4| 3| 2| 1| 0|
++  // opcode           |Opcode                          | 0            |
++  // immediate        |Data                                           |
++
++  unsigned char *data = &buffer->data[buffer->n_fetch];
++  unsigned short value;
++  if (! fetch_data (buffer, info, 2))
++    return;
++  value = ((unsigned short)data[0] << 8) | data[1];
++
++  info->fprintf_func (info->stream, "%s >%04X", 
++                      text, value);
++}
++
++static struct parse_table level_5[] =
++{
++  {parse_type_6, "blwp"},
++  {parse_type_6, "b"},
++  {parse_type_6, "x"},
++  {parse_type_6, "clr"},
++  {parse_type_6, "neg"},
++  {parse_type_6, "inv"},
++  {parse_type_6, "inc"},
++  {parse_type_6, "inct"},
++  {parse_type_6, "dec"},
++  {parse_type_6, "dect"},
++  {parse_type_6, "bl"},
++  {parse_type_6, "swpb"},
++  {parse_type_6, "seto"},
++  {parse_type_6, "abs"},
++  {parse_error,  ""},
++  {parse_error,  ""}
++};
++
++static void parse_level_5(struct buffer *buffer, disassemble_info *info, char *text)
++{
++  unsigned int code = (buffer->opcode >> 6) & 0xF;
++  text = level_5[code].text;
++  level_5[code].func(buffer, info, text);
++}
++
++static struct parse_table level_4[] =
++{
++  {parse_type_8,  "li"},
++  {parse_error,   ""},
++  {parse_type_8,  "ai"},
++  {parse_error,   ""},
++  {parse_type_8,  "andi"},
++  {parse_error,   ""},
++  {parse_type_8,  "ori"},
++  {parse_error,   ""},
++  {parse_type_8,  "ci"},
++  {parse_error,   ""},
++  {parse_type_8a, "stwp"},
++  {parse_error,   ""},
++  {parse_type_8a, "stst"},
++  {parse_error,   ""},
++  {parse_type_8b, "lwpi"},
++  {parse_error,   ""},
++  {parse_type_8b, "limi"},
++  {parse_error,   ""},
++  {parse_type_7,  "idle"},
++  {parse_error,   ""},
++  {parse_type_7,  "rset"},
++  {parse_error,   ""},
++  {parse_type_7,  "rtwp"},
++  {parse_error,   ""},
++  {parse_type_7,  "ckon"},
++  {parse_error,   ""},
++  {parse_type_7,  "ckof"},
++  {parse_error,   ""},
++  {parse_type_7,  "lrex"},
++  {parse_error,   ""},
++  {parse_error,   ""},
++  {parse_error,   ""}
++};
++
++static void parse_level_4(struct buffer *buffer, disassemble_info *info, char *text)
++{
++  unsigned int code = (buffer->opcode >> 4) & 0x1F;
++  text = level_4[code].text;
++  level_4[code].func(buffer, info, text);
++}
++
++static struct parse_table level_3[] =
++{
++  {parse_error,   ""},
++  {parse_error,   ""},
++  {parse_level_4, ""},
++  {parse_level_4, ""},
++  {parse_level_5, ""},
++  {parse_level_5, ""},
++  {parse_level_5, ""},
++  {parse_level_5, ""},
++  {parse_type_5,  "sra"},
++  {parse_type_5,  "srl"},
++  {parse_type_5,  "sla"},
++  {parse_type_5,  "src"},
++  {parse_error,   ""},
++  {parse_error,   ""},
++  {parse_error,   ""},
++  {parse_error,   ""}
++};
++
++static void parse_level_3(struct buffer *buffer, disassemble_info *info, char *text)
++{
++  unsigned int code = (buffer->opcode >> 8) & 0xF;
++  text = level_3[code].text;
++  level_3[code].func(buffer, info, text);
++}
++
++static struct parse_table level_2[] =
++{
++  {parse_type_2,  "jmp"},
++  {parse_type_2,  "jlt"},
++  {parse_type_2,  "jle"},
++  {parse_type_2,  "jeq"},
++  {parse_type_2,  "jhe"},
++  {parse_type_2,  "jgt"},
++  {parse_type_2,  "jne"},
++  {parse_type_2,  "jnc"},
++  {parse_type_2,  "joc"},
++  {parse_type_2,  "jno"},
++  {parse_type_2,  "jl"},
++  {parse_type_2,  "jh"},
++  {parse_type_2,  "jop"},
++  {parse_type_2a, "sbo"},
++  {parse_type_2a, "sbz"},
++  {parse_type_2a, "tb"}
++};
++
++static void parse_level_2(struct buffer *buffer, disassemble_info *info, char *text)
++{
++  unsigned int code = (buffer->opcode >> 8) & 0xF;
++  text = level_2[code].text;
++  level_2[code].func(buffer, info, text);
++}
++
++static struct parse_table level_1[] =
++{
++  {parse_type_3, "coc"},
++  {parse_type_3, "czc"},
++  {parse_type_3, "xor"},
++  {parse_type_4, "xop"},
++  {parse_type_4, "ldcr"},
++  {parse_type_4, "stcr"},
++  {parse_type_3, "mpy"},
++  {parse_type_3, "div"}
++};
++
++static void parse_level_1(struct buffer *buffer, disassemble_info *info, char *text)
++{
++  unsigned int code = (buffer->opcode >> 10) & 0x7;
++  text = level_1[code].text;
++  level_1[code].func(buffer, info, text);
++}
++
++static struct parse_table level_0[] =
++{
++  {parse_level_3, ""},
++  {parse_level_2, ""},
++  {parse_level_1, ""},
++  {parse_level_1, ""},
++  {parse_type_1,  "szc"},
++  {parse_type_1,  "szcb"},
++  {parse_type_1,  "s"},
++  {parse_type_1,  "sb"},
++  {parse_type_1,  "c"},
++  {parse_type_1,  "cb"},
++  {parse_type_1,  "a"},
++  {parse_type_1,  "ab"},
++  {parse_type_1,  "mov"},
++  {parse_type_1,  "movb"},
++  {parse_type_1,  "soc"},
++  {parse_type_1,  "socb"}
++};
++
++int
++print_insn_tms9900 (bfd_vma addr, disassemble_info * info)
++{
++  struct buffer buf;
++  unsigned int code;
++  
++  buf.base = addr;
++  buf.n_fetch = 0;
++
++  if (! fetch_data (& buf, info, 2))
++    return -1;
++  buf.opcode = (((unsigned int)buf.data[0]) << 8) | buf.data[1];
++  code = (buf.opcode >> 12) & 0xF;
++  level_0[code].func(&buf, info, level_0[code].text);
++  return(buf.n_fetch);
++}
++

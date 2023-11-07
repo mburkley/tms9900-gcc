@@ -1,0 +1,4 @@
+#!/bin/bash
+make all
+cd /home/eric/dev/sdlmame/sdlmess0130/
+./mess ti99_4a -cart2 /home/eric/dev/tios/test/hello/hello.cart
