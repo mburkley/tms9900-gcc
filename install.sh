@@ -167,6 +167,7 @@ if [ ! -f .libgcc_built ] ; then
    touch .libgcc_built
 fi
 
+# TODO built elf2ea5 and elf2cart
 echo "=== Installation complete ==="
 cd $START
 
