@@ -127,6 +127,9 @@ s390*-*-*)
 sh[123456789lbe]*-*-*)
 	cpu_type=sh
 	;;
+tms9900-*-*)
+	cpu_type=tms9900
+	;;
 esac
 
 # Common parts for widely ported systems.
@@ -550,6 +553,10 @@ sparc64-*-linux*)		# 64-bit SPARC's running GNU/Linux
 sparc64-*-netbsd*)
 	;;
 spu-*-elf*)
+	;;
+tms9900-*-*)
+	# Make SI mode functions for TMS9900
+	tmake_file=${cpu_type}/t-tms9900
 	;;
 v850e1-*-*)
 	;;

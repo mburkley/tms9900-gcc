@@ -102,6 +102,7 @@ sparc*)		 targ_archs=bfd_sparc_arch ;;
 spu*)            targ_archs=bfd_spu_arch ;;
 strongarm*)	 targ_archs=bfd_arm_arch ;;
 thumb*)		 targ_archs=bfd_arm_arch ;;
+tms9900*)	 targ_archs=bfd_tms9900_arch ;;
 v850*)		 targ_archs=bfd_v850_arch ;;
 x86_64*)	 targ_archs=bfd_i386_arch ;;
 xscale*)	 targ_archs=bfd_arm_arch ;;
@@ -1430,6 +1431,10 @@ case "${targ}" in
   tic80*-*-*)
     targ_defvec=tic80coff_vec
     targ_underscore=yes
+    ;;
+
+  tms9900-*-*)
+    targ_defvec=bfd_elf32_tms9900_vec
     ;;
 
   v850-*-*)

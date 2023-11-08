@@ -607,6 +607,8 @@ tic4x-*-* | c4x-*-*)    targ_emul=tic4xcoff ; targ_extra_emuls="tic3xcoff tic3xc
 tic54x-*-* | c54x*-*-*)	targ_emul=tic54xcoff ;;
 tic80-*-*)		targ_emul=tic80coff
 			;;
+tms9900-*-*)		targ_emul=tms9900
+			;;
 v850-*-*)		targ_emul=v850 ;;
 v850e-*-*)		targ_emul=v850 ;;
 v850ea-*-*)		targ_emul=v850

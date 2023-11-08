@@ -77,6 +77,9 @@ SItab[] =
   { 'a', 1e+18 }				/* ato */
 };
 
+histogram *histograms;
+unsigned num_histograms;
+
 /* Reads just the header part of histogram record into
    *RECORD from IFP.  FILENAME is the name of IFP and
    is provided for formatting error messages only.  
