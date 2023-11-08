@@ -286,23 +286,23 @@ int tms9900_initial_elimination_offset (int from,
       . <- arg pointer
       [args]
       . <- frame pointer
-      [frame]      
       [saved regs]
+      [frame]
       . <- stack pointer
   */
 
   if (from == ARG_POINTER_REGNUM && to == HARD_SP_REGNUM)
   {
-    return(tms9900_get_saved_reg_size() +
+    return(tms9900_get_saved_reg_size()+
            get_frame_size ());
   }
   if (from == FRAME_POINTER_REGNUM && to == HARD_SP_REGNUM)
   {
-    return(tms9900_get_saved_reg_size());
+    return(get_frame_size());
   }
   if (from == ARG_POINTER_REGNUM && to == FRAME_POINTER_REGNUM)
   {
-    return(get_frame_size());
+    return(tms9900_get_saved_reg_size());
   }
   return(0);
 }
@@ -547,12 +547,12 @@ void tms9900_expand_prologue (void)
       idx++;
    }
 
-   /* Allocate stack space */
-   if(regcount > 0 || frame_size > 0)
+   /* Allocate stack space for saved regs */
+   if(regcount > 0)
    {
-      /* Emit "ai sp, -regcount*2-framesize" */
+      /* Emit "ai sp, -regcount*2" */
       emit_insn(gen_addhi3(stack_pointer_rtx, stack_pointer_rtx, 
-                          GEN_INT(-regcount * 2 - frame_size)));
+                          GEN_INT(-regcount * 2)));
    }
 
    /* Actually save registers */
@@ -560,13 +560,14 @@ void tms9900_expand_prologue (void)
    {
       /*
       Form 1:
-      ai sp, -regs-frame    4      14+8+8   = 30
+      ai sp, -regs*2        4      14+8+8   = 30
       mov sp, r0            2      14+8     = 22
       mov r9 , *r0+         2      14+8+8+8 = 38
       mov r13, *r0+         2      14+8+8+8 = 38
       mov r14, *r0+         2      14+8+8+8 = 38
       mov r15, *r0+         2      14+8+8+8 = 38
       mov r11, *r0          2      14+8+8+8 = 34
+      ai sp, -frame         4      14+8+8   = 30
       */
 
       /* Emit "mov sp, r0" */
@@ -603,12 +604,13 @@ void tms9900_expand_prologue (void)
    {
       /*
       Form 2:
-      ai sp, -regs-frame   4      14+8+8   = 30
+      ai sp, -regs*2       4      14+8+8   = 30
       mov r9, *sp          2      14+8+4+8 = 34
       mov r13, @2(sp)      4      14+8+8+8 = 38
       mov r14, @4(sp)      4      14+8+8+8 = 38
       mov r15, @6(sp)      4      14+8+8+8 = 38
       mov r11, @8(sp)      4      14+8+8+8 = 38
+      ai sp, -frame        4      14+8+8   = 30
       */
       int offset = 0;
       idx = 0;
@@ -628,6 +630,13 @@ void tms9900_expand_prologue (void)
       }
    }
 
+   if(frame_size > 0)
+   {
+      /* Emit "ai sp, -framesize" */
+      emit_insn(gen_addhi3(stack_pointer_rtx, stack_pointer_rtx, 
+                          GEN_INT(-frame_size)));
+   }
+
    /* Set frame pointer */
    if(frame_pointer_needed)
    {
@@ -640,24 +649,14 @@ void tms9900_expand_prologue (void)
 void tms9900_expand_epilogue (bool is_sibcall)
 {
    /*
-   There are two forms for the epilogue, depending if stack frame
-   registers are used. Doing this saves a few cycles. Not a big deal
-   in itself, but may be noticable after many calls.
+   There is one only form for the epilogue.
 
+   ai sp, frame         4      14+8+8   = 30
    mov *sp+, r9         2      14+8+8+8 = 38
    mov *sp+, r13        2      14+8+8+8 = 38
    mov *sp+, r14        2      14+8+8+8 = 38
    mov *sp+, r15        2      14+8+8+8 = 38
-   mov *sp,  r11        2      14+8+4+8 = 34  <-- This line is different
-   ai sp, frame+2       4      14+8+8   = 30
-
-   or:
-   
-   mov *sp+, r9         2      14+8+8+8 = 38
-   mov *sp+, r13        2      14+8+8+8 = 38
-   mov *sp+, r14        2      14+8+8+8 = 38
-   mov *sp+, r15        2      14+8+8+8 = 38
-   mov *sp+, r11        2      14+8+8+8 = 38  <-- This line is different
+   mov *sp+, r11        2      14+8+8+8 = 38
    */
 
    int saveregs[5];
@@ -665,6 +664,13 @@ void tms9900_expand_epilogue (bool is_sibcall)
 
    /* Find frame size to restore */
    int frame_size = get_frame_size();
+
+   if(frame_size != 0)
+   {
+      /* Emit "ai sp, frame_size" */
+      emit_insn(gen_addhi3(stack_pointer_rtx, stack_pointer_rtx, 
+                           GEN_INT(frame_size)));
+   }
 
    /* Find non-volatile registers which need to be restored */
    int idx = 0;
@@ -692,36 +698,15 @@ void tms9900_expand_epilogue (bool is_sibcall)
          /* Restore this register */
          int regno = nvolregs[idx];
          restored++;
-         if(frame_size > 2 && restored == regcount)
-         {
-            /* Fold final postincrement into frame recovery
-               Emit "mov *SP, Rx" */
-            emit_insn(gen_movhi(
-               gen_rtx_REG(HImode, regno),
-               gen_rtx_MEM(HImode, stack_pointer_rtx)));
-            /* Since no postincrement was emitted, 
-            we need to add this to the frame size*/
-            frame_size += 2;
-         }
-         else
-         {
-            /* Emit "mov *SP+, Rx" */
-            emit_insn(gen_movhi(
-               gen_rtx_REG(HImode, regno),
-               gen_rtx_MEM(HImode, 
-                           gen_rtx_POST_INC(HImode, stack_pointer_rtx))));
-         }
+        /* Emit "mov *SP+, Rx" */
+        emit_insn(gen_movhi(
+           gen_rtx_REG(HImode, regno),
+           gen_rtx_MEM(HImode, 
+                       gen_rtx_POST_INC(HImode, stack_pointer_rtx))));
       }
       idx++;
    }
    
-   if(frame_size != 0)
-   {
-      /* Emit "ai sp, frame_size" */
-      emit_insn(gen_addhi3(stack_pointer_rtx, stack_pointer_rtx, 
-                           GEN_INT(frame_size)));
-   }
-
    if(!is_sibcall)
    {
       /* Emit the return instruction "b *R11" */
