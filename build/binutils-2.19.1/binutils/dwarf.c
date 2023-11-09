@@ -53,7 +53,7 @@ int do_debug_frames_interp;
 int do_debug_macinfo;
 int do_debug_str;
 int do_debug_loc;
-int do_wide;
+static int do_wide;
 
 dwarf_vma (*byte_get) (unsigned char *, int);
 

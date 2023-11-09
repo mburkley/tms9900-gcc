@@ -407,6 +407,8 @@ DESCRIPTION
 .#define bfd_mach_z80            3 {* With ixl, ixh, iyl, and iyh.  *}
 .#define bfd_mach_z80full        7 {* All undocumented instructions.  *}
 .#define bfd_mach_r800           11 {* R800: successor with multiplication.  *}
+.  bfd_arch_tms9900,   {* Texas Instruments TMS9900 archetecture.  *}
+.#define bfd_mach_tms9900       1
 .  bfd_arch_last
 .  };
 */
@@ -501,6 +503,7 @@ extern const bfd_arch_info_type bfd_tic30_arch;
 extern const bfd_arch_info_type bfd_tic4x_arch;
 extern const bfd_arch_info_type bfd_tic54x_arch;
 extern const bfd_arch_info_type bfd_tic80_arch;
+extern const bfd_arch_info_type bfd_tms9900_arch;
 extern const bfd_arch_info_type bfd_v850_arch;
 extern const bfd_arch_info_type bfd_vax_arch;
 extern const bfd_arch_info_type bfd_we32k_arch;
@@ -570,6 +573,7 @@ static const bfd_arch_info_type * const bfd_archures_list[] =
     &bfd_tic4x_arch,
     &bfd_tic54x_arch,
     &bfd_tic80_arch,
+    &bfd_tms9900_arch,
     &bfd_v850_arch,
     &bfd_vax_arch,
     &bfd_w65_arch,

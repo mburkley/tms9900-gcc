@@ -102,6 +102,11 @@ along with GCC; see the file COPYING3.  If not see
 				   declarations for e.g. AIX 4.x.  */
 #endif
 
+#ifdef TMS9900
+extern struct rtl_opt_pass pass_tms9900_subreg;
+extern struct rtl_opt_pass pass_tms9900_postinc;
+#endif
+
 /* This is used for debugging.  It allows the current pass to printed
    from anywhere in compilation.  */
 struct opt_pass *current_pass;
@@ -767,6 +772,10 @@ init_optimization_passes (void)
       NEXT_PASS (pass_match_asm_constraints);
       NEXT_PASS (pass_sms);
       NEXT_PASS (pass_sched);
+#ifdef TMS9900
+      NEXT_PASS (pass_tms9900_subreg);
+      NEXT_PASS (pass_tms9900_postinc);
+#endif
       NEXT_PASS (pass_subregs_of_mode_init);
       NEXT_PASS (pass_ira);
       NEXT_PASS (pass_subregs_of_mode_finish);

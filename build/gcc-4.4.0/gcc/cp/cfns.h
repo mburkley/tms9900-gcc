@@ -1,4 +1,4 @@
-/* ANSI-C code produced by gperf version 3.0.1 */
+/* ANSI-C code produced by gperf version 3.0.4 */
 /* Command-line: gperf -o -C -E -k '1-6,$' -j1 -D -N libc_name_p -L ANSI-C ../../gcc/cp/cfns.gperf  */
 
 #if !((' ' == 32) && ('!' == 33) && ('"' == 34) && ('#' == 35) \
@@ -36,6 +36,7 @@ __inline
 static unsigned int hash (const char *, unsigned int);
 #ifdef __GNUC__
 __inline
+__attribute__ ((__gnu_inline__))
 #endif
 const char * libc_name_p (const char *, unsigned int);
 /* maximum key range = 391, duplicates = 0 */
@@ -57,13 +58,13 @@ hash (register const char *str, register unsigned int len)
       400, 400, 400, 400, 400, 400, 400, 400, 400, 400,
       400, 400, 400, 400, 400, 400, 400, 400, 400, 400,
       400, 400, 400, 400, 400, 400, 400, 400,   0,   0,
-	1, 400, 400, 400, 400, 400, 400, 400, 400, 400,
+        1, 400, 400, 400, 400, 400, 400, 400, 400, 400,
       400, 400, 400, 400, 400, 400, 400, 400, 400, 400,
       400, 400, 400, 400, 400, 400, 400, 400, 400, 400,
       400, 400, 400, 400, 400, 400, 400, 400, 400, 400,
       400, 400, 400, 400, 400, 400, 400,  28,  90,   0,
        95,   0,  51,  93, 114,  26, 109, 124,   5,   1,
-	6,  13,  37, 128,   3,   0,   0,  49,  38,   0,
+        6,  13,  37, 128,   3,   0,   0,  49,  38,   0,
       104,  45,   0, 400, 400, 400, 400, 400, 400, 400,
       400, 400, 400, 400, 400, 400, 400, 400, 400, 400,
       400, 400, 400, 400, 400, 400, 400, 400, 400, 400,
@@ -84,29 +85,32 @@ hash (register const char *str, register unsigned int len)
   switch (hval)
     {
       default:
-	hval += asso_values[(unsigned char)str[5]+1];
+        hval += asso_values[(unsigned char)str[5]+1];
       /*FALLTHROUGH*/
       case 5:
-	hval += asso_values[(unsigned char)str[4]];
+        hval += asso_values[(unsigned char)str[4]];
       /*FALLTHROUGH*/
       case 4:
-	hval += asso_values[(unsigned char)str[3]];
+        hval += asso_values[(unsigned char)str[3]];
       /*FALLTHROUGH*/
       case 3:
-	hval += asso_values[(unsigned char)str[2]];
+        hval += asso_values[(unsigned char)str[2]];
       /*FALLTHROUGH*/
       case 2:
-	hval += asso_values[(unsigned char)str[1]];
+        hval += asso_values[(unsigned char)str[1]];
       /*FALLTHROUGH*/
       case 1:
-	hval += asso_values[(unsigned char)str[0]];
-	break;
+        hval += asso_values[(unsigned char)str[0]];
+        break;
     }
   return hval + asso_values[(unsigned char)str[len - 1]];
 }
 
 #ifdef __GNUC__
 __inline
+#if defined __GNUC_STDC_INLINE__ || defined __GNUC_GNU_INLINE__
+__attribute__ ((__gnu_inline__))
+#endif
 #endif
 const char *
 libc_name_p (register const char *str, register unsigned int len)
@@ -329,17 +333,17 @@ libc_name_p (register const char *str, register unsigned int len)
       register int key = hash (str, len);
 
       if (key <= MAX_HASH_VALUE && key >= 0)
-	{
-	  register int index = lookup[key];
+        {
+          register int index = lookup[key];
 
-	  if (index >= 0)
-	    {
-	      register const char *s = wordlist[index];
+          if (index >= 0)
+            {
+              register const char *s = wordlist[index];
 
-	      if (*str == *s && !strcmp (str + 1, s + 1))
-		return s;
-	    }
-	}
+              if (*str == *s && !strcmp (str + 1, s + 1))
+                return s;
+            }
+        }
     }
   return 0;
 }

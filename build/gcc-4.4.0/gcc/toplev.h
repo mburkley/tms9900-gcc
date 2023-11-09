@@ -186,6 +186,7 @@ extern int floor_log2                  (unsigned HOST_WIDE_INT);
 #  define CTZ_HWI __builtin_ctz
 # endif
 
+#ifdef __cplusplus
 extern inline int
 floor_log2 (unsigned HOST_WIDE_INT x)
 {
@@ -197,6 +198,7 @@ exact_log2 (unsigned HOST_WIDE_INT x)
 {
   return x == (x & -x) && x ? (int) CTZ_HWI (x) : -1;
 }
+#endif /* __cplusplus */
 #endif /* GCC_VERSION >= 3004 */
 
 /* Functions used to get and set GCC's notion of in what directory

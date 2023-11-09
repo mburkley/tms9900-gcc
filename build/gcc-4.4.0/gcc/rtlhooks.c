@@ -55,6 +55,15 @@ gen_lowpart_general (enum machine_mode mode, rtx x)
     {
       int offset = 0;
 
+#ifdef TMS9900
+      /* Added for TMS9900
+         If the location is not known yet, take no action now. Return
+         the original subreg expression until the location is known */
+      if(!(MEM_P (x)))
+        {
+          return gen_lowpart_general (mode, force_reg (GET_MODE (x), x));
+        }
+#endif
       /* The only additional case we can do is MEM.  */
       gcc_assert (MEM_P (x));
 

@@ -77,6 +77,7 @@
 #define ARCH_tic4x
 #define ARCH_tic54x
 #define ARCH_tic80
+#define ARCH_tms9900
 #define ARCH_v850
 #define ARCH_vax
 #define ARCH_w65
@@ -384,6 +385,11 @@ disassembler (abfd)
 #ifdef ARCH_tic80
     case bfd_arch_tic80:
       disassemble = print_insn_tic80;
+      break;
+#endif
+#ifdef ARCH_tms9900
+    case bfd_arch_tms9900:
+      disassemble = print_insn_tms9900;
       break;
 #endif
 #ifdef ARCH_v850

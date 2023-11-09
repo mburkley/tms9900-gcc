@@ -334,6 +334,7 @@
 
 #define EM_CYGNUS_MEP		0xF00D  /* Toshiba MeP */
 
+#define EM_TMS9900		0xABBA
 /* See the above comment before you add a new EM_* value here.  */
 
 /* Values for e_version.  */

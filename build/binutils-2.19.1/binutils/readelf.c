@@ -152,6 +152,7 @@
 #include "elf/sh.h"
 #include "elf/sparc.h"
 #include "elf/spu.h"
+#include "elf/tms9900.h"
 #include "elf/v850.h"
 #include "elf/vax.h"
 #include "elf/x86-64.h"
@@ -165,7 +166,7 @@
 #include "safe-ctype.h"
 
 char *program_name = "readelf";
-int do_wide;
+static int do_wide;
 static long archive_file_offset;
 static unsigned long archive_file_size;
 static unsigned long dynamic_addr;
@@ -1198,6 +1199,10 @@ dump_relocations (FILE *file,
 	case EM_CR16_OLD:
 	  rtype = elf_cr16_reloc_type (type);
 	  break;
+
+        case EM_TMS9900:
+          rtype = elf_tms9900_reloc_type (type);
+          break;
 	}
 
       if (rtype == NULL)
@@ -1825,6 +1830,7 @@ get_machine_name (unsigned e_machine)
     case EM_CYGNUS_MEP:         return "Toshiba MeP Media Engine";
     case EM_CR16:		
     case EM_CR16_OLD:		return "National Semiconductor's CR16";
+    case EM_TMS9900:            return "Texas Instruments TMS9900";
     default:
       snprintf (buff, sizeof (buff), _("<unknown>: 0x%x"), e_machine);
       return buff;

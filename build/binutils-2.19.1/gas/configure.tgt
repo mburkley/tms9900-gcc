@@ -81,6 +81,7 @@ case ${cpu} in
   strongarm*be)		cpu_type=arm endian=big ;;
   strongarm*b)		cpu_type=arm endian=big ;;
   strongarm*)		cpu_type=arm endian=little ;;
+  tsm9900*)             cpu_type=tms9900 endian=big ;;
   v850*)		cpu_type=v850 ;;
   x86_64*)		cpu_type=i386 arch=x86_64;;
   xscale*be|xscale*b)	cpu_type=arm endian=big ;;
@@ -383,6 +384,8 @@ case ${generic_target} in
   tic30-*-*coff*)			fmt=coff bfd_gas=yes ;;
   tic4x-*-* | c4x-*-*)			fmt=coff bfd_gas=yes ;;
   tic54x-*-* | c54x*-*-*)		fmt=coff bfd_gas=yes need_libm=yes;;
+
+  tms9900-*-*)				fmt=elf ;;
 
   v850-*-*)				fmt=elf ;;
   v850e-*-*)				fmt=elf ;;

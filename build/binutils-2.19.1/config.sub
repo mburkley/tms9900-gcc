@@ -148,7 +148,7 @@ case $os in
 	-convergent* | -ncr* | -news | -32* | -3600* | -3100* | -hitachi* |\
 	-c[123]* | -convex* | -sun | -crds | -omron* | -dg | -ultra | -tti* | \
 	-harris | -dolphin | -highlevel | -gould | -cbm | -ns | -masscomp | \
-	-apple | -axis | -knuth | -cray)
+	-apple | -axis | -knuth | -cray | -tms9900)
 		os=
 		basic_machine=$1
 		;;
@@ -284,7 +284,7 @@ case $basic_machine in
 	| sparc | sparc64 | sparc64b | sparc64v | sparc86x | sparclet | sparclite \
 	| sparcv8 | sparcv9 | sparcv9b | sparcv9v \
 	| spu | strongarm \
-	| tahoe | thumb | tic4x | tic80 | tron \
+	| tahoe | thumb | tic4x | tic80 | tron | tms9900 \
 	| v850 | v850e \
 	| we32k \
 	| x86 | xc16x | xscale | xscalee[bl] | xstormy16 | xtensa \
