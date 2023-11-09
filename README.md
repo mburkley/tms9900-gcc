@@ -24,10 +24,16 @@ files.  It contains only the files that are modified by the patches.
 
 User download and install
 -------------------------
-For users that just want to use the compiler, please follow these steps:
+For users that just want to use the compiler, please follow these steps to clone
+the main branch and install build tools. You will need a recent version of gcc
+installed.
 
- * Checkout the main branch using "git clone git@github.com:mburkley/tms9900-gcc.git"
- * Run "./install.sh <target>" where <target> is your desired install directory
+ * git clone git@github.com:mburkley/tms9900-gcc.git
+ * apt install build-essential libgmp-dev libmpfr-dev
+ * cd tms900-gcc
+ * ./install.sh <target>
+
+ where <target> is your desired install directory
 (/usr/local/tms9900-gcc for example)
 
 Compiler developers
@@ -44,21 +50,22 @@ need a copy of the unmodified gcc/binutils source code to generate the patch.
 
 Get a copy of the relevant unmodified sources:
 
+ * cd tms9900-gcc
  * git checkout gcc-4.4.0
  * mv build/gcc-4.4.0 build/gcc-orig
  * mv build/binutils-2.19.1 build/binutils-orig
 
 Create a new branch with full buildable sources:
 
- * git checkout main
- * ./install.sh
  * git checkout -b my-branch
+ * git rebase main
+ * ./install.sh
 
 Once you have finished your changes, commit the changed files (not the entire
-soruce tree) and recreate the patch files from within the build directory:
+source tree) and recreate the patch files from within the build directory:
 
- * diff -ruN gcc-orig gcc-4.4.0 > ../gcc-4.4.0-tms9900-1.20.patch
- * diff -ruN binutils-orig > ../binutils-2.19.1-tms9900-1.8.patch
+ * diff -ru gcc-orig gcc-4.4.0 | grep -v "Only in gcc-4.4.0" > ../gcc-4.4.0-tms9900-1.20.patch
+ * diff -ru binutils-orig binutils-2.19.1 | grep -v "Only in binutils-2.19.1" > ../binutils-2.19.1-tms9900-1.9.patch
 
 Add the two new patches to git, push the branch and create a PR 
 
