@@ -32,7 +32,7 @@ check_result ()
 # Base all following work on latest patch versions
 BINUTILS_PATCH=`latest binutils-*.patch`
 MDEF_BINUTILS_PATCH=`latest multidef-binutils-*.patch`
-GCC_PATCH=`     latest gcc-*.patch`
+GCC_PATCH=`latest gcc-*.patch`
 
 # Extract tool versions from patch name
 BINUTILS_VERSION=`echo $BINUTILS_PATCH | sed "s/-tms9900.*//"`
@@ -103,10 +103,6 @@ if [ ! -f .binutils_patched ] ; then
    cd $BINUTILS_VERSION
    patch -p1 < ../../$BINUTILS_PATCH
    check_result "=== Failed to patch Binutils sources ==="
-
-   patch -p1 < ../../$MDEF_BINUTILS_PATCH
-   check_result "=== Failed to patch MDEF Binutils sources ==="
-
    cd ..
    touch .binutils_patched
 fi
