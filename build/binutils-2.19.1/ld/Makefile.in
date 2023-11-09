@@ -640,6 +640,7 @@ ALL_EMULATIONS = \
 	etic4xcoff.o \
 	etic54xcoff.o \
 	etic80coff.o \
+	etms9900.o \
 	evanilla.o \
 	evax.o \
 	evaxnbsd.o \
@@ -2520,6 +2521,9 @@ etic54xcoff.c: $(srcdir)/emulparams/tic54xcoff.sh \
 etic80coff.c: $(srcdir)/emulparams/tic80coff.sh \
   $(srcdir)/emultempl/generic.em $(srcdir)/scripttempl/tic80coff.sc ${GEN_DEPENDS}
 	${GENSCRIPTS} tic80coff "$(tdir_tic80coff)"
+etms9900.c: $(srcdir)/emulparams/tms9900.sh \
+  $(ELF_DEPS) $(srcdir)/emultempl/generic.em $(srcdir)/scripttempl/elf.sc ${GEN_DEPENDS}
+	${GENSCRIPTS} tms9900 "$(tdir_tms9900)"
 evanilla.c: $(srcdir)/emulparams/vanilla.sh \
   $(srcdir)/emultempl/vanilla.em $(srcdir)/scripttempl/vanilla.sc ${GEN_DEPENDS}
 	${GENSCRIPTS} vanilla "$(tdir_vanilla)"
