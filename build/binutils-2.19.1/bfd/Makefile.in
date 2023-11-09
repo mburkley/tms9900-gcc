@@ -546,6 +546,7 @@ BFD32_BACKENDS = \
 	elfxx-sparc.lo \
 	elf32-sparc.lo \
 	elf32-spu.lo \
+	elf32-tms9900.lo\
 	elf32-v850.lo \
 	elf32-vax.lo \
 	elf32-xstormy16.lo \
@@ -2139,6 +2140,9 @@ elf32-sparc.lo: elf32-sparc.c $(INCDIR)/filenames.h \
 elf32-spu.lo: elf32-spu.c $(INCDIR)/filenames.h $(INCDIR)/libiberty.h \
   $(INCDIR)/bfdlink.h $(INCDIR)/hashtab.h elf-bfd.h $(INCDIR)/elf/common.h \
   $(INCDIR)/elf/external.h $(INCDIR)/elf/internal.h $(INCDIR)/elf/spu.h \
+  $(INCDIR)/elf/reloc-macros.h elf32-spu.h elf32-target.h
+elf32-tms9900.lo: elf32-tms9900.c $(INCDIR)/filenames.h $(INCDIR)/bfdlink.h\
+  $(INCDIR)/elf/external.h $(INCDIR)/elf/internal.h $(INCDIR)/elf/tms9900.h \
   $(INCDIR)/elf/reloc-macros.h elf32-spu.h elf32-target.h
 elf32-v850.lo: elf32-v850.c $(INCDIR)/filenames.h $(INCDIR)/bfdlink.h \
   $(INCDIR)/hashtab.h elf-bfd.h $(INCDIR)/elf/common.h \

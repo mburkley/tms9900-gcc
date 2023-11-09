@@ -2314,6 +2314,8 @@ spu-*-elf*)
 	c_target_objs="${c_target_objs} spu-c.o"
 	cxx_target_objs="${cxx_target_objs} spu-c.o"
 	;;
+tms9900-*-*)
+	;;
 v850e1-*-*)
 	target_cpu_default="TARGET_CPU_v850e1"
 	tm_file="dbxelf.h elfos.h svr4.h v850/v850.h"

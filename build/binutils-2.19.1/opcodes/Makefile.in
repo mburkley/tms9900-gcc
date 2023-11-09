@@ -420,7 +420,8 @@ CFILES = \
 	tic54x-opc.c \
 	tic80-dis.c \
 	tic80-opc.c \
-	v850-dis.c \
+	tms9900-dis.c \
+        v850-dis.c \
 	v850-opc.c \
 	vax-dis.c \
 	w65-dis.c \
@@ -1664,6 +1665,8 @@ tic80-dis.lo: tic80-dis.c sysdep.h config.h $(INCDIR)/ansidecl.h \
   $(INCDIR)/symcat.h
 tic80-opc.lo: tic80-opc.c sysdep.h config.h $(INCDIR)/ansidecl.h \
   $(INCDIR)/opcode/tic80.h
+tms9900-dis.lo: tms9900-dis.c sysdep.h config.h $(INCDIR)/ansidecl.h \
+  $(INCDIR)/dis-asm.h
 v850-dis.lo: v850-dis.c sysdep.h config.h $(INCDIR)/ansidecl.h \
   $(INCDIR)/opcode/v850.h $(INCDIR)/dis-asm.h $(BFD_H) \
   $(INCDIR)/symcat.h opintl.h
