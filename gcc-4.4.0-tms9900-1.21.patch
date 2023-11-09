@@ -1,6 +1,6 @@
 diff -ru gcc-orig/config.sub gcc-4.4.0/config.sub
---- gcc-orig/config.sub	2023-11-09 10:22:30.183989619 +0000
-+++ gcc-4.4.0/config.sub	2023-11-09 13:41:40.819744320 +0000
+--- gcc-orig/config.sub	2023-11-09 21:04:18.754191922 +0000
++++ gcc-4.4.0/config.sub	2023-11-09 21:20:48.382867405 +0000
 @@ -285,7 +285,7 @@
  	| sparc | sparc64 | sparc64b | sparc64v | sparc86x | sparclet | sparclite \
  	| sparcv8 | sparcv9 | sparcv9b | sparcv9v \
@@ -11,8 +11,8 @@ diff -ru gcc-orig/config.sub gcc-4.4.0/config.sub
  	| we32k \
  	| x86 | xc16x | xscale | xscalee[bl] | xstormy16 | xtensa \
 diff -ru gcc-orig/gcc/combine.c gcc-4.4.0/gcc/combine.c
---- gcc-orig/gcc/combine.c	2023-11-09 10:22:30.183989619 +0000
-+++ gcc-4.4.0/gcc/combine.c	2023-11-09 19:07:20.834339171 +0000
+--- gcc-orig/gcc/combine.c	2023-11-09 21:04:18.758191908 +0000
++++ gcc-4.4.0/gcc/combine.c	2023-11-09 21:20:48.390867377 +0000
 @@ -4466,6 +4466,17 @@
  		    return gen_rtx_CLOBBER (VOIDmode, const0_rtx);
  #endif
@@ -50,8 +50,8 @@ diff -ru gcc-orig/gcc/combine.c gcc-4.4.0/gcc/combine.c
        if (WORDS_BIG_ENDIAN)
  	offset = MAX (isize, UNITS_PER_WORD) - MAX (osize, UNITS_PER_WORD);
 diff -ru gcc-orig/gcc/config/tms9900/lib1funcs.asm gcc-4.4.0/gcc/config/tms9900/lib1funcs.asm
---- gcc-orig/gcc/config/tms9900/lib1funcs.asm	2023-11-09 19:22:16.503496525 +0000
-+++ gcc-4.4.0/gcc/config/tms9900/lib1funcs.asm	2023-11-09 13:41:40.823744304 +0000
+--- gcc-orig/gcc/config/tms9900/lib1funcs.asm	2023-11-09 21:11:39.804718373 +0000
++++ gcc-4.4.0/gcc/config/tms9900/lib1funcs.asm	2023-11-09 21:20:48.394867365 +0000
 @@ -0,0 +1,820 @@
 +/******************************************************************************
 +*                               __clzM2
@@ -874,8 +874,8 @@ diff -ru gcc-orig/gcc/config/tms9900/lib1funcs.asm gcc-4.4.0/gcc/config/tms9900/
 +#endif
 +
 diff -ru gcc-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms9900/tms9900.c
---- gcc-orig/gcc/config/tms9900/tms9900.c	2023-11-09 19:22:21.063482048 +0000
-+++ gcc-4.4.0/gcc/config/tms9900/tms9900.c	2023-11-09 19:07:20.838339158 +0000
+--- gcc-orig/gcc/config/tms9900/tms9900.c	2023-11-09 21:11:39.808718359 +0000
++++ gcc-4.4.0/gcc/config/tms9900/tms9900.c	2023-11-09 21:20:48.394867365 +0000
 @@ -0,0 +1,1127 @@
 +#include "insn-modes.h"
 +#include <stdio.h>
@@ -2005,8 +2005,8 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms9900/tms9
 +};
 +
 diff -ru gcc-orig/gcc/config/tms9900/tms9900.h gcc-4.4.0/gcc/config/tms9900/tms9900.h
---- gcc-orig/gcc/config/tms9900/tms9900.h	2023-11-09 19:22:22.119478695 +0000
-+++ gcc-4.4.0/gcc/config/tms9900/tms9900.h	2023-11-09 19:07:20.838339158 +0000
+--- gcc-orig/gcc/config/tms9900/tms9900.h	2023-11-09 21:11:39.812718346 +0000
++++ gcc-4.4.0/gcc/config/tms9900/tms9900.h	2023-11-09 21:20:48.394867365 +0000
 @@ -0,0 +1,1178 @@
 +/* Definitions of target machine for GNU compiler.
 +   Texas Instruments TMS9900
@@ -3187,8 +3187,8 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.h gcc-4.4.0/gcc/config/tms9900/tms9
 +#endif
 +
 diff -ru gcc-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms9900/tms9900.md
---- gcc-orig/gcc/config/tms9900/tms9900.md	2023-11-09 19:22:23.903473031 +0000
-+++ gcc-4.4.0/gcc/config/tms9900/tms9900.md	2023-11-09 19:08:05.302198885 +0000
+--- gcc-orig/gcc/config/tms9900/tms9900.md	2023-11-09 21:11:39.816718332 +0000
++++ gcc-4.4.0/gcc/config/tms9900/tms9900.md	2023-11-09 21:22:42.246466181 +0000
 @@ -0,0 +1,2954 @@
 +;; This file is part of GCC.
 +
@@ -3366,7 +3366,7 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms9900/tms
 +
 +
 +;;-------------------------------------
-+; TODO temporarily removed.  Causes a compiler assert
++; TODO commented out for now - causes compiler assert
 +;;-------------------------------------
 +; (define_insn "tstqi"
 +;   [(set (cc0)
@@ -3378,7 +3378,7 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms9900/tms
 +;     return("");
 +;   }
 +;   [(set_attr "length" "4,6")])
-+
++ 
 +
 +;;-------------------------------------
 +(define_insn "cmphi"
@@ -6145,8 +6145,8 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms9900/tms
 +  [(set_attr "length" "4")])
 +
 diff -ru gcc-orig/gcc/config/tms9900/tms9900-protos.h gcc-4.4.0/gcc/config/tms9900/tms9900-protos.h
---- gcc-orig/gcc/config/tms9900/tms9900-protos.h	2023-11-09 19:22:29.099456535 +0000
-+++ gcc-4.4.0/gcc/config/tms9900/tms9900-protos.h	2023-11-09 19:07:20.838339158 +0000
+--- gcc-orig/gcc/config/tms9900/tms9900-protos.h	2023-11-09 21:11:39.820718319 +0000
++++ gcc-4.4.0/gcc/config/tms9900/tms9900-protos.h	2023-11-09 21:20:48.402867337 +0000
 @@ -0,0 +1,55 @@
 +/* Definitions of target machine for GNU compiler, for the TMS9900
 +
@@ -6204,8 +6204,8 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900-protos.h gcc-4.4.0/gcc/config/tms99
 +extern int tms9900_go_if_legitimate_address(enum machine_mode mode ATTRIBUTE_UNUSED, rtx operand, int strict);
 +
 diff -ru gcc-orig/gcc/config.gcc gcc-4.4.0/gcc/config.gcc
---- gcc-orig/gcc/config.gcc	2023-11-09 10:22:30.187989687 +0000
-+++ gcc-4.4.0/gcc/config.gcc	2023-11-09 13:41:40.823744304 +0000
+--- gcc-orig/gcc/config.gcc	2023-11-09 21:04:18.758191908 +0000
++++ gcc-4.4.0/gcc/config.gcc	2023-11-09 21:20:48.402867337 +0000
 @@ -2314,6 +2314,8 @@
  	c_target_objs="${c_target_objs} spu-c.o"
  	cxx_target_objs="${cxx_target_objs} spu-c.o"
@@ -6216,8 +6216,8 @@ diff -ru gcc-orig/gcc/config.gcc gcc-4.4.0/gcc/config.gcc
  	target_cpu_default="TARGET_CPU_v850e1"
  	tm_file="dbxelf.h elfos.h svr4.h v850/v850.h"
 diff -ru gcc-orig/gcc/cp/cfns.h gcc-4.4.0/gcc/cp/cfns.h
---- gcc-orig/gcc/cp/cfns.h	2023-11-09 10:22:30.187989687 +0000
-+++ gcc-4.4.0/gcc/cp/cfns.h	2023-11-09 13:41:40.823744304 +0000
+--- gcc-orig/gcc/cp/cfns.h	2023-11-09 21:04:18.758191908 +0000
++++ gcc-4.4.0/gcc/cp/cfns.h	2023-11-09 21:20:48.402867337 +0000
 @@ -1,4 +1,4 @@
 -/* ANSI-C code produced by gperf version 3.0.1 */
 +/* ANSI-C code produced by gperf version 3.0.4 */
@@ -6317,8 +6317,8 @@ diff -ru gcc-orig/gcc/cp/cfns.h gcc-4.4.0/gcc/cp/cfns.h
    return 0;
  }
 diff -ru gcc-orig/gcc/cp/except.c gcc-4.4.0/gcc/cp/except.c
---- gcc-orig/gcc/cp/except.c	2023-11-09 10:22:30.187989687 +0000
-+++ gcc-4.4.0/gcc/cp/except.c	2023-11-09 13:41:40.823744304 +0000
+--- gcc-orig/gcc/cp/except.c	2023-11-09 21:04:18.758191908 +0000
++++ gcc-4.4.0/gcc/cp/except.c	2023-11-09 21:20:48.402867337 +0000
 @@ -926,7 +926,6 @@
     Standard C library shall report an error by throwing an
     exception, unless it calls a program-supplied function that
@@ -6328,13 +6328,13 @@ diff -ru gcc-orig/gcc/cp/except.c gcc-4.4.0/gcc/cp/except.c
  
  int
 diff -ru gcc-orig/gcc/DEV-PHASE gcc-4.4.0/gcc/DEV-PHASE
---- gcc-orig/gcc/DEV-PHASE	2023-11-09 10:22:30.183989619 +0000
-+++ gcc-4.4.0/gcc/DEV-PHASE	2023-11-09 13:41:40.819744320 +0000
+--- gcc-orig/gcc/DEV-PHASE	2023-11-09 21:04:18.754191922 +0000
++++ gcc-4.4.0/gcc/DEV-PHASE	2023-11-09 21:20:48.402867337 +0000
 @@ -0,0 +1 @@
 +TMS9900 patch 1.19
 diff -ru gcc-orig/gcc/final.c gcc-4.4.0/gcc/final.c
---- gcc-orig/gcc/final.c	2023-11-09 10:22:30.187989687 +0000
-+++ gcc-4.4.0/gcc/final.c	2023-11-09 19:07:20.838339158 +0000
+--- gcc-orig/gcc/final.c	2023-11-09 21:04:18.758191908 +0000
++++ gcc-4.4.0/gcc/final.c	2023-11-09 21:20:48.406867324 +0000
 @@ -2772,6 +2772,11 @@
        else if (REG_P (y))
  	{
@@ -6358,8 +6358,8 @@ diff -ru gcc-orig/gcc/final.c gcc-4.4.0/gcc/final.c
      }
  
 diff -ru gcc-orig/gcc/passes.c gcc-4.4.0/gcc/passes.c
---- gcc-orig/gcc/passes.c	2023-11-09 10:22:30.187989687 +0000
-+++ gcc-4.4.0/gcc/passes.c	2023-11-09 19:07:20.838339158 +0000
+--- gcc-orig/gcc/passes.c	2023-11-09 21:04:18.758191908 +0000
++++ gcc-4.4.0/gcc/passes.c	2023-11-09 21:20:48.406867324 +0000
 @@ -102,6 +102,11 @@
  				   declarations for e.g. AIX 4.x.  */
  #endif
@@ -6384,8 +6384,8 @@ diff -ru gcc-orig/gcc/passes.c gcc-4.4.0/gcc/passes.c
        NEXT_PASS (pass_ira);
        NEXT_PASS (pass_subregs_of_mode_finish);
 diff -ru gcc-orig/gcc/reload.c gcc-4.4.0/gcc/reload.c
---- gcc-orig/gcc/reload.c	2023-11-09 10:22:30.187989687 +0000
-+++ gcc-4.4.0/gcc/reload.c	2023-11-09 19:07:20.838339158 +0000
+--- gcc-orig/gcc/reload.c	2023-11-09 21:04:18.758191908 +0000
++++ gcc-4.4.0/gcc/reload.c	2023-11-09 21:20:48.406867324 +0000
 @@ -2166,6 +2166,14 @@
  
    if (x == y)
@@ -6415,8 +6415,8 @@ diff -ru gcc-orig/gcc/reload.c gcc-4.4.0/gcc/reload.c
  					     GET_MODE (SUBREG_REG (operand)),
  					     SUBREG_BYTE (operand),
 diff -ru gcc-orig/gcc/rtl-error.c gcc-4.4.0/gcc/rtl-error.c
---- gcc-orig/gcc/rtl-error.c	2023-11-09 10:22:30.187989687 +0000
-+++ gcc-4.4.0/gcc/rtl-error.c	2023-11-09 19:07:20.838339158 +0000
+--- gcc-orig/gcc/rtl-error.c	2023-11-09 21:04:18.758191908 +0000
++++ gcc-4.4.0/gcc/rtl-error.c	2023-11-09 21:20:48.410867309 +0000
 @@ -102,12 +102,14 @@
  _fatal_insn (const char *msgid, const_rtx insn, const char *file, int line,
  	     const char *function)
@@ -6434,8 +6434,8 @@ diff -ru gcc-orig/gcc/rtl-error.c gcc-4.4.0/gcc/rtl-error.c
    fancy_abort (file, line, function);
  }
 diff -ru gcc-orig/gcc/rtlhooks.c gcc-4.4.0/gcc/rtlhooks.c
---- gcc-orig/gcc/rtlhooks.c	2023-11-09 10:22:30.187989687 +0000
-+++ gcc-4.4.0/gcc/rtlhooks.c	2023-11-09 19:07:20.838339158 +0000
+--- gcc-orig/gcc/rtlhooks.c	2023-11-09 21:04:18.758191908 +0000
++++ gcc-4.4.0/gcc/rtlhooks.c	2023-11-09 21:20:48.410867309 +0000
 @@ -55,6 +55,15 @@
      {
        int offset = 0;
@@ -6453,8 +6453,8 @@ diff -ru gcc-orig/gcc/rtlhooks.c gcc-4.4.0/gcc/rtlhooks.c
        gcc_assert (MEM_P (x));
  
 diff -ru gcc-orig/gcc/simplify-rtx.c gcc-4.4.0/gcc/simplify-rtx.c
---- gcc-orig/gcc/simplify-rtx.c	2023-11-09 10:22:30.191989755 +0000
-+++ gcc-4.4.0/gcc/simplify-rtx.c	2023-11-09 13:41:40.827744289 +0000
+--- gcc-orig/gcc/simplify-rtx.c	2023-11-09 21:04:18.762191895 +0000
++++ gcc-4.4.0/gcc/simplify-rtx.c	2023-11-09 21:20:48.410867309 +0000
 @@ -5094,6 +5094,19 @@
  		final_offset += difference % UNITS_PER_WORD;
  	    }
@@ -6476,8 +6476,8 @@ diff -ru gcc-orig/gcc/simplify-rtx.c gcc-4.4.0/gcc/simplify-rtx.c
  
  	  /* Propagate original regno.  We don't have any way to specify
 diff -ru gcc-orig/gcc/toplev.h gcc-4.4.0/gcc/toplev.h
---- gcc-orig/gcc/toplev.h	2023-11-09 10:22:30.191989755 +0000
-+++ gcc-4.4.0/gcc/toplev.h	2023-11-09 13:41:40.827744289 +0000
+--- gcc-orig/gcc/toplev.h	2023-11-09 21:04:18.762191895 +0000
++++ gcc-4.4.0/gcc/toplev.h	2023-11-09 21:20:48.410867309 +0000
 @@ -186,6 +186,7 @@
  #  define CTZ_HWI __builtin_ctz
  # endif
@@ -6495,8 +6495,8 @@ diff -ru gcc-orig/gcc/toplev.h gcc-4.4.0/gcc/toplev.h
  
  /* Functions used to get and set GCC's notion of in what directory
 diff -ru gcc-orig/libgcc/config/tms9900/t-tms9900 gcc-4.4.0/libgcc/config/tms9900/t-tms9900
---- gcc-orig/libgcc/config/tms9900/t-tms9900	2023-11-09 19:23:27.395213662 +0000
-+++ gcc-4.4.0/libgcc/config/tms9900/t-tms9900	2023-11-09 13:41:40.827744289 +0000
+--- gcc-orig/libgcc/config/tms9900/t-tms9900	2023-11-09 21:11:39.828718292 +0000
++++ gcc-4.4.0/libgcc/config/tms9900/t-tms9900	2023-11-09 21:20:48.410867309 +0000
 @@ -0,0 +1,27 @@
 +# Extra 16-bit integer functions.
 +intfuncs16 = _absvXX2 _addvXX3 _subvXX3 _mulvXX3 _negvXX2
@@ -6526,8 +6526,8 @@ diff -ru gcc-orig/libgcc/config/tms9900/t-tms9900 gcc-4.4.0/libgcc/config/tms990
 +endif
 +
 diff -ru gcc-orig/libgcc/config.host gcc-4.4.0/libgcc/config.host
---- gcc-orig/libgcc/config.host	2023-11-09 10:22:30.191989755 +0000
-+++ gcc-4.4.0/libgcc/config.host	2023-11-09 13:41:40.827744289 +0000
+--- gcc-orig/libgcc/config.host	2023-11-09 21:04:18.762191895 +0000
++++ gcc-4.4.0/libgcc/config.host	2023-11-09 21:20:48.410867309 +0000
 @@ -127,6 +127,9 @@
  sh[123456789lbe]*-*-*)
  	cpu_type=sh
