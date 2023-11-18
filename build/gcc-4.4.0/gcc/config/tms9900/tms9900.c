@@ -276,6 +276,16 @@ static int tms9900_get_saved_reg_size(void)
    return(size);
 }
 
+static void print_arg_offset (int from)
+{
+    switch (from)
+    {
+    case ARG_POINTER_REGNUM: printf ("%d=ARG_PTR_R ", from); break;
+    case HARD_SP_REGNUM: printf ("%d=HARD_SP_R ", from); break;
+    case FRAME_POINTER_REGNUM: printf ("%d=FR_PTR_R ", from); break;
+    default: printf ("%d=dunno? ", from); break;
+    }
+}
 
 /* Define the offset between two registers, one to be eliminated, and the
    other its replacement, at the start of a routine.  */
@@ -291,20 +301,27 @@ int tms9900_initial_elimination_offset (int from,
       . <- stack pointer
   */
 
+  printf("%s saved=%d frame=%d ", __func__, tms9900_get_saved_reg_size(),
+  get_frame_size());
+  print_arg_offset (from);
+  print_arg_offset (to);
+  int ret = 0;
   if (from == ARG_POINTER_REGNUM && to == HARD_SP_REGNUM)
   {
-    return(tms9900_get_saved_reg_size()+
+    ret =(tms9900_get_saved_reg_size()+
            get_frame_size ());
   }
   if (from == FRAME_POINTER_REGNUM && to == HARD_SP_REGNUM)
   {
-    return(get_frame_size());
+    ret =(get_frame_size());
   }
   if (from == ARG_POINTER_REGNUM && to == FRAME_POINTER_REGNUM)
   {
-    return(tms9900_get_saved_reg_size());
+    ret =(tms9900_get_saved_reg_size());
   }
-  return(0);
+  // ret =(0);
+  printf ("res=%d\n", ret);
+  return ret;
 }
 
 
