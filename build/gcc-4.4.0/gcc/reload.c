@@ -2167,7 +2167,7 @@ operands_match_p (rtx x, rtx y)
   if (x == y)
     return 1;
 
-#ifdef TMS9900
+#ifdef TMS9900xxx
   /* We cannot match register subregs for the TMS9900 */
   if((GET_MODE(x)==QImode && GET_CODE(x)==SUBREG && REG_P(SUBREG_REG(x))) ||
      (GET_MODE(y)==QImode && GET_CODE(y)==SUBREG && REG_P(SUBREG_REG(y))))
@@ -3003,7 +3003,7 @@ find_reloads (rtx insn, int replace, int ind_levels, int live_known,
 	      if (REG_P (SUBREG_REG (operand))
 		  && REGNO (SUBREG_REG (operand)) < FIRST_PSEUDO_REGISTER)
 		{
-#ifdef TMS9900
+#ifdef TMS9900xxx
                   /* Added for TMS9900, do not attempt reloads of
                      registers if byte values are involved */
                   if(GET_MODE (operand) != QImode && 
@@ -5489,7 +5489,7 @@ find_reloads_address_1 (enum machine_mode mode, rtx x, int context,
 	    code0 = GET_CODE (op0);
 	    if (code0 == REG && REGNO (op0) < FIRST_PSEUDO_REGISTER)
 	      op0 = gen_rtx_REG (word_mode,
-				 (REGNO (op0) +
+				 (REGNO (op0)+
 				  subreg_regno_offset (REGNO (SUBREG_REG (orig_op0)),
 						       GET_MODE (SUBREG_REG (orig_op0)),
 						       SUBREG_BYTE (orig_op0),
@@ -5504,7 +5504,7 @@ find_reloads_address_1 (enum machine_mode mode, rtx x, int context,
 	      /* ??? Why is this given op1's mode and above for
 		 ??? op0 SUBREGs we use word_mode?  */
 	      op1 = gen_rtx_REG (GET_MODE (op1),
-				 (REGNO (op1) +
+				 (REGNO (op1)+
 				  subreg_regno_offset (REGNO (SUBREG_REG (orig_op1)),
 						       GET_MODE (SUBREG_REG (orig_op1)),
 						       SUBREG_BYTE (orig_op1),
@@ -6376,7 +6376,7 @@ find_replacement (rtx *loc)
 
 	  if (REG_P (reloadreg))
 	    return gen_rtx_REG (GET_MODE (*loc),
-				(REGNO (reloadreg) +
+				(REGNO (reloadreg)+
 				 subreg_regno_offset (REGNO (SUBREG_REG (*loc)),
 						      GET_MODE (SUBREG_REG (*loc)),
 						      SUBREG_BYTE (*loc),

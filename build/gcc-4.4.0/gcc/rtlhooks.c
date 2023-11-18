@@ -55,7 +55,7 @@ gen_lowpart_general (enum machine_mode mode, rtx x)
     {
       int offset = 0;
 
-#ifdef TMS9900
+#ifdef TMS9900xxx
       /* Added for TMS9900
          If the location is not known yet, take no action now. Return
          the original subreg expression until the location is known */

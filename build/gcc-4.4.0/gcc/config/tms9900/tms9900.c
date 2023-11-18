@@ -65,7 +65,7 @@ struct gcc_target targetm = TARGET_INITIALIZER;
 /* Non-volatile registers to be saved across function calls */
 static int nvolregs[]={
    HARD_LR_REGNUM,
-   HARD_R9_REGNUM,
+   HARD_BP_REGNUM,
    HARD_LW_REGNUM,
    HARD_LP_REGNUM,
    HARD_LS_REGNUM,
@@ -82,7 +82,10 @@ int tms9900_function_arg_padding (enum machine_mode mode,
                                   const_tree type)
 {
   if (type != 0 && AGGREGATE_TYPE_P (type))
+  {
+  printf ("%s upward\n", __func__);
     return upward;
+}
 
   /* Fall back to the default.  */
   return DEFAULT_FUNCTION_ARG_PADDING (mode, type);
@@ -107,6 +110,7 @@ void tms9900_function_arg_advance (CUMULATIVE_ARGS *cum,
      arg_bytes = GET_MODE_SIZE (mode);
   }
   cum->nregs += ((arg_bytes + 1)/ UNITS_PER_WORD) * REGS_PER_WORD;
+  printf("%s bytes=%d\n", __func__, arg_bytes);
   return;
 }
 
@@ -152,9 +156,13 @@ rtx tms9900_function_arg (CUMULATIVE_ARGS *cum,
       cum->nregs >= TMS9900_ARG_REGS ||
       /* Argument doesn't completely fit in arg registers */      
       GET_MODE_SIZE(mode) + cum->nregs > TMS9900_ARG_REGS)
+    {
+    printf ("%s alloc on stack\n", __func__);
     return NULL_RTX;
+    }
 
   /* Allocate registers for argument */
+    printf ("%s alloc in reg %d\n", __func__, cum->nregs+1);
   return gen_rtx_REG (mode, cum->nregs + HARD_R1_REGNUM);
 }
 
@@ -288,21 +296,24 @@ static void print_arg_offset (int from)
 }
 
 /* Define the offset between two registers, one to be eliminated, and the
-   other its replacement, at the start of a routine.  */
+   other its replacement, at the start of a routine.
+   MGB return values as they are AFTER the prolog */
 int tms9900_initial_elimination_offset (int from,
                                         int to)
 {
   /*  
+      [argn]
+      .
+      [arg0]
       . <- arg pointer
-      [args]
-      . <- frame pointer
       [saved regs]
       [frame]
       . <- stack pointer
+      . <- frame pointer
   */
 
-  printf("%s saved=%d frame=%d ", __func__, tms9900_get_saved_reg_size(),
-  get_frame_size());
+  printf("%s savedregs=%d frame=%d ", __func__,
+      tms9900_get_saved_reg_size(), get_frame_size());
   print_arg_offset (from);
   print_arg_offset (to);
   int ret = 0;
@@ -313,14 +324,19 @@ int tms9900_initial_elimination_offset (int from,
   }
   if (from == FRAME_POINTER_REGNUM && to == HARD_SP_REGNUM)
   {
-    ret =(get_frame_size());
+    // ret =(tms9900_get_saved_reg_size()+
+    //        get_frame_size ());
+    // ret =(get_frame_size());
+    ret = 0;
   }
   if (from == ARG_POINTER_REGNUM && to == FRAME_POINTER_REGNUM)
   {
-    ret =(tms9900_get_saved_reg_size());
+    ret =(tms9900_get_saved_reg_size()+
+           get_frame_size ());
+    // ret =(tms9900_get_saved_reg_size());
   }
   // ret =(0);
-  printf ("res=%d\n", ret);
+  printf ("%s res=%d\n", __func__, ret);
   return ret;
 }
 
@@ -564,6 +580,7 @@ void tms9900_expand_prologue (void)
       idx++;
    }
 
+  printf("%s saving regs=%d frame=%d ", __func__, regcount, frame_size);
    /* Allocate stack space for saved regs */
    if(regcount > 0)
    {
@@ -573,8 +590,8 @@ void tms9900_expand_prologue (void)
    }
 
    /* Actually save registers */
-   if(regcount > 2)
-   {
+   // if(regcount > 2)
+   // {
       /*
       Form 1:
       ai sp, -regs*2        4      14+8+8   = 30
@@ -616,6 +633,7 @@ void tms9900_expand_prologue (void)
          }
          idx++;
       }
+   #if 0
    }
    else
    {
@@ -646,9 +664,11 @@ void tms9900_expand_prologue (void)
          idx++;
       }
    }
+   #endif
 
    if(frame_size > 0)
    {
+  printf("%s alloc frame\n", __func__);
       /* Emit "ai sp, -framesize" */
       emit_insn(gen_addhi3(stack_pointer_rtx, stack_pointer_rtx, 
                           GEN_INT(-frame_size)));
@@ -657,9 +677,11 @@ void tms9900_expand_prologue (void)
    /* Set frame pointer */
    if(frame_pointer_needed)
    {
+  printf("%s set fp\n", __func__);
       emit_insn(gen_movhi(gen_rtx_REG(HImode, FRAME_POINTER_REGNUM),
                           stack_pointer_rtx));
    }
+  printf("%s done\n", __func__);
 }
 
 
@@ -684,6 +706,7 @@ void tms9900_expand_epilogue (bool is_sibcall)
 
    if(frame_size != 0)
    {
+  printf("%s delete frame\n", __func__);
       /* Emit "ai sp, frame_size" */
       emit_insn(gen_addhi3(stack_pointer_rtx, stack_pointer_rtx, 
                            GEN_INT(frame_size)));
@@ -705,6 +728,7 @@ void tms9900_expand_epilogue (bool is_sibcall)
       idx++;
    }
 
+  printf("%s restore %d regs\n", __func__, regcount);
    idx = 0;
    restored = 0;
    while(nvolregs[idx] != 0)
@@ -726,11 +750,13 @@ void tms9900_expand_epilogue (bool is_sibcall)
    
    if(!is_sibcall)
    {
+  printf("%s return\n", __func__);
       /* Emit the return instruction "b *R11" */
       emit_insn(gen_rtx_UNSPEC(HImode, 
                                gen_rtvec (1, gen_rtx_REG(HImode, HARD_R11_REGNUM)),
                                UNSPEC_RETURN));
    }
+  printf("%s done\n", __func__);
 }
 
 
