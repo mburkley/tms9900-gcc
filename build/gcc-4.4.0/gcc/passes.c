@@ -103,7 +103,7 @@ along with GCC; see the file COPYING3.  If not see
 #endif
 
 #ifdef TMS9900
-extern struct rtl_opt_pass pass_tms9900_subreg;
+// extern struct rtl_opt_pass pass_tms9900_subreg;
 extern struct rtl_opt_pass pass_tms9900_postinc;
 #endif
 
@@ -773,7 +773,7 @@ init_optimization_passes (void)
       NEXT_PASS (pass_sms);
       NEXT_PASS (pass_sched);
 #ifdef TMS9900
-      NEXT_PASS (pass_tms9900_subreg);
+      // NEXT_PASS (pass_tms9900_subreg);
       NEXT_PASS (pass_tms9900_postinc);
 #endif
       NEXT_PASS (pass_subregs_of_mode_init);

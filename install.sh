@@ -62,7 +62,6 @@ fi
 
 echo "Using these patches:"
 echo "   BINUTILS: $BINUTILS_PATCH"
-echo "   MDEF_BINUTILS: $MDEF_BINUTILS_PATCH"
 echo "   GCC: $GCC_PATCH"
 echo
 

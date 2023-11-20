@@ -902,15 +902,19 @@ tms9900_asm_integer(rtx x, unsigned int size, int aligned_p)
 //==================================================================
 // Code for tms9900_subreg pass
 
+
 #include "tree-pass.h"
 #include "basic-block.h"
 #include "rtl.h"
+#if 0
 
 static void
 tms9900_extract_subreg(rtx insn, rtx arg, rtx* parg)
 {
+  printf("%s\n", __func__);
   if(BINARY_P(arg))
   {
+  printf("%s recurse\n", __func__);
     /* Recurse until we find a leaf expression */
     tms9900_extract_subreg(insn, XEXP(arg,0), &XEXP(arg,0));
     tms9900_extract_subreg(insn, XEXP(arg,1), &XEXP(arg,1));
@@ -920,7 +924,7 @@ tms9900_extract_subreg(rtx insn, rtx arg, rtx* parg)
   {
     if(GET_CODE(arg) == SUBREG && GET_MODE(arg) == QImode)
     {
-      printf ("creating extract\n");
+      printf ("%s creating extract\n", __func__);
       /* Found a subreg expression we need to extract.
          Place it in a seperate instruction before this one */
       rtx temp_reg = gen_reg_rtx(QImode);
@@ -949,19 +953,24 @@ tms9900_extract_subreg(rtx insn, rtx arg, rtx* parg)
 static bool
 gate_tms9900_subreg (void)
 {
-  return true;
+  // return true;
+  return false;
 }
 
 static unsigned int
 tms9900_subreg (void)
 {
+  printf("%s\n", __func__);
+  return 0;
   basic_block bb;
   rtx insn;
 
   FOR_EACH_BB (bb)
     FOR_BB_INSNS (bb, insn)
+  printf("%s loping\n", __func__);
     if (INSN_P (insn))
     {
+  printf("%s get single_set\n", __func__);
       rtx set=single_set (insn);
       if(set !=NULL)
       {
@@ -977,6 +986,10 @@ tms9900_subreg (void)
         }
       }
     }
+    else
+  printf("%s not INSN_P\n", __func__);
+
+  printf("%s done\n", __func__);
   return 0;
 }
 
@@ -1000,7 +1013,7 @@ struct rtl_opt_pass pass_tms9900_subreg =
   TODO_ggc_collect                      /* todo_flags_finish */
  }
 };
-
+#endif
 
 //==================================================================
 // Code for tms9900_postinc pass
@@ -1174,7 +1187,7 @@ struct rtl_opt_pass pass_tms9900_postinc =
 extern void tms9900_debug_operands (const char *name, rtx ops[], int count)
 {
     static int refcount;
-    printf("%s-%d\n", name, ++refcount);
+    printf("\n%s-%d\n", name, ++refcount);
     for (int i = 0; i < count; i++)
     {
         printf("OP%d : ", i);
@@ -1191,6 +1204,17 @@ static int regMode[16] =
     HImode, HImode, HImode, HImode
 };
 
+char *tms9900_get_mode (int mode)
+{
+    switch (mode)
+    {
+    case QImode: return "QI"; break;
+    case HImode: return "HI"; break;
+    case SImode: return "SI"; break;
+    }
+    return "??";
+}
+
 void tms9900_register_mode_set (rtx operand, int mode)
 {
    if (!REG_P (operand))
@@ -1198,7 +1222,12 @@ void tms9900_register_mode_set (rtx operand, int mode)
 
    int regno = REGNO (operand);
 
-   printf("Mode set r%d to %d\n", regno, mode);
+   if (regno > 15)
+   {
+       printf("Pseudo r%d ignored\n", regno);
+       return;
+   }
+   printf("Mode set r%d to %s\n", regno, tms9900_get_mode (mode));
    regMode[regno] = mode;
 }
 
@@ -1209,13 +1238,21 @@ void tms9900_register_convert (rtx operand, int mode, int sign)
 
    int regno = REGNO (operand);
 
-   printf("Mode check r%d from %d\n", regno, mode);
-   if (regMode[regno] == mode)
+   if (regno > 15)
+   {
+       printf("Pseudo r%d ignored\n", regno);
        return;
+   }
+
+   if (regMode[regno] == mode)
+   {
+       printf("Mode r%d is already %s\n", regno, tms9900_get_mode (mode));
+       return;
+   }
 
    printf ("Converting r%d from %s to %s\n", regno,
-           regMode[regno]==QImode?"QI":"HI",
-           mode==QImode?"QI":"HI");
+            tms9900_get_mode (regMode[regno]),
+            tms9900_get_mode (mode));
 
    regMode[regno] = mode;
 
