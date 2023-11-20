@@ -102,7 +102,7 @@ void
 _fatal_insn (const char *msgid, const_rtx insn, const char *file, int line,
 	     const char *function)
 {
-#if 1
+#if 0
   error ("%s", _(msgid));
 
   /* The above incremented error_count, but isn't an error that we want to

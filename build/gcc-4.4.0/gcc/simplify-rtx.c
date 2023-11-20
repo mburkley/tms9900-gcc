@@ -5094,7 +5094,7 @@ simplify_subreg (enum machine_mode outermode, rtx op,
 		final_offset += difference % UNITS_PER_WORD;
 	    }
 
-#if 0 // def TMS9900
+#ifdef TMS9900xxx
           /* Modification for TMS9900
              Do not assume QI quantities are in low part of register */
           if(outermode == QImode)

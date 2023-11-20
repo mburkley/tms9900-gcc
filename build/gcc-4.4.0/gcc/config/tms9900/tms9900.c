@@ -906,7 +906,6 @@ tms9900_asm_integer(rtx x, unsigned int size, int aligned_p)
 #include "tree-pass.h"
 #include "basic-block.h"
 #include "rtl.h"
-#if 0
 
 static void
 tms9900_extract_subreg(rtx insn, rtx arg, rtx* parg)
@@ -953,8 +952,7 @@ tms9900_extract_subreg(rtx insn, rtx arg, rtx* parg)
 static bool
 gate_tms9900_subreg (void)
 {
-  // return true;
-  return false;
+  return true;
 }
 
 static unsigned int
@@ -1013,7 +1011,6 @@ struct rtl_opt_pass pass_tms9900_subreg =
   TODO_ggc_collect                      /* todo_flags_finish */
  }
 };
-#endif
 
 //==================================================================
 // Code for tms9900_postinc pass
