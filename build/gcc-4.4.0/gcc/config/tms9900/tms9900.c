@@ -920,6 +920,7 @@ tms9900_extract_subreg(rtx insn, rtx arg, rtx* parg)
   {
     if(GET_CODE(arg) == SUBREG && GET_MODE(arg) == QImode)
     {
+      printf ("creating extract\n");
       /* Found a subreg expression we need to extract.
          Place it in a seperate instruction before this one */
       rtx temp_reg = gen_reg_rtx(QImode);
@@ -1167,4 +1168,92 @@ struct rtl_opt_pass pass_tms9900_postinc =
   TODO_ggc_collect                      /* todo_flags_finish */
  }
 };
+
+// MGB additions start here - mostly for debug
+
+extern void tms9900_debug_operands (const char *name, rtx ops[], int count)
+{
+    static int refcount;
+    printf("%s-%d\n", name, ++refcount);
+    for (int i = 0; i < count; i++)
+    {
+        printf("OP%d : ", i);
+        print_inline_rtx (stdout, ops[i], 0);
+        printf ("\n");
+    }
+}
+
+static int regMode[16] =
+{
+    HImode, HImode, HImode, HImode,
+    HImode, HImode, HImode, HImode,
+    HImode, HImode, HImode, HImode,
+    HImode, HImode, HImode, HImode
+};
+
+void tms9900_register_mode_set (rtx operand, int mode)
+{
+   if (!REG_P (operand))
+       return;
+
+   int regno = REGNO (operand);
+
+   printf("Mode set r%d to %d\n", regno, mode);
+   regMode[regno] = mode;
+}
+
+void tms9900_register_convert (rtx operand, int mode, int sign)
+{
+   if (!REG_P (operand))
+       return;
+
+   int regno = REGNO (operand);
+
+   printf("Mode check r%d from %d\n", regno, mode);
+   if (regMode[regno] == mode)
+       return;
+
+   printf ("Converting r%d from %s to %s\n", regno,
+           regMode[regno]==QImode?"QI":"HI",
+           mode==QImode?"QI":"HI");
+
+   regMode[regno] = mode;
+
+   if (mode == QImode)
+   {
+      /*  This register is in HI mode and we need it to be in QI mode so emit a
+       *  sla */
+      /* Emit "sla %0, 8" */
+      output_asm_insn("sla  %0, 8", &operand);
+      // output_asm_insn("sla %0, 8", gen_rtx_REG(QImode, regno));
+      // emit_insn(gen_ashlhi3(gen_rtx_REG(HImode, regno),
+      //                       gen_rtx_REG(HImode, regno),
+      //                       GEN_INT(8)));
+   }
+   else
+   {
+      /*  This register is in QI mode and we need it to be in HI mode so emit a
+       *  sra or srl depending on sign */
+      if (sign)
+      {
+          /* Emit "sra %0, 8" */
+          output_asm_insn("sra  %0, 8", &operand);
+          // output_asm_insn("sra %0, 8", gen_rtx_REG(HImode, regno));
+          // emit_insn(gen_ashrhi3(gen_rtx_REG(HImode, regno),
+          //                   gen_rtx_REG(HImode, regno),
+          //                   GEN_INT(8)));
+
+      }
+      else
+      {
+          /* Emit "srl %0, 8" */
+          output_asm_insn("srl  %0, 8", &operand);
+          // output_asm_insn("srl %0, 8", gen_rtx_REG(HImode, regno));
+          // emit_insn(gen_lshrhi3(gen_rtx_REG(HImode, regno),
+          //                   gen_rtx_REG(HImode, regno),
+          //                   GEN_INT(8)));
+
+      } 
+   }
+}
 
