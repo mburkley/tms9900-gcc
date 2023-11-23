@@ -1182,21 +1182,8 @@ struct rtl_opt_pass pass_tms9900_postinc =
 };
 
 // MGB additions start here - mostly for debug
-
-extern void tms9900_debug_operands (const char *name, rtx ops[], int count)
-{
-    FILE *file = outputFile?outputFile:stdout;
-
-    static int refcount;
-    fprintf(file, "\n; %s-%d\n", name, ++refcount);
-    for (int i = 0; i < count; i++)
-    {
-        fprintf(file, "; OP%d : ", i);
-        print_inline_rtx (file, ops[i], 0);
-        fprintf (file, "\n");
-    }
-    fprintf (file, "\n");
-}
+#include <stdlib.h>
+#include <stdarg.h>
 
 static int regMode[16] =
 {
@@ -1216,6 +1203,42 @@ char *tms9900_get_mode (int mode)
     }
     return "??";
 }
+
+extern void tms9900_inline_debug (const char *fmt,...)
+{
+    FILE *file = outputFile?outputFile:stdout;
+
+    va_list ap;
+
+    va_start (ap, fmt);
+    vfprintf (file, fmt, ap);
+    va_end (ap);
+}
+
+extern void tms9900_debug_operands (const char *name, rtx ops[], int count)
+{
+    FILE *file = outputFile?outputFile:stdout;
+
+    static int refcount;
+    fprintf(file, "\n; %s-%d\n", name, ++refcount);
+    for (int i = 0; i < count; i++)
+    {
+        fprintf(file, "; OP%d : ", i);
+        print_inline_rtx (file, ops[i], 0);
+        char *code = "??";
+        switch (GET_CODE (ops[i]))
+        {
+        case SUBREG: code = "[SUBREG]"; break;
+        case TRUNCATE: code = "[TRUNCATE]"; break;
+        case CONST_INT: code = "[CONST_INT]"; break;
+        case REG: code = "[REG]"; break;
+        case MEM: code = "[MEM]"; break;
+        }
+        fprintf (file, "code=%s:%s\n", code, tms9900_get_mode (GET_MODE (ops[i])));
+    }
+    fprintf (file, "\n");
+}
+
 
 void tms9900_register_mode_set (rtx operand, int mode)
 {
