@@ -176,11 +176,13 @@ static void tms9900_output_addr_const(FILE *file, rtx addr)
     output_addr_const(file, addr);
 }
 
+static FILE *outputFile;
 
 /* Construct string expression matching an address operand */
 void print_operand_address (FILE *file,
                             register rtx addr)
 {
+  if (!outputFile) outputFile=file;
   retry:
   switch (GET_CODE (addr))
     {
@@ -1183,14 +1185,17 @@ struct rtl_opt_pass pass_tms9900_postinc =
 
 extern void tms9900_debug_operands (const char *name, rtx ops[], int count)
 {
+    FILE *file = outputFile?outputFile:stdout;
+
     static int refcount;
-    printf("\n%s-%d\n", name, ++refcount);
+    fprintf(file, "\n; %s-%d\n", name, ++refcount);
     for (int i = 0; i < count; i++)
     {
-        printf("OP%d : ", i);
-        print_inline_rtx (stdout, ops[i], 0);
-        printf ("\n");
+        fprintf(file, "; OP%d : ", i);
+        print_inline_rtx (file, ops[i], 0);
+        fprintf (file, "\n");
     }
+    fprintf (file, "\n");
 }
 
 static int regMode[16] =
@@ -1214,6 +1219,7 @@ char *tms9900_get_mode (int mode)
 
 void tms9900_register_mode_set (rtx operand, int mode)
 {
+   return;
    if (!REG_P (operand))
        return;
 
@@ -1230,6 +1236,7 @@ void tms9900_register_mode_set (rtx operand, int mode)
 
 void tms9900_register_convert (rtx operand, int mode, int sign)
 {
+   return;
    if (!REG_P (operand))
        return;
 
