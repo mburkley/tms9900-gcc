@@ -183,6 +183,7 @@ void print_operand_address (FILE *file,
                             register rtx addr)
 {
   if (!outputFile) outputFile=file;
+
   retry:
   switch (GET_CODE (addr))
     {
@@ -1182,6 +1183,57 @@ struct rtl_opt_pass pass_tms9900_postinc =
 };
 
 // MGB additions start here - mostly for debug
+
+#if 0
+
+// Abandoned functions to expand mult and div with no temps.  Woudl generate a
+// huge amount of code to have 4 complete sets of instructions to cater for +/-
+// operands.
+
+/*  Issue a mult insn, signed or unsigned.  TMS9900 only supports unsigned mult
+ *  so if signed, take note of the signs, do abs and reapply sign to result
+ *
+ *  op[0] : SI : result
+ *  op[1] : HI : operand1
+ *  op[2] : HI : operand2
+ */
+void tms9900_mult (int sign, rtx ops[])
+{
+}
+
+/*  Issue a divide/modulo insn, signed or unsigned.  TMS9900 only supports
+ *  unsigned div so if signed, take note of the signs, do abs and reapply sign
+ *  to result
+ *
+ *  op[0] : HI : quotient / result
+ *  op[1] : SI : dividend
+ *  op[2] : HI : divisor
+ *  op[3] : HI : modulo / remainder
+ */
+void tms9900_divmod (int sign, rtx operands[])
+{
+    if (sign)
+    {
+    if(which_alternative == 2)
+      offset[0] = GEN_INT(6);
+    else
+      offset[0] = GEN_INT(4);
+        output_asm_insn("mov  %1, %1", operands);
+        output_asm_insn("jle  $+%0", offset);
+        output_asm_insn("neg  %1", operands);
+
+        output_asm_insn("mov  %2, %2", operands);
+        output_asm_insn("jle  $+%0", offset);
+        output_asm_insn("neg  %2", operands);
+
+        output_asm_insn("div  %2, %1", operands);
+        output_asm_insn("neg  %2", operands);
+        output_asm_insn("neg  %0", operands);
+        output
+
+    }
+#endif
+
 #include <stdlib.h>
 #include <stdarg.h>
 
@@ -1224,17 +1276,24 @@ extern void tms9900_debug_operands (const char *name, rtx ops[], int count)
     for (int i = 0; i < count; i++)
     {
         fprintf(file, "; OP%d : ", i);
+
+        /* For print_inline_rtx to prefix its output with a comment indicator.
+         * This is similar to passing -dP to gcc but more specific to our needs
+         */
+        extern const char *print_rtx_head;
+        print_rtx_head = "; ";
+
         print_inline_rtx (file, ops[i], 0);
         char *code = "??";
         switch (GET_CODE (ops[i]))
         {
-        case SUBREG: code = "[SUBREG]"; break;
-        case TRUNCATE: code = "[TRUNCATE]"; break;
-        case CONST_INT: code = "[CONST_INT]"; break;
-        case REG: code = "[REG]"; break;
-        case MEM: code = "[MEM]"; break;
+        case SUBREG: code = "SUBREG"; break;
+        case TRUNCATE: code = "TRUNCATE"; break;
+        case CONST_INT: code = "CONST_INT"; break;
+        case REG: code = "REG"; break;
+        case MEM: code = "MEM"; break;
         }
-        fprintf (file, "code=%s:%s\n", code, tms9900_get_mode (GET_MODE (ops[i])));
+        fprintf (file, "code=[%s:%s]\n", code, tms9900_get_mode (GET_MODE (ops[i])));
     }
     fprintf (file, "\n");
 }
