@@ -871,6 +871,7 @@ tms9900_asm_output_dwarf_delta (FILE *file, int size,
 
 /* Output an offset from a label for use in a dwarf record */
 void tms9900_asm_output_dwarf_offset (FILE *file, int size, const char * lab,
+                                int offset,
                                 section *base)
 {
   char sname[64];

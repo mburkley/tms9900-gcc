@@ -52,6 +52,11 @@ extern void tms9900_expand_epilogue (bool is_sibcall);
 extern int tms9900_starting_frame_offset(void);
 extern int tms9900_reg_ok_for_base(int strict, rtx reg);
 extern int tms9900_go_if_legitimate_address(enum machine_mode mode ATTRIBUTE_UNUSED, rtx operand, int strict);
+extern void tms9900_asm_output_dwarf_delta (FILE *file, int size,
+                               const char *lab1, const char *lab2);
+extern void tms9900_asm_output_dwarf_offset (FILE *file, int size, const char * lab,
+                                int offset,
+                                section *base);
 
 extern void tms9900_register_mode_set (rtx operand, int mode);
 extern void tms9900_register_convert (rtx operand, int mode, int sign);

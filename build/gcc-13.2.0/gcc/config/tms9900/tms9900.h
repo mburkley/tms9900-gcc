@@ -73,10 +73,12 @@ along with GCC; see the file COPYING3.  If not see
 /* Nonzero if ELF.  */
 #define TARGET_ELF 1
 
-/* As an embedded target, we have no libc.  */
-#ifndef inhibit_libc
-#  define inhibit_libc
-#endif
+/* As an embedded target, we have no libc.
+ * MGB removed.  With gcc-13 the compiler fails to build with unknonw functons
+ * from gcov-io.h that are prototyped only if this flag is not set*/
+// #ifndef inhibit_libc
+// #  define inhibit_libc
+// #endif
 
 /* Default target_flags if no switches specified.  */
 
@@ -332,11 +334,11 @@ extern short *reg_renumber;	/* def in local_alloc.c */
 /* List the order in which to allocate registers.  Each register must be
    listed once, even those in FIXED_REGISTERS.  */
 #define REG_ALLOC_ORDER	\
-   {R1_REGNUM, R2_REGNUM, R3_REGNUM, R4_REGNUM,\
-    R5_REGNUM, R6_REGNUM, R7_REGNUM, R8_REGNUM,\
-    CB_REGNUM, SC_REGNUM, LW_REGNUM, LP_REGNUM,\
-    LS_REGNUM, R9_REGNUM, LR_REGNUM, SP_REGNUM,\
-    ST_REGNUM, WP_REGNUM, PC_REGNUM }
+   {R1_REGNUM,  R2_REGNUM,  R3_REGNUM,  R4_REGNUM,\
+    R5_REGNUM,  R6_REGNUM,  R7_REGNUM,  R8_REGNUM,\
+    R12_REGNUM, R13_REGNUM, R14_REGNUM, R15_REGNUM,\
+    R8_REGNUM,  R9_REGNUM,  R11_REGNUM, R10_REGNUM,\
+    ST_REGNUM,  WP_REGNUM,  PC_REGNUM }
 
 /* A C expression for the number of consecutive hard registers,
    starting at register number REGNO, required to hold a value of
@@ -454,16 +456,19 @@ enum reg_class
 /* BASE_REGS     */   { 0x0000FFFE }, \
 /* ALL_REGS      */   { 0x0007FFFF }}
 
-#if 0
-/* MGB moved to constraints.md for gcc-13 */
 /* Set up a C expression whose value is a register class containing hard
    register REGNO */
 #define REGNO_REG_CLASS(REGNO) \
    (REGNO == SC_REGNUM  ? SHIFT_REGS : \
     REGNO == CB_REGNUM  ? CRU_REGS   : \
+    REGNO == ST_REGNUM  ? ST_REGS   : \
+    REGNO == WP_REGNUM  ? WP_REGS   : \
+    REGNO == PC_REGNUM  ? PC_REGS   : \
     REGNO <= R15_REGNUM ? ALL_REGS   : \
     NO_REGS)
 
+#if 0
+/* MGB moved to constraints.md for gcc-13 */
 /* Get register class from a letter in the machine description. */
 #define REG_CLASS_FROM_LETTER(C) \
    ((C) == 'S' ? SHIFT_REGS : \
@@ -662,7 +667,7 @@ typedef struct tms9900_args
 
 #undef PAD_VARARGS_DOWN
 #define PAD_VARARGS_DOWN \
-  (tms9900_function_arg_padding (TYPE_MODE (type), type) == downward)
+  (tms9900_function_arg_padding (TYPE_MODE (type), type) == PAD_DOWNWARD)
 
 /* Initialize a variable CUM of type CUMULATIVE_ARGS for a call to a
    function whose data type is FNTYPE. For a library call, FNTYPE is 0.  */
@@ -1233,8 +1238,8 @@ do {                                                                       \
 #define ASM_OUTPUT_DWARF_DELTA(FILE,SIZE,LABEL1,LABEL2)  \
    tms9900_asm_output_dwarf_delta (FILE, SIZE, LABEL1, LABEL2)
 
-#define ASM_OUTPUT_DWARF_OFFSET(FILE,SIZE,LABEL,BASE)  \
-   tms9900_asm_output_dwarf_offset (FILE, SIZE, LABEL, BASE)
+#define ASM_OUTPUT_DWARF_OFFSET(FILE,SIZE,LABEL,OFFSET,BASE)  \
+   tms9900_asm_output_dwarf_offset (FILE, SIZE, LABEL, OFFSET,BASE)
 
 /* Put references to global constructors in a .init section. The crt0 code
    will invoke these constructors at startup, before calling main. */
