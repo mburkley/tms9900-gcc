@@ -66,13 +66,22 @@ along with GCC; see the file COPYING3.  If not see
 #define TARGET_CPU_CPP_BUILTINS()		\
   do						\
     {						\
-      builtin_define_std ("tms9900");		\
+      builtin_define_std ("cpu=tms9900");	\
     }						\
   while (0)
+
+/* Nonzero if ELF.  */
+#define TARGET_ELF 1
 
 /* As an embedded target, we have no libc.  */
 #ifndef inhibit_libc
 #  define inhibit_libc
+#endif
+
+/* Default target_flags if no switches specified.  */
+
+#ifndef TARGET_DEFAULT
+#define TARGET_DEFAULT (MASK_UNIX_ASM)
 #endif
 
 #if 0
@@ -323,11 +332,11 @@ extern short *reg_renumber;	/* def in local_alloc.c */
 /* List the order in which to allocate registers.  Each register must be
    listed once, even those in FIXED_REGISTERS.  */
 #define REG_ALLOC_ORDER	\
-   {HARD_R1_REGNUM, HARD_R2_REGNUM, HARD_R3_REGNUM, HARD_R4_REGNUM,\
-    HARD_R5_REGNUM, HARD_R6_REGNUM, HARD_R7_REGNUM, HARD_R8_REGNUM,\
-    HARD_CB_REGNUM, HARD_SC_REGNUM, HARD_LW_REGNUM, HARD_LP_REGNUM,\
-    HARD_LS_REGNUM, HARD_R9_REGNUM, HARD_LR_REGNUM, HARD_SP_REGNUM,\
-    HARD_ST_REGNUM, HARD_WP_REGNUM, HARD_PC_REGNUM }
+   {R1_REGNUM, R2_REGNUM, R3_REGNUM, R4_REGNUM,\
+    R5_REGNUM, R6_REGNUM, R7_REGNUM, R8_REGNUM,\
+    CB_REGNUM, SC_REGNUM, LW_REGNUM, LP_REGNUM,\
+    LS_REGNUM, R9_REGNUM, LR_REGNUM, SP_REGNUM,\
+    ST_REGNUM, WP_REGNUM, PC_REGNUM }
 
 /* A C expression for the number of consecutive hard registers,
    starting at register number REGNO, required to hold a value of
@@ -450,9 +459,9 @@ enum reg_class
 /* Set up a C expression whose value is a register class containing hard
    register REGNO */
 #define REGNO_REG_CLASS(REGNO) \
-   (REGNO == HARD_SC_REGNUM  ? SHIFT_REGS : \
-    REGNO == HARD_CB_REGNUM  ? CRU_REGS   : \
-    REGNO <= HARD_R15_REGNUM ? ALL_REGS   : \
+   (REGNO == SC_REGNUM  ? SHIFT_REGS : \
+    REGNO == CB_REGNUM  ? CRU_REGS   : \
+    REGNO <= R15_REGNUM ? ALL_REGS   : \
     NO_REGS)
 
 /* Get register class from a letter in the machine description. */
@@ -626,7 +635,7 @@ enum reg_class
 
 
 /* The number of argument registers we can use (R1..R6) */
-#define TMS9900_ARG_REGS (HARD_R7_REGNUM - HARD_R1_REGNUM)
+#define TMS9900_ARG_REGS (R7_REGNUM - R1_REGNUM)
 
 /* Define a data type for recording info about an argument list
    during the scan of that argument list.  This data type should
@@ -712,7 +721,7 @@ typedef struct tms9900_args
 
 /* 1 if N is a possible register number for function argument passing. */
 #define FUNCTION_ARG_REGNO_P(N)	\
-     (((N) >= HARD_R1_REGNUM) && ((N) <= HARD_R6_REGNUM))
+     (((N) >= R1_REGNUM) && ((N) <= R6_REGNUM))
 
 /* 8- and 16-bit values are returned in R1, 32-bit values are
    passed in R1+R2, The high word is in R1. */
@@ -721,11 +730,11 @@ typedef struct tms9900_args
 /* 8- and 16-bit values are returned in R1, 32-bit values are
    passed in R1+R2, The high word is in R1. */
 #define LIBCALL_VALUE(MODE)						\
-     gen_rtx_REG (MODE, HARD_R1_REGNUM)
+     gen_rtx_REG (MODE, R1_REGNUM)
 
 /* 1 if N is a possible register number for a function value.  */
 #define FUNCTION_VALUE_REGNO_P(N) \
-     ((N) == HARD_R1_REGNUM)
+     ((N) == R1_REGNUM)
 
 /* EXIT_IGNORE_STACK should be nonzero if, when returning from a function,
    the stack pointer does not matter.  The value is tested only in functions
@@ -736,8 +745,9 @@ typedef struct tms9900_args
 
 /* Output assembler code to FILE to increment profiler label # LABELNO
    for profiling a function entry.  */
-#define FUNCTION_PROFILER(FILE, LABELNO)		\
-    fprintf (FILE, "\tldy\tLP%d\n\tjsr mcount\n", (LABELNO))
+#define TMS9900_FUNCTION_PROFILER_NAME "mcount"
+#define FUNCTION_PROFILER(FILE, LABELNO) \
+     fprintf (FILE, "\tldy\tLP%d\n\tjsr mcount\n", (LABELNO))
 
 /* Let's see whether this works as trampoline:
      LI Rn, @STATIC	0x0200	0x0000 <- STATIC; Y = STATIC_CHAIN_REGNUM
@@ -787,7 +797,7 @@ typedef struct tms9900_args
    allocated such a hard register. 
    Any hard register except R0 is a valid base */
 #define REGNO_OK_FOR_BASE_P(NUM) \
-   ((NUM) >= HARD_R1_REGNUM && (NUM) <= HARD_R15_REGNUM)
+   ((NUM) >= R1_REGNUM && (NUM) <= R15_REGNUM)
 
 /* A C expression which is nonzero if register number NUM is suitable
    for use as an index register in operand addresses.  It may be
@@ -953,11 +963,11 @@ typedef struct tms9900_args
 
 /* Enable compare elimination pass.  */
 #undef TARGET_FLAGS_REGNUM
-#define TARGET_FLAGS_REGNUM HARD_ST_REGNUM
+#define TARGET_FLAGS_REGNUM ST_REGNUM
 
 /* Specify the CC registers.  */
 #undef TARGET_FIXED_CONDITION_CODE_REGS
-#define TARGET_FIXED_CONDITION_CODE_REGS HARD_ST_REGNUM
+#define TARGET_FIXED_CONDITION_CODE_REGS ST_REGNUM
 
 /* Defining the Output Assembler Language.  */
 
