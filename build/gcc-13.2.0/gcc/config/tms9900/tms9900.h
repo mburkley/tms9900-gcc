@@ -75,6 +75,7 @@ along with GCC; see the file COPYING3.  If not see
 #  define inhibit_libc
 #endif
 
+#if 0
 /* Forward type declaration for prototypes definitions.
    rtx_ptr is equivalent to rtx. Can't use the same name.  */
 struct rtx_def;
@@ -87,6 +88,7 @@ typedef union tree_node *tree_ptr;
    Prototypes defined here will use an int instead. It's better than no
    prototype at all.  */
 typedef int enum_machine_mode;
+#endif
 
 /*****************************************************************************
 **
@@ -115,23 +117,28 @@ extern short *reg_renumber;	/* def in local_alloc.c */
 #endif
 
 /* Print subsidiary information on the compiler version in use.  */
-#define TARGET_VERSION	fprintf (stderr, " (TMS9900)")
-
+// #define TARGET_VERSION	fprintf (stderr, " (TMS9900)")
 
 /* Target machine storage layout */
 
 /* Define this as 1 if most significant byte of a word is the lowest numbered.  */
 #define BYTES_BIG_ENDIAN 	1
+/* target machine storage layout */
 
-/* Define this as 1 if most significant bit is lowest numbered
+/* Define this if most significant bit is lowest numbered
    in instructions that operate on numbered bit-fields.  */
-#define BITS_BIG_ENDIAN         1
+#define BITS_BIG_ENDIAN 1
 
-/* Define this as 1 if most significant word of a multiword number is lowest numbered.  */
-#define WORDS_BIG_ENDIAN 	1
+/* Define this if most significant word of a multiword number is first.  */
+#define WORDS_BIG_ENDIAN 1
 
-/* Width of a word, in units (bytes).  */
-#define UNITS_PER_WORD		2
+#define FLOAT_WORDS_BIG_ENDIAN 1
+
+/* Width of a word, in units (bytes). 
+
+   UNITS OR BYTES - seems like units */
+#define UNITS_PER_WORD 2
+
 
 /* Definition of size_t.  This is really an unsigned short as the
    TMS9900 only handles a 64K address space.  */
@@ -221,7 +228,10 @@ extern short *reg_renumber;	/* def in local_alloc.c */
 
 #define REGS_PER_WORD (UNITS_PER_WORD / HARD_REG_SIZE)
 
-/* Assign names to real TMS9900 registers. */
+#if 0
+// MGB Moved to tms9900.md
+/* Assign names to real TMS9900 registers.  ST and WP registers have been added
+ * to this list for completeness */
 #define HARD_R0_REGNUM		0
 #define HARD_R1_REGNUM		1
 #define HARD_R2_REGNUM		2
@@ -238,6 +248,8 @@ extern short *reg_renumber;	/* def in local_alloc.c */
 #define HARD_R13_REGNUM		13
 #define HARD_R14_REGNUM		14
 #define HARD_R15_REGNUM		15
+#define HARD_ST_REGNUM		16  // Status register
+#define HARD_WP_REGNUM		17  // Workspace pointer
 
 /* Shift count register */
 #define HARD_SC_REGNUM		HARD_R0_REGNUM
@@ -258,17 +270,33 @@ extern short *reg_renumber;	/* def in local_alloc.c */
 /* Old status register after BLWP instruction */
 #define HARD_LS_REGNUM		HARD_R15_REGNUM
 
-/* How to refer to registers in assembler output.  This sequence is indexed
-   by compiler's hard-register-number (see above). */
-#define REGISTER_NAMES \
-{ "r0",  "r1", "r2",  "r3",  "r4",  "r5",  "r6",  "r7",  \
-  "r8",  "r9", "r10", "r11", "r12", "r13", "r14", "r15"}
-
 /* Number of actual hardware registers. The hardware registers are assigned
    numbers for the compiler from 0 to just below FIRST_PSEUDO_REGISTER. 
    All registers that the compiler knows about must be given numbers, even
    those that are not normally considered general registers.  */
-#define FIRST_PSEUDO_REGISTER	(16)
+#define FIRST_PSEUDO_REGISTER	(19)
+
+/* Register to use for pushing function arguments.  */
+#define STACK_POINTER_REGNUM		HARD_SP_REGNUM
+
+/* Base register for access to local variables of the function.  */
+#define FRAME_POINTER_REGNUM		HARD_R9_REGNUM
+
+/* Base register for access to arguments of the function.  */
+#define ARG_POINTER_REGNUM		HARD_R8_REGNUM
+
+/* Register in which static-chain is passed to a function.  */
+#define STATIC_CHAIN_REGNUM	        HARD_R7_REGNUM
+
+
+#endif
+
+/* How to refer to registers in assembler output.  This sequence is indexed
+   by compiler's hard-register-number (see above). */
+#define REGISTER_NAMES \
+{ "r0",  "r1", "r2",  "r3",  "r4",  "r5",  "r6",  "r7",  \
+  "r8",  "r9", "r10", "r11", "r12", "r13", "r14", "r15", \
+  "st",  "wp", "pc"  }
 
 /* 1 for registers that have pervasive standard uses and are not available
    for the register allocator.
@@ -276,8 +304,8 @@ extern short *reg_renumber;	/* def in local_alloc.c */
    MGB TODO move BP, AP to R12/R13 so that we can have 1-10 as general regs
 */
 #define FIXED_REGISTERS \
-  {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0}
-/* SC 1  2  3  4  5  6  7  AP BP SP LR CB LW LP LS*/
+  {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1}
+/* SC 1  2  3  4  5  6  7  AP BP SP LR CB LW LP LS ST WP PC*/
 
 /* 0 for registers which must be preserved across function call boundaries */
 /* MGB TODO seems excessive to always preserve R13,R14,R15 as these will only
@@ -286,11 +314,11 @@ extern short *reg_renumber;	/* def in local_alloc.c */
  * BLWP then we can ask them to save R13/R14/R15 themselves.
  */
 #define CALL_USED_REGISTERS \
-  {1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 0}
-/* SC 1  2  3  4  5  6  7  AP BP SP LR CB LW LP LS*/
+  {1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1}
+/* SC 1  2  3  4  5  6  7  AP BP SP LR CB LW LP LS ST WP PC*/
 
 /* Define this macro to change register usage conditional on target flags. */
-#define CONDITIONAL_REGISTER_USAGE 
+// #define CONDITIONAL_REGISTER_USAGE 
 
 /* List the order in which to allocate registers.  Each register must be
    listed once, even those in FIXED_REGISTERS.  */
@@ -298,20 +326,27 @@ extern short *reg_renumber;	/* def in local_alloc.c */
    {HARD_R1_REGNUM, HARD_R2_REGNUM, HARD_R3_REGNUM, HARD_R4_REGNUM,\
     HARD_R5_REGNUM, HARD_R6_REGNUM, HARD_R7_REGNUM, HARD_R8_REGNUM,\
     HARD_CB_REGNUM, HARD_SC_REGNUM, HARD_LW_REGNUM, HARD_LP_REGNUM,\
-    HARD_LS_REGNUM, HARD_R9_REGNUM, HARD_LR_REGNUM, HARD_SP_REGNUM}
+    HARD_LS_REGNUM, HARD_R9_REGNUM, HARD_LR_REGNUM, HARD_SP_REGNUM,\
+    HARD_ST_REGNUM, HARD_WP_REGNUM, HARD_PC_REGNUM }
 
 /* A C expression for the number of consecutive hard registers,
    starting at register number REGNO, required to hold a value of
    mode MODE.  */
+#if 0
+/* MGB removed for gcc-13 */
 #define HARD_REGNO_NREGS(REGNO, MODE) \
    ((GET_MODE_SIZE (MODE) + HARD_REG_SIZE - 1) / HARD_REG_SIZE)
+#endif
 
+#if 0
 /* Value is 1 if hard register REGNO (or starting with REGNO) can hold a value of machine-mode MODE
  *
- *  MGB TODO could include 64-bit as well */
+ *  MGB TODO could include 64-bit as well
+ *  removed for gcc-13 */
 #define HARD_REGNO_MODE_OK(REGNO, MODE) \
    (!(MODE == SImode && REGNO==HARD_R15_REGNUM))
-  
+#endif
+
 /* A C expression that is nonzero if hard register number REGNO2 can be
    considered for use as a rename register for REGNO1 */
 #define HARD_REGNO_RENAME_OK(REGNO1,REGNO2) 1
@@ -320,7 +355,8 @@ extern short *reg_renumber;	/* def in local_alloc.c */
    mode MODE1 and one has mode MODE2.  If HARD_REGNO_MODE_OK could produce
    different values for MODE1 and MODE2, for any hard reg, then this must be
    0 for correct output. */
-#define MODES_TIEABLE_P(MODE1, MODE2) 0
+/* MGB removed for gcc-13 */
+// #define MODES_TIEABLE_P(MODE1, MODE2) 0
 
 /* Define the classes of registers for register constraints in the
    machine description.  Also define ranges of constants.
@@ -343,6 +379,9 @@ enum reg_class
   NO_REGS,
   SHIFT_REGS,     /* Register used for variable shift (SC) */
   CRU_REGS,       /* Register used for CRU access (CB) */
+  ST_REGS,        /* Status register for CC */
+  WP_REGS,        /* Workspace pointer */
+  PC_REGS,        /* PC */
   BASE_REGS,      /* Registers which may be used as a memory base */
   ALL_REGS,       /* All registers, including fakes */
   LIM_REG_CLASSES
@@ -363,6 +402,9 @@ enum reg_class
 { "NO_REGS",       \
   "SHIFT_REGS",    \
   "CRU_REGS",      \
+  "ST_REGS",       \
+  "WP_REGS",       \
+  "PC_REGS",       \
   "BASE_REGS",     \
   "ALL_REGS" }
 
@@ -388,15 +430,23 @@ enum reg_class
    LW      0x00002000
    LP      0x00004000
    LS      0x00008000
+   ST      0x00010000
+   WP      0x00020000
+   PC      0x00040000
 --------------------------------------------------------------*/
 
 #define REG_CLASS_CONTENTS \
 /* NO_REGS       */  {{ 0x00000000 }, \
 /* SHIFT_REGS    */   { 0x00000001 }, /* SC */ \
 /* CRU_REGS      */   { 0x00001000 }, /* CB */ \
+/* ST_REGS       */   { 0x00010000 }, /* ST */ \
+/* WP_REGS       */   { 0x00020000 }, /* WP */ \
+/* PC_REGS       */   { 0x00040000 }, /* PC */ \
 /* BASE_REGS     */   { 0x0000FFFE }, \
-/* ALL_REGS      */   { 0x0000FFFF }}
+/* ALL_REGS      */   { 0x0007FFFF }}
 
+#if 0
+/* MGB moved to constraints.md for gcc-13 */
 /* Set up a C expression whose value is a register class containing hard
    register REGNO */
 #define REGNO_REG_CLASS(REGNO) \
@@ -411,6 +461,7 @@ enum reg_class
     (C) == 'C' ? CRU_REGS   : \
     (C) == 'T' ? ALL_REGS   : \
     NO_REGS)
+#endif
 
 /* A C expression that places additional restrictions of the register
    class to use when it is necessary to copy value X into a register
@@ -423,6 +474,8 @@ enum reg_class
 #define CLASS_MAX_NREGS(CLASS, MODE) \
    ((GET_MODE_SIZE (MODE) + UNITS_PER_WORD - 1) / UNITS_PER_WORD)
 
+#if 0
+/* MGB removed for gcc-13 */
 /* The letters I, J, K, L and M in a register constraint string
    can be used to stand for particular ranges of immediate operands.
    This macro defines what the ranges are.
@@ -449,14 +502,20 @@ enum reg_class
    (C) == 'K' ? (((VALUE) & 0xffff0000) != 0 && \
 		 ((VALUE) & 0x0000ffff) != 0): \
    0)
+#endif
 
+#if 0
+/* MGB removed for gcc-13 */
 /* Similar, but for floating constants, and defining letters G and H.
 
    `G' is for 0.0.  */
 #define CONST_DOUBLE_OK_FOR_LETTER_P(VALUE, C) \
   ((C) == 'G' ? (GET_MODE_CLASS (GET_MODE (VALUE)) == MODE_FLOAT \
 		 && VALUE == CONST0_RTX (GET_MODE (VALUE))) : 0) 
+#endif
 
+#if 0
+/* MGB removed for gcc-13 */
 /* Letters in the range `Q' through `U' may be defined in a
    machine-dependent fashion to stand for arbitrary operand types. 
    The machine description macro `EXTRA_CONSTRAINT' is passed the
@@ -473,12 +532,13 @@ enum reg_class
    : ((CODE) == 'Q') ? (tms9900_address_type (OP, GET_MODE (OP)) == 3)  \
    : ((CODE) == 'R') ? (tms9900_address_type (OP, GET_MODE (OP)) == 1)	\
    : 0)
+#endif
 
 /* Stack layout; function entry, exit and calling.  */
 
 /* Define this if pushing a word on the stack
    makes the stack pointer a smaller address.  */
-#define STACK_GROWS_DOWNWARD
+#define STACK_GROWS_DOWNWARD 1
 
 /* Define this to nonzero if the nominal address of the stack frame
    is at the high-address end of the local variables;
@@ -493,7 +553,8 @@ enum reg_class
    If FRAME_GROWS_DOWNWARD, this is the offset to the END of the
    first local allocated.  Otherwise, it is the offset to the BEGINNING
    of the first local allocated.  */
-#define STARTING_FRAME_OFFSET 0
+/* MGB removed for gcc-13 */
+// #define STARTING_FRAME_OFFSET 0
 
 /* Offset of first parameter from the argument pointer register value.  */
 #define FIRST_PARM_OFFSET(FNDECL)	0
@@ -506,18 +567,6 @@ enum reg_class
 
 /* Before the prologue, the top of the frame is at 2(sp).  */
 #define INCOMING_FRAME_SP_OFFSET        0
-
-/* Register to use for pushing function arguments.  */
-#define STACK_POINTER_REGNUM		HARD_SP_REGNUM
-
-/* Base register for access to local variables of the function.  */
-#define FRAME_POINTER_REGNUM		HARD_R9_REGNUM
-
-/* Base register for access to arguments of the function.  */
-#define ARG_POINTER_REGNUM		HARD_R8_REGNUM
-
-/* Register in which static-chain is passed to a function.  */
-#define STATIC_CHAIN_REGNUM	        HARD_R7_REGNUM
 
 /* Definitions for register eliminations.
 
@@ -538,15 +587,18 @@ enum reg_class
    Zero means the frame pointer need not be set up (and parms may be
    accessed via the stack pointer) in functions that seem suitable.
    This is computed in `reload', in reload1.c.  */
-#define FRAME_POINTER_REQUIRED	0
+/* MGB removed for gcc-13 */
+// #define FRAME_POINTER_REQUIRED	0
 
-#define CAN_DEBUG_WITHOUT_FP 1
+/* MGB removed for gcc-13 */
+// #define CAN_DEBUG_WITHOUT_FP 1
 
 /* Given FROM and TO register numbers, say whether this elimination is allowed.
    Frame pointer elimination is automatically handled.
 
    All other eliminations are valid.  */
-#define CAN_ELIMINATE(FROM, TO)		1
+/* MGB removed for gcc-13 */
+// #define CAN_ELIMINATE(FROM, TO)		1
 
 /* Define the offset between two registers, one to be eliminated, and the other
    its replacement, at the start of a routine.  */
@@ -567,7 +619,8 @@ enum reg_class
    arguments described by the number-of-args field in the call. FUNTYPE is
    the data type of the function (as a tree), or for a library call it is
    an identifier node for the subroutine name. */
-#define RETURN_POPS_ARGS(FUNDECL,FUNTYPE,SIZE)	0
+/* MGB removed for gcc-13 */
+// #define RETURN_POPS_ARGS(FUNDECL,FUNTYPE,SIZE)	0
 
 /* Passing Arguments in Registers.  */
 
@@ -592,8 +645,11 @@ typedef struct tms9900_args
    `downward' to pad below, or `none' to inhibit padding.
 
    Structures are stored left shifted in their argument slot.  */
+/* MGB removed for gcc-13 */
+#if 0
 #define FUNCTION_ARG_PADDING(MODE, TYPE) \
   tms9900_function_arg_padding ((MODE), (TYPE))
+#endif
 
 #undef PAD_VARARGS_DOWN
 #define PAD_VARARGS_DOWN \
@@ -607,8 +663,11 @@ typedef struct tms9900_args
 /* Update the data in CUM to advance over an argument of mode MODE and data
    type TYPE. (TYPE is null for libcalls where that information may not be
    available.) */
+/* MGB removed for gcc-13 */
+#if 0
 #define FUNCTION_ARG_ADVANCE(CUM, MODE, TYPE, NAMED) \
     (tms9900_function_arg_advance (&CUM, MODE, TYPE, NAMED))
+#endif
 
 /* Define where to put the arguments to a function.
    Value is zero to push the argument on the stack,
@@ -622,8 +681,11 @@ typedef struct tms9900_args
     the preceding args and about the function being called.
    NAMED is nonzero if this argument is a named parameter
     (otherwise it is an extra parameter matching an ellipsis).  */
+#if 0
+/* MGB removed for gcc-13 */
 #define FUNCTION_ARG(CUM, MODE, TYPE, NAMED) \
   (tms9900_function_arg (&CUM, MODE, TYPE, NAMED))
+#endif
 
 /* This target hook should return `true' if an argument at the
    position indicated by CUM should be passed by reference.  This
@@ -645,7 +707,8 @@ typedef struct tms9900_args
    caller-save need a reload and the way it is implemented,
    it forbids all spill registers at that point.  Enabling
    caller saving results in spill failure.  */
-#define CALLER_SAVE_PROFITABLE(REFS,CALLS) 0
+/* MGB removed for gcc-13 */
+// #define CALLER_SAVE_PROFITABLE(REFS,CALLS) 0
 
 /* 1 if N is a possible register number for function argument passing. */
 #define FUNCTION_ARG_REGNO_P(N)	\
@@ -680,6 +743,8 @@ typedef struct tms9900_args
      LI Rn, @STATIC	0x0200	0x0000 <- STATIC; Y = STATIC_CHAIN_REGNUM
      B  FUNCTION	0x0820  0x0000 <- FUNCTION
 */
+/* MGB removed for gcc-13 */
+#if 0
 #define TRAMPOLINE_TEMPLATE(FILE)	\
 {					\
   assemble_aligned_integer (2, GEN_INT (0x0200+STATIC_CHAIN_REGNUM));	\
@@ -687,9 +752,6 @@ typedef struct tms9900_args
   assemble_aligned_integer (2, GEN_INT(0x0820));			\
   assemble_aligned_integer (2, const0_rtx);				\
 }
-
-#define TRAMPOLINE_SIZE 8
-#define TRAMPOLINE_ALIGNMENT 16
 
 /* Emit RTL insns to initialize the variable parts of a trampoline.
    FNADDR is an RTX for the address of the function's pure code.
@@ -699,6 +761,10 @@ typedef struct tms9900_args
   emit_move_insn (gen_rtx_MEM (HImode, plus_constant (TRAMP, 2)), CXT); \
   emit_move_insn (gen_rtx_MEM (HImode, plus_constant (TRAMP, 6)), FNADDR); \
 }
+#endif
+
+#define TRAMPOLINE_SIZE 8
+#define TRAMPOLINE_ALIGNMENT 16
 
 /* The TMS9900 can only do post increment */
 #define HAVE_POST_INCREMENT  (1)
@@ -803,17 +869,22 @@ typedef struct tms9900_args
   
    It is always safe for this macro to do nothing.
    It exists to recognize opportunities to optimize the output.  */
-#define LEGITIMIZE_ADDRESS(X,OLDX,MODE,WIN)
+/* MGB removed for gcc-13 */
+// #define LEGITIMIZE_ADDRESS(X,OLDX,MODE,WIN)
   
 /* Go to LABEL if ADDR (a legitimate address expression)
    has an effect that depends on the machine mode it is used for.  */
-#define GO_IF_MODE_DEPENDENT_ADDRESS(ADDR,LABEL)
+/* MGB removed for gcc-13 */
+// #define GO_IF_MODE_DEPENDENT_ADDRESS(ADDR,LABEL)
 
 /* Nonzero if the constant value X is a legitimate general operand.
    It is given that X satisfies CONSTANT_P or is a CONST_DOUBLE.  */
-#define LEGITIMATE_CONSTANT_P(X)	1
+/* MGB removed for gcc-13 */
+// #define LEGITIMATE_CONSTANT_P(X)	1
 
 /* Tell final.c how to eliminate redundant test instructions.  */
+/* MGB removed for gcc-13 */
+#if 0
 #define NOTICE_UPDATE_CC(EXP, INSN) \
 { if (GET_CODE (EXP) == SET)					\
     {								\
@@ -833,6 +904,7 @@ typedef struct tms9900_args
       cc_status.value2 = 0;					\
     }								\
 }
+#endif
 
 /*   A C expression for the cost of moving data of mode MODE from a
      register in class FROM to one in class TO.  The classes are
@@ -872,6 +944,20 @@ typedef struct tms9900_args
 
 /* Nonzero if access to memory by bytes is slow and undesirable.  */
 #define SLOW_BYTE_ACCESS 0
+
+/* Give a comparison code (EQ, NE etc) and the first operand of a COMPARE,
+   return the mode to be used for the comparison.
+   MGB fixed at CCmode for now */
+
+#define SELECT_CC_MODE(OP,X,Y) CCmode
+
+/* Enable compare elimination pass.  */
+#undef TARGET_FLAGS_REGNUM
+#define TARGET_FLAGS_REGNUM HARD_ST_REGNUM
+
+/* Specify the CC registers.  */
+#undef TARGET_FIXED_CONDITION_CODE_REGS
+#define TARGET_FIXED_CONDITION_CODE_REGS HARD_ST_REGNUM
 
 /* Defining the Output Assembler Language.  */
 
@@ -1044,7 +1130,8 @@ EMW*/
 
 /* This flag, if defined, says the same insns that convert to a signed fixnum
    also convert validly to an unsigned one.  */
-#define FIXUNS_TRUNC_LIKE_FIX_TRUNC
+/* MGB removed for gcc-13 */
+// #define FIXUNS_TRUNC_LIKE_FIX_TRUNC
 
 /* Max number of bytes we can move from memory to memory in one
    reasonably fast instruction.  */
@@ -1061,7 +1148,8 @@ EMW*/
 
 /* Value is 1 if truncating an integer of INPREC bits to OUTPREC bits
    is done just by pretending it is already truncated.  */
-#define TRULY_NOOP_TRUNCATION(OUTPREC, INPREC)	0
+/* MGB removed for gcc-13 */
+// #define TRULY_NOOP_TRUNCATION(OUTPREC, INPREC)	0
 
 /* Specify the machine mode that pointers have. After generation of rtl, the
    compiler makes no further distinction between pointers and any other
@@ -1140,7 +1228,8 @@ do {                                                                       \
 
 /* Put references to global constructors in a .init section. The crt0 code
    will invoke these constructors at startup, before calling main. */
-#define INIT_SECTION_ASM_OP
+/* MGB gcc-13 expects a value here so if we have none, don't define it*/
+// #define INIT_SECTION_ASM_OP
 
 #undef  SIZE_ASM_OP
 #undef  TYPE_ASM_OP
