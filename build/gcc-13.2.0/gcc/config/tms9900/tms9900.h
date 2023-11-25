@@ -1049,7 +1049,7 @@ EMW*/
   else if (GET_CODE (X) == REG)			\
     fprintf (FILE, "%s", reg_names[REGNO (X)]);	\
   else if (GET_CODE (X) == MEM)			\
-    output_address (XEXP (X, 0));		\
+    output_address (GET_MODE(x), XEXP (X, 0));		\
   else if (GET_CODE (X) == PC)			\
     fprintf (FILE, "$");			\
   else if (GET_CODE (X) == CONST_INT)		\
