@@ -3455,7 +3455,6 @@ tic6x-*-uclinux)
 	;;
 tms9900*-*-*)
 	target_cpu_default="TARGET_CPU_tms9900"
-	use_collect2=no
 	tm_file="${tm_file} newlib-stdint.h"
 	use_gcc_stdint=wrap
 	;;

@@ -40,19 +40,35 @@
 #include "explow.h"
 #include "expmed.h"
 #include "calls.h"
+#include "tms9900-protos.h"
 
 /* This file should be included last.  */
 #include "target-def.h"
 
 #if 1
-static bool tms9900_pass_by_reference (CUMULATIVE_ARGS *,
-                                       enum machine_mode, const_tree, bool);
+static rtx tms9900_function_arg (cumulative_args_t cum_v, 
+					const function_arg_info &);
+
+static bool tms9900_pass_by_reference (cumulative_args_t,
+				     const function_arg_info &arg);
+static pad_direction tms9900_function_arg_padding (machine_mode mode,
+                                  const_tree type);
+
+static void tms9900_function_arg_advance (cumulative_args_t,
+				      const function_arg_info &);
 static bool tms9900_asm_integer(rtx x, unsigned int size, int aligned_p);
+
+static bool
+tms9900_ok_for_sibcall (tree decl ATTRIBUTE_UNUSED, tree exp ATTRIBUTE_UNUSED);
+
+static bool tms9900_fixed_condition_code_regs (unsigned int *, unsigned int *);
+
 #endif
 
 static int tms9900_dwarf_label_counter;
 
 /* Define data types */
+
 #undef  TARGET_ASM_BYTE_OP
 #define TARGET_ASM_BYTE_OP "\tbyte\t"
 
@@ -80,6 +96,39 @@ static int tms9900_dwarf_label_counter;
 #undef  TARGET_FUNCTION_OK_FOR_SIBCALL
 #define TARGET_FUNCTION_OK_FOR_SIBCALL tms9900_ok_for_sibcall
 
+/* If defined, a C expression which determines whether, and in which direction,
+   to pad out an argument with extra space.  The value should be of type
+   `enum direction': either `upward' to pad above the argument,
+   `downward' to pad below, or `none' to inhibit padding.
+
+   Structures are stored left shifted in their argument slot.  */
+#undef TARGET_FUNCTION_ARG_PADDING
+#define TARGET_FUNCTION_ARG_PADDING tms9900_function_arg_padding
+
+/* Update the data in CUM to advance over an argument of mode MODE and data
+   type TYPE. (TYPE is null for libcalls where that information may not be
+   available.) */
+#undef TARGET_FUNCTION_ARG_ADVANCE
+#define TARGET_FUNCTION_ARG_ADVANCE tms9900_function_arg_advance
+
+/* Define where to put the arguments to a function.
+   Value is zero to push the argument on the stack,
+   or a hard register in which to store the argument.
+
+   MODE is the argument's machine mode.
+   TYPE is the data type of the argument (as a tree).
+    This is null for libcalls where that information may
+    not be available.
+   CUM is a variable of type CUMULATIVE_ARGS which gives info about
+    the preceding args and about the function being called.
+   NAMED is nonzero if this argument is a named parameter
+    (otherwise it is an extra parameter matching an ellipsis).  */
+#undef TARGET_FUNCTION_ARG
+#define TARGET_FUNCTION_ARG tms9900_function_arg
+
+#undef TARGET_FIXED_CONDITION_CODE_REGS
+#define TARGET_FIXED_CONDITION_CODE_REGS tms9900_fixed_condition_code_regs
+
 static bool
 tms9900_ok_for_sibcall (tree decl ATTRIBUTE_UNUSED, tree exp ATTRIBUTE_UNUSED)
 {
@@ -104,7 +153,7 @@ static int nvolregs[]={
    `downward' to pad below, or `none' to inhibit padding.
 
    Structures are stored left shifted in their argument slot.  */
-int tms9900_function_arg_padding (enum machine_mode mode,
+pad_direction tms9900_function_arg_padding (machine_mode mode,
                                   const_tree type)
 {
   if (type != 0 && AGGREGATE_TYPE_P (type))
@@ -121,11 +170,12 @@ int tms9900_function_arg_padding (enum machine_mode mode,
 /* Update the data in CUM to advance over an argument
    of mode MODE and data type TYPE.
    (TYPE is null for libcalls where that information may not be available.)  */
-void tms9900_function_arg_advance (CUMULATIVE_ARGS *cum, 
-                                   enum machine_mode mode,
-                                   tree type, 
-                                   int named ATTRIBUTE_UNUSED)
+void tms9900_function_arg_advance (cumulative_args_t cum_v,
+				      const function_arg_info &arg)
 {
+  CUMULATIVE_ARGS *cum = get_cumulative_args (cum_v);
+  tree type = arg.type;
+  machine_mode mode = arg.mode;
   unsigned arg_bytes;
   if(mode == BLKmode)
   {
@@ -133,27 +183,23 @@ void tms9900_function_arg_advance (CUMULATIVE_ARGS *cum,
   }
   else
   {
-     arg_bytes = (unsigned) GET_MODE_SIZE (mode).to_constant();
+     arg_bytes = (unsigned) GET_MODE_SIZE (mode);
   }
   cum->nregs += ((arg_bytes + 1)/ UNITS_PER_WORD) * REGS_PER_WORD;
   printf("%s bytes=%d\n", __func__, arg_bytes);
   return;
 }
 
-
 /* Initialize a variable CUM of type CUMULATIVE_ARGS
    for a call to a function whose data type is FNTYPE.
    For a library call, FNTYPE is NULL.  */
-void tms9900_init_cumulative_args (CUMULATIVE_ARGS *cum, 
-                                   tree fntype ATTRIBUTE_UNUSED,
-                                   rtx libname ATTRIBUTE_UNUSED)
+void tms9900_init_cumulative_args (struct tms9900_args *cum, tree fntype ATTRIBUTE_UNUSED, rtx, tree)
 {
   /* Varargs vectors are treated the same as long long. Using
      named_count avoids having to change the way 'named' is handled */
   cum->named_count = 0;
   cum->nregs = 0;
 }
-
 
 /* Determine where to put an argument to a function.
    Value is zero to push the argument on the stack,
@@ -167,19 +213,21 @@ void tms9900_init_cumulative_args (CUMULATIVE_ARGS *cum,
       the preceding args and about the function being called.
    NAMED is nonzero if this argument is a named parameter
       (otherwise it is an extra parameter matching an ellipsis).  */
-static rtx tms9900_function_arg (cumulative_args_t cum, 
-					const function_arg_info &)
+static rtx tms9900_function_arg (cumulative_args_t cum_v, 
+					const function_arg_info &arg)
 {
+  CUMULATIVE_ARGS *cum = get_cumulative_args (cum_v);
+  machine_mode mode = arg.mode;
   if (mode == VOIDmode)
     /* Pick an arbitrary value for operand 2 of the call insn.  */
     return const0_rtx;
   
   if (/* Vararg argument, must live on stack */
-      !named ||
+      // !named ||
       /* No more argument registers left */
       cum->nregs >= TMS9900_ARG_REGS ||
       /* Argument doesn't completely fit in arg registers */      
-      GET_MODE_SIZE(mode).to_constant() + cum->nregs > TMS9900_ARG_REGS)
+      GET_MODE_SIZE(mode) + cum->nregs > TMS9900_ARG_REGS)
     {
     printf ("%s alloc on stack\n", __func__);
     return NULL_RTX;
@@ -307,17 +355,17 @@ return 1;
 static int tms9900_get_saved_reg_size(void)
 {
    int idx = 0;
-   int size = 0;
+   int sz = 0;
    while(nvolregs[idx] != 0)
    {      
       int regno = nvolregs[idx];     
       if(tms9900_should_save_reg(regno))
       {
-         size += 2;
+         sz += 2;
       }
       idx++;
    }
-   return(size);
+   return(sz);
 }
 
 static void print_arg_offset (int from)
@@ -871,7 +919,7 @@ static bool tms9900_pass_by_reference (cumulative_args_t,
       size = int_size_in_bytes (type);
     }
   else
-    size = GET_MODE_SIZE (mode).to_constant();
+    size = GET_MODE_SIZE (mode);
   return(size > 4);
 }
 #endif
@@ -936,6 +984,16 @@ tms9900_asm_integer(rtx x, unsigned int size, int aligned_p)
   return default_assemble_integer(x,size,1);
 }
 #endif
+
+/* Implement TARGET_FIXED_CONDITION_CODE_REGS.  */
+
+static bool
+tms9900_fixed_condition_code_regs (unsigned int *p1, unsigned int *p2)
+{
+  *p1 = CC_REGNUM;
+  *p2 = INVALID_REGNUM;
+  return true;
+}
 
 //==================================================================
 // Code for tms9900_subreg pass

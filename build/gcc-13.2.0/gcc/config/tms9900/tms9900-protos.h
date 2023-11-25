@@ -27,23 +27,9 @@ extern void notice_update_cc_on_set (rtx, rtx);
 extern const char *output_branch (const char *, const char *, int);
 extern const char *output_jump (int);
 
-extern int tms9900_function_arg_padding (enum machine_mode mode, 
-                                         const_tree type);
-
-extern void tms9900_function_arg_advance (CUMULATIVE_ARGS *cum, 
-                                          enum machine_mode mode,
-                                          tree type,
-                                          int named ATTRIBUTE_UNUSED);
 
 extern void tms9900_init_cumulative_args (CUMULATIVE_ARGS *cum,
-                                          tree fntype ATTRIBUTE_UNUSED,
-                                          rtx libname ATTRIBUTE_UNUSED);
-
-extern rtx tms9900_function_arg (CUMULATIVE_ARGS *cum, 
-                                 enum machine_mode mode,
-                                 tree type ATTRIBUTE_UNUSED,
-                                 int named);
-
+                                          tree, rtx, tree);
 extern int tms9900_initial_elimination_offset (int from, int to);
 extern rtx tms9900_function_value (const_tree valtype);
 extern void tms9900_output_ascii(FILE* stream, const char* ptr, int len);
