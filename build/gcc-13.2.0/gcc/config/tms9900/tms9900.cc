@@ -1,35 +1,54 @@
+
+#define IN_TARGET_CODE 1
+
 #include "insn-modes.h"
 #include <stdio.h>
+
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
-#include "tm.h"
+#include "backend.h"
+#include "target.h"
+// #include "tm.h"
 #include "rtl.h"
 #include "tree.h"
 #include "tm_p.h"
-#include "regs.h"
-#include "hard-reg-set.h"
-#include "real.h"
+// #include "regs.h"
+// #include "hard-reg-set.h"
+// #include "real.h"
 #include "insn-config.h"
 #include "conditions.h"
 #include "output.h"
 #include "insn-attr.h"
-#include "flags.h"
+// #include "flags.h"
 #include "recog.h"
 #include "expr.h"
-#include "libfuncs.h"
-#include "toplev.h"
-#include "basic-block.h"
-#include "function.h"
-#include "ggc.h"
-#include "reload.h"
-#include "target.h"
-#include "target-def.h"
+// #include "libfuncs.h"
+// #include "toplev.h"
+// #include "basic-block.h"
+// #include "function.h"
+// #include "ggc.h"
+// #include "reload.h"
+#include "memmodel.h"
 #include "df.h"
+#include "emit-rtl.h"
+#include "stor-layout.h"
+#include "stringpool.h"
+#include "attribs.h"
+#include "varasm.h"
+#include "builtins.h"
+#include "explow.h"
+#include "expmed.h"
+#include "calls.h"
 
+/* This file should be included last.  */
+#include "target-def.h"
+
+#if 1
 static bool tms9900_pass_by_reference (CUMULATIVE_ARGS *,
                                        enum machine_mode, const_tree, bool);
 static bool tms9900_asm_integer(rtx x, unsigned int size, int aligned_p);
+#endif
 
 static int tms9900_dwarf_label_counter;
 
@@ -39,6 +58,18 @@ static int tms9900_dwarf_label_counter;
 
 #undef  TARGET_ASM_ALIGNED_HI_OP
 #define TARGET_ASM_ALIGNED_HI_OP "\tdata\t"
+
+#undef  TARGET_ASM_ALIGNED_SI_OP
+#define TARGET_ASM_ALIGNED_SI_OP NULL
+
+#undef  TARGET_ASM_ALIGNED_DI_OP
+#define TARGET_ASM_ALIGNED_DI_OP NULL
+
+#undef  TARGET_ASM_ALIGNED_TI_OP
+#define TARGET_ASM_ALIGNED_TI_OP NULL
+
+#undef TARGET_MUST_PASS_IN_STACK
+#define TARGET_MUST_PASS_IN_STACK must_pass_in_stack_var_size
 
 #undef  TARGET_PASS_BY_REFERENCE
 #define TARGET_PASS_BY_REFERENCE tms9900_pass_by_reference
@@ -50,25 +81,20 @@ static int tms9900_dwarf_label_counter;
 #define TARGET_FUNCTION_OK_FOR_SIBCALL tms9900_ok_for_sibcall
 
 static bool
-tms9900_ok_for_sibcall (tree decl, tree exp)
+tms9900_ok_for_sibcall (tree decl ATTRIBUTE_UNUSED, tree exp ATTRIBUTE_UNUSED)
 {
   return true;
 }
-
-#define TARGET_ASM_ALIGNED_HI_OP "\tdata\t"
-#define TARGET_ASM_ALIGNED_SI_OP NULL
-#define TARGET_ASM_ALIGNED_DI_OP NULL
-#define TARGET_ASM_ALIGNED_TI_OP NULL
 
 struct gcc_target targetm = TARGET_INITIALIZER;
 
 /* Non-volatile registers to be saved across function calls */
 static int nvolregs[]={
-   HARD_LR_REGNUM,
-   HARD_BP_REGNUM,
-   HARD_LW_REGNUM,
-   HARD_LP_REGNUM,
-   HARD_LS_REGNUM,
+   LR_REGNUM,
+   FRAME_POINTER_REGNUM,
+   LW_REGNUM,
+   LP_REGNUM,
+   LS_REGNUM,
    0};
 
 
@@ -84,11 +110,11 @@ int tms9900_function_arg_padding (enum machine_mode mode,
   if (type != 0 && AGGREGATE_TYPE_P (type))
   {
   printf ("%s upward\n", __func__);
-    return upward;
+    return PAD_UPWARD;
 }
 
   /* Fall back to the default.  */
-  return DEFAULT_FUNCTION_ARG_PADDING (mode, type);
+  return TARGET_FUNCTION_ARG_PADDING (mode, type);
 }
 
 
@@ -100,14 +126,14 @@ void tms9900_function_arg_advance (CUMULATIVE_ARGS *cum,
                                    tree type, 
                                    int named ATTRIBUTE_UNUSED)
 {
-  int arg_bytes;
+  unsigned arg_bytes;
   if(mode == BLKmode)
   {
      arg_bytes = int_size_in_bytes (type);
   }
   else
   {
-     arg_bytes = GET_MODE_SIZE (mode);
+     arg_bytes = (unsigned) GET_MODE_SIZE (mode).to_constant();
   }
   cum->nregs += ((arg_bytes + 1)/ UNITS_PER_WORD) * REGS_PER_WORD;
   printf("%s bytes=%d\n", __func__, arg_bytes);
@@ -141,10 +167,8 @@ void tms9900_init_cumulative_args (CUMULATIVE_ARGS *cum,
       the preceding args and about the function being called.
    NAMED is nonzero if this argument is a named parameter
       (otherwise it is an extra parameter matching an ellipsis).  */
-rtx tms9900_function_arg (CUMULATIVE_ARGS *cum, 
-                          enum machine_mode mode,
-		          tree type,
-                          int named)
+static rtx tms9900_function_arg (cumulative_args_t cum, 
+					const function_arg_info &)
 {
   if (mode == VOIDmode)
     /* Pick an arbitrary value for operand 2 of the call insn.  */
@@ -155,7 +179,7 @@ rtx tms9900_function_arg (CUMULATIVE_ARGS *cum,
       /* No more argument registers left */
       cum->nregs >= TMS9900_ARG_REGS ||
       /* Argument doesn't completely fit in arg registers */      
-      GET_MODE_SIZE(mode) + cum->nregs > TMS9900_ARG_REGS)
+      GET_MODE_SIZE(mode).to_constant() + cum->nregs > TMS9900_ARG_REGS)
     {
     printf ("%s alloc on stack\n", __func__);
     return NULL_RTX;
@@ -163,7 +187,7 @@ rtx tms9900_function_arg (CUMULATIVE_ARGS *cum,
 
   /* Allocate registers for argument */
     printf ("%s alloc in reg %d\n", __func__, cum->nregs+1);
-  return gen_rtx_REG (mode, cum->nregs + HARD_R1_REGNUM);
+  return gen_rtx_REG (mode, cum->nregs + R1_REGNUM);
 }
 
 
@@ -180,7 +204,7 @@ static FILE *outputFile;
 
 /* Construct string expression matching an address operand */
 void print_operand_address (FILE *file,
-                            register rtx addr)
+                            rtx addr)
 {
   if (!outputFile) outputFile=file;
 
@@ -257,18 +281,27 @@ void print_operand_address (FILE *file,
 }
 
 
+
 /* Should we save this register? */ 
-int tms9900_should_save_reg(int regno)
+int tms9900_should_save_reg(int regno ATTRIBUTE_UNUSED)
+{
+return 1;
+}
+
+#if 0
+// TODO disabled for now
 {
    return(
       /* Save non-volatile registers or r11 if used */
       (df_regs_ever_live_p(regno) &&
-          (call_used_regs[regno] == 0 || regno == HARD_LR_REGNUM)) ||
+          (
+          // TODO - no longer defined: call_used_regs[regno] == 0 || 
+          regno == LR_REGNUM)) ||
       /* Save r11 if this is not a leaf function */
-      (regno == HARD_LR_REGNUM && !current_function_is_leaf)
+      (regno == LR_REGNUM && !current_function_is_leaf)
    );
 }
-
+#endif
 
 /* Get number of bytes used to save registers in the current stack frame */
 static int tms9900_get_saved_reg_size(void)
@@ -292,7 +325,7 @@ static void print_arg_offset (int from)
     switch (from)
     {
     case ARG_POINTER_REGNUM: printf ("%d=ARG_PTR_R ", from); break;
-    case HARD_SP_REGNUM: printf ("%d=HARD_SP_R ", from); break;
+    case STACK_POINTER_REGNUM: printf ("%d=HARD_SP_R ", from); break;
     case FRAME_POINTER_REGNUM: printf ("%d=FR_PTR_R ", from); break;
     default: printf ("%d=dunno? ", from); break;
     }
@@ -315,17 +348,17 @@ int tms9900_initial_elimination_offset (int from,
       . <- frame pointer
   */
 
-  printf("%s savedregs=%d frame=%d ", __func__,
-      tms9900_get_saved_reg_size(), get_frame_size());
+  printf("%s savedregs=%d frame=%ld ", __func__,
+      tms9900_get_saved_reg_size(), (long) get_frame_size().to_constant());
   print_arg_offset (from);
   print_arg_offset (to);
   int ret = 0;
-  if (from == ARG_POINTER_REGNUM && to == HARD_SP_REGNUM)
+  if (from == ARG_POINTER_REGNUM && to == STACK_POINTER_REGNUM)
   {
-    ret =(tms9900_get_saved_reg_size()+
-           get_frame_size ());
+    ret =(int)(tms9900_get_saved_reg_size()+
+           get_frame_size ()).to_constant();
   }
-  if (from == FRAME_POINTER_REGNUM && to == HARD_SP_REGNUM)
+  if (from == FRAME_POINTER_REGNUM && to == STACK_POINTER_REGNUM)
   {
     // ret =(tms9900_get_saved_reg_size()+
     //        get_frame_size ());
@@ -334,8 +367,7 @@ int tms9900_initial_elimination_offset (int from,
   }
   if (from == ARG_POINTER_REGNUM && to == FRAME_POINTER_REGNUM)
   {
-    ret =(tms9900_get_saved_reg_size()+
-           get_frame_size ());
+    ret =(tms9900_get_saved_reg_size()+ get_frame_size ().to_constant());
     // ret =(tms9900_get_saved_reg_size());
   }
   // ret =(0);
@@ -476,6 +508,9 @@ const char* output_jump (int length)
 }
 
 
+#if 0
+/* MGB removed - cc0 is deprecated */
+
 /* Determine if an instruction will update the conditional
    flag as a side effect. This is used to eliminate unnneded
    comparison instructions */
@@ -512,14 +547,14 @@ void notice_update_cc_on_set(rtx exp, rtx insn ATTRIBUTE_UNUSED)
     CC_STATUS_INIT;
   }		        
 }
-
+#endif
 
 /* Determine where the return value from a function will lie */
 rtx tms9900_function_value (const_tree valtype) /*, 
                             const_tree func ATTRIBUTE_UNUSED, 
                             bool outgoing ATTRIBUTE_UNUSED) */
 {
-  return gen_rtx_REG (TYPE_MODE (valtype), HARD_R1_REGNUM);
+  return gen_rtx_REG (TYPE_MODE (valtype), R1_REGNUM);
 }
 
 
@@ -567,7 +602,7 @@ void tms9900_expand_prologue (void)
    int saveregs[5];
    int regcount = 0;
    int idx = 0;
-   int frame_size = get_frame_size();
+   long frame_size = get_frame_size().to_constant();
 
    /* Find non-volatile registers which need to be saved */
    while(nvolregs[idx] != 0)
@@ -583,7 +618,7 @@ void tms9900_expand_prologue (void)
       idx++;
    }
 
-  printf("%s saving regs=%d frame=%d ", __func__, regcount, frame_size);
+  printf("%s saving regs=%d frame=%ld ", __func__, regcount, frame_size);
    /* Allocate stack space for saved regs */
    if(regcount > 0)
    {
@@ -608,7 +643,7 @@ void tms9900_expand_prologue (void)
       */
 
       /* Emit "mov sp, r0" */
-      emit_insn(gen_movhi(gen_rtx_REG(HImode, HARD_R0_REGNUM),
+      emit_insn(gen_movhi(gen_rtx_REG(HImode, R0_REGNUM),
                           stack_pointer_rtx));
 
       idx = 0;
@@ -621,7 +656,7 @@ void tms9900_expand_prologue (void)
             {
                /* Emit "mov Rx, *R0" */
                emit_insn(gen_movhi(
-                  gen_rtx_MEM(HImode, gen_rtx_REG(HImode, HARD_R0_REGNUM)),
+                  gen_rtx_MEM(HImode, gen_rtx_REG(HImode, R0_REGNUM)),
                   gen_rtx_REG(HImode, regno)));
             }
             else
@@ -630,7 +665,7 @@ void tms9900_expand_prologue (void)
                emit_insn(gen_movhi(
                   gen_rtx_MEM(HImode, 
                               gen_rtx_POST_INC(HImode, 
-                                 gen_rtx_REG(HImode, HARD_R0_REGNUM))),
+                                 gen_rtx_REG(HImode, R0_REGNUM))),
                   gen_rtx_REG(HImode, regno)));
             }
          }
@@ -705,7 +740,7 @@ void tms9900_expand_epilogue (bool is_sibcall)
    int restored;
 
    /* Find frame size to restore */
-   int frame_size = get_frame_size();
+   long frame_size = get_frame_size().to_constant();
 
    if(frame_size != 0)
    {
@@ -736,7 +771,6 @@ void tms9900_expand_epilogue (bool is_sibcall)
    restored = 0;
    while(nvolregs[idx] != 0)
    {      
-      int regno = nvolregs[idx];
       if(saveregs[idx] != 0)
       {
          /* Restore this register */
@@ -756,7 +790,7 @@ void tms9900_expand_epilogue (bool is_sibcall)
   printf("%s return\n", __func__);
       /* Emit the return instruction "b *R11" */
       emit_insn(gen_rtx_UNSPEC(HImode, 
-                               gen_rtvec (1, gen_rtx_REG(HImode, HARD_R11_REGNUM)),
+                               gen_rtvec (1, gen_rtx_REG(HImode, R11_REGNUM)),
                                UNSPEC_RETURN));
    }
   printf("%s done\n", __func__);
@@ -768,7 +802,7 @@ void tms9900_expand_epilogue (bool is_sibcall)
 int tms9900_reg_ok_for_base(int strict, rtx reg)
 {
   return(!strict || 
-         (REGNO(reg) !=0 && REGNO(reg) <= HARD_R15_REGNUM));
+         (REGNO(reg) !=0 && REGNO(reg) <= R15_REGNUM));
 }
 
 
@@ -820,15 +854,15 @@ int tms9900_go_if_legitimate_address(enum machine_mode mode ATTRIBUTE_UNUSED, rt
   return 0;
 }
 
-
+#if 1
 /* All aggregate types or types larger than four bytes which are
    to be passsed by value are silently copied to the stack and 
    then passed by reference. */
-static bool
-tms9900_pass_by_reference (CUMULATIVE_ARGS *cum ATTRIBUTE_UNUSED,
-                       enum machine_mode mode ATTRIBUTE_UNUSED,
-                       const_tree type, bool named ATTRIBUTE_UNUSED)
+static bool tms9900_pass_by_reference (cumulative_args_t,
+				     const function_arg_info &arg)
 {
+  tree type = arg.type;
+  machine_mode mode = arg.mode;
   unsigned int size;
   if (type)
     {
@@ -837,10 +871,10 @@ tms9900_pass_by_reference (CUMULATIVE_ARGS *cum ATTRIBUTE_UNUSED,
       size = int_size_in_bytes (type);
     }
   else
-    size = GET_MODE_SIZE (mode);
+    size = GET_MODE_SIZE (mode).to_constant();
   return(size > 4);
 }
-
+#endif
 
 /* Output a difference of two labels that will be an assembly time
    constant if the two labels are local.  (.long lab1-lab2 will be
@@ -856,7 +890,7 @@ tms9900_asm_output_dwarf_delta (FILE *file, int size,
                      && lab2[0] == '*' && lab2[1] == 'L');
   const char *directive = "data";
   islocaldiff=1;
-  if(size > 2) fprintf(file,"\n\tdata 0\n",size);
+  if(size > 2) fprintf(file,"\n\tdata 0\n");
   if (islocaldiff)
     fprintf (file, "\t.set L$set$%d,", tms9900_dwarf_label_counter);
   else
@@ -871,7 +905,7 @@ tms9900_asm_output_dwarf_delta (FILE *file, int size,
 
 /* Output an offset from a label for use in a dwarf record */
 void tms9900_asm_output_dwarf_offset (FILE *file, int size, const char * lab,
-                                int offset,
+                                int offset ATTRIBUTE_UNUSED,
                                 section *base)
 {
   char sname[64];
@@ -879,7 +913,7 @@ void tms9900_asm_output_dwarf_offset (FILE *file, int size, const char * lab,
   tms9900_asm_output_dwarf_delta (file, size, lab, sname);
 }
 
-
+#if 1
 /* Output an integer value of a specified size and alignemnt */
 static bool
 tms9900_asm_integer(rtx x, unsigned int size, int aligned_p)
@@ -901,11 +935,13 @@ tms9900_asm_integer(rtx x, unsigned int size, int aligned_p)
   }
   return default_assemble_integer(x,size,1);
 }
-
+#endif
 
 //==================================================================
 // Code for tms9900_subreg pass
 
+/* MGB removed - we don't want to interfere in subregs */
+#if 0
 
 #include "tree-pass.h"
 #include "basic-block.h"
@@ -994,7 +1030,6 @@ tms9900_subreg (void)
   printf("%s done\n", __func__);
   return 0;
 }
-
 
 struct rtl_opt_pass pass_tms9900_subreg =
 {
@@ -1182,7 +1217,7 @@ struct rtl_opt_pass pass_tms9900_postinc =
   TODO_ggc_collect                      /* todo_flags_finish */
  }
 };
-
+#endif
 // MGB additions start here - mostly for debug
 
 #if 0
@@ -1246,13 +1281,14 @@ static int regMode[16] =
     HImode, HImode, HImode, HImode
 };
 
-char *tms9900_get_mode (int mode)
+const char *tms9900_get_mode (int mode)
 {
     switch (mode)
     {
     case QImode: return "QI"; break;
     case HImode: return "HI"; break;
     case SImode: return "SI"; break;
+    default: break;
     }
     return "??";
 }
@@ -1285,7 +1321,7 @@ extern void tms9900_debug_operands (const char *name, rtx ops[], int count)
         print_rtx_head = "; ";
 
         print_inline_rtx (file, ops[i], 0);
-        char *code = "??";
+        const char *code = "??";
         switch (GET_CODE (ops[i]))
         {
         case SUBREG: code = "SUBREG"; break;
@@ -1293,6 +1329,7 @@ extern void tms9900_debug_operands (const char *name, rtx ops[], int count)
         case CONST_INT: code = "CONST_INT"; break;
         case REG: code = "REG"; break;
         case MEM: code = "MEM"; break;
+        default: break;
         }
         fprintf (file, "code=[%s:%s]\n", code, tms9900_get_mode (GET_MODE (ops[i])));
     }
