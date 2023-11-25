@@ -653,53 +653,14 @@ typedef struct tms9900_args
   int named_count;  /* Number of named arguments (for varargs) */  
 } CUMULATIVE_ARGS;
 
-/* If defined, a C expression which determines whether, and in which direction,
-   to pad out an argument with extra space.  The value should be of type
-   `enum direction': either `upward' to pad above the argument,
-   `downward' to pad below, or `none' to inhibit padding.
-
-   Structures are stored left shifted in their argument slot.  */
-/* MGB removed for gcc-13 */
-#if 0
-#define FUNCTION_ARG_PADDING(MODE, TYPE) \
-  tms9900_function_arg_padding ((MODE), (TYPE))
-#endif
-
 #undef PAD_VARARGS_DOWN
 #define PAD_VARARGS_DOWN \
-  (tms9900_function_arg_padding (TYPE_MODE (type), type) == PAD_DOWNWARD)
+  (targetm.calls.function_arg_padding (TYPE_MODE (type), type) == PAD_DOWNWARD)
 
 /* Initialize a variable CUM of type CUMULATIVE_ARGS for a call to a
    function whose data type is FNTYPE. For a library call, FNTYPE is 0.  */
-#define INIT_CUMULATIVE_ARGS(CUM, FNTYPE, LIBNAME, INDIRECT, N_NAMED_ARGS) \
-   (tms9900_init_cumulative_args (&CUM, FNTYPE, LIBNAME))
-
-/* Update the data in CUM to advance over an argument of mode MODE and data
-   type TYPE. (TYPE is null for libcalls where that information may not be
-   available.) */
-/* MGB removed for gcc-13 */
-#if 0
-#define FUNCTION_ARG_ADVANCE(CUM, MODE, TYPE, NAMED) \
-    (tms9900_function_arg_advance (&CUM, MODE, TYPE, NAMED))
-#endif
-
-/* Define where to put the arguments to a function.
-   Value is zero to push the argument on the stack,
-   or a hard register in which to store the argument.
-
-   MODE is the argument's machine mode.
-   TYPE is the data type of the argument (as a tree).
-    This is null for libcalls where that information may
-    not be available.
-   CUM is a variable of type CUMULATIVE_ARGS which gives info about
-    the preceding args and about the function being called.
-   NAMED is nonzero if this argument is a named parameter
-    (otherwise it is an extra parameter matching an ellipsis).  */
-#if 0
-/* MGB removed for gcc-13 */
-#define FUNCTION_ARG(CUM, MODE, TYPE, NAMED) \
-  (tms9900_function_arg (&CUM, MODE, TYPE, NAMED))
-#endif
+#define INIT_CUMULATIVE_ARGS(CUM, FNTYPE, LIBNAME, FNDECL, N_NAMED_ARGS) \
+   (tms9900_init_cumulative_args (&CUM, FNTYPE, LIBNAME, FNDECL))
 
 /* This target hook should return `true' if an argument at the
    position indicated by CUM should be passed by reference.  This
@@ -853,8 +814,9 @@ typedef struct tms9900_args
     { \
     goto ADDR; \
     } \
-  fail: ;\
   }
+
+  // fail: ;
 
 /* The macros REG_OK_FOR..._P assume that the arg is a REG rtx and check its
    validity for a certain class.  We have two alternate definitions for each
