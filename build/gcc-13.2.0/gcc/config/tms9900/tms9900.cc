@@ -9,26 +9,15 @@
 #include "coretypes.h"
 #include "backend.h"
 #include "target.h"
-// #include "tm.h"
 #include "rtl.h"
 #include "tree.h"
 #include "tm_p.h"
-// #include "regs.h"
-// #include "hard-reg-set.h"
-// #include "real.h"
 #include "insn-config.h"
 #include "conditions.h"
 #include "output.h"
 #include "insn-attr.h"
-// #include "flags.h"
 #include "recog.h"
 #include "expr.h"
-// #include "libfuncs.h"
-// #include "toplev.h"
-// #include "basic-block.h"
-// #include "function.h"
-// #include "ggc.h"
-// #include "reload.h"
 #include "memmodel.h"
 #include "df.h"
 #include "emit-rtl.h"
@@ -45,7 +34,6 @@
 /* This file should be included last.  */
 #include "target-def.h"
 
-#if 1
 static rtx tms9900_function_arg (cumulative_args_t cum_v, 
 					const function_arg_info &);
 
@@ -62,8 +50,6 @@ static bool
 tms9900_ok_for_sibcall (tree decl ATTRIBUTE_UNUSED, tree exp ATTRIBUTE_UNUSED);
 
 static bool tms9900_fixed_condition_code_regs (unsigned int *, unsigned int *);
-
-#endif
 
 static int tms9900_dwarf_label_counter;
 
@@ -486,6 +472,61 @@ indirection:
     
   /* We should never get here, but we need to return something */
   return 0;
+}
+
+// TODO - coped from pdp11 - custiomise for tms
+int
+simple_memory_operand(rtx op, machine_mode mode ATTRIBUTE_UNUSED)
+{
+  rtx addr;
+
+  /* Eliminate non-memory operations */
+  if (GET_CODE (op) != MEM)
+    return FALSE;
+
+  /* Decode the address now.  */
+
+ indirection:
+    
+  addr = XEXP (op, 0);
+
+  switch (GET_CODE (addr))
+    {
+    case REG:
+      /* (R0) - no extra cost */
+      return 1;
+	
+    case POST_INC:
+      /* -(R0), (R0)+ - cheap! */
+      return 1;
+	
+    case MEM:
+      /* cheap - is encoded in addressing mode info! 
+
+	 -- except for @(R0), which has to be @0(R0) !!! */
+
+      if (GET_CODE (XEXP (addr, 0)) == REG)
+	return 0;
+	
+      op=addr;
+      goto indirection;
+	
+    case CONST_INT:
+    case LABEL_REF:	       
+    case CONST:
+    case SYMBOL_REF:
+      /* @#address - extra cost */
+      return 0;
+
+    case PLUS:
+      /* X(R0) - extra cost */
+      return 0;
+
+    default:
+      break;
+    }
+    
+  return FALSE;
 }
 
 

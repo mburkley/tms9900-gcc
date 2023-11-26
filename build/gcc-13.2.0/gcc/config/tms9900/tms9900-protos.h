@@ -1,4 +1,6 @@
 /* Definitions of target machine for GNU compiler, for the TMS9900
+   Copyright (C) 2000-2023 Free Software Foundation, Inc.
+   Contributed by Eric Welser and Mark Burkley (mark@burkley.net)
 
 This file is part of GCC.
 
