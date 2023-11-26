@@ -563,7 +563,7 @@ sh[123456789lbe]*-*-* | sh-*-*)
 	extra_options="${extra_options} fused-madd.opt"
 	extra_objs="${extra_objs} sh_treg_combine.o sh-mem.o sh_optimize_sett_clrt.o"
 	;;
-tms9900*-*-*)
+tms9900-*-*)
 	cpu_type=tms9900
 	;;
 v850*-*-*)
@@ -3453,10 +3453,9 @@ tic6x-*-uclinux)
 	tmake_file="${tmake_file} c6x/t-c6x c6x/t-c6x-elf c6x/t-c6x-uclinux"
 	use_collect2=no
 	;;
-tms9900*-*-*)
-	target_cpu_default="TARGET_CPU_tms9900"
-	tm_file="${tm_file} newlib-stdint.h"
-	use_gcc_stdint=wrap
+tms9900-*-*)
+	use_gcc_stdint=none
+	use_collect2=no
 	;;
 v850-*-rtems*)
 	target_cpu_default="TARGET_CPU_generic"

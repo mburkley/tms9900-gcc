@@ -1,6 +1,6 @@
-;;- Constraint definitions for the pdp11 for GNU C compiler
+;;- Constraint definitions for the tms9900 for GNU C compiler
 ;; Copyright (C) 2010-2023 Free Software Foundation, Inc.
-;; Contributed by Michael K. Gschwind (mike@vlsivie.tuwien.ac.at).
+;; Contributed by Mark Burkley (mark@burkley.net)
 
 ;; This file is part of GCC.
 
@@ -19,7 +19,6 @@
 ;; <http://www.gnu.org/licenses/>.
 
 ;; Description of class IDs
-;;   'C  is for CRU register
 ;;   'I' is for 32-bit value xxxx0000
 ;;   'J' is for 32-bit value 0000xxxx
 ;;   'K' is for 32-bit value xxxxxxxx
@@ -32,8 +31,6 @@
 ;;   'R' is for memory references which are encoded within the opcode.
 ;;   'S' is for shift register
 ;;   'T' Class of all registers
-;;    U?
-;;    W?
 
 
 (define_constraint "I"

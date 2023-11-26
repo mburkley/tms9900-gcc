@@ -1,6 +1,7 @@
 /* Definitions of target machine for GNU compiler.
    Texas Instruments TMS9900
-   Copyright (C) 2009
+   Copyright (C) 2009 Eric Welser
+   Copyright (C) 2023 Mark Burkley
 
 This file is part of GCC.
 
@@ -74,7 +75,7 @@ along with GCC; see the file COPYING3.  If not see
 #define TARGET_ELF 1
 
 /* As an embedded target, we have no libc.
- * MGB removed.  With gcc-13 the compiler fails to build with unknonw functons
+ * MGB removed.  With gcc-13 the compiler fails to build with unknown functons
  * from gcov-io.h that are prototyped only if this flag is not set*/
 // #ifndef inhibit_libc
 // #  define inhibit_libc

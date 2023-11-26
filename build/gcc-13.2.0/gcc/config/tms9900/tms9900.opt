@@ -22,19 +22,3 @@ mgnu-asm
 Target RejectNegative Mask(GNU_ASM) Negative(munix-asm)
 Use the GNU assembler syntax.
 
-mfpu
-Target RejectNegative Mask(FPU)
-Use hardware floating point.
-
-mint16
-Target InverseMask(INT32, INT16)
-Use 16 bit int.
-
-mint32
-Target Mask(INT32)
-Use 32 bit int.
-
-msoft-float
-Target RejectNegative InverseMask(FPU, SOFT_FLOAT)
-Do not use hardware floating point.
-
