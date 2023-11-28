@@ -319,23 +319,23 @@ void print_operand_address (FILE *file,
 /* Should we save this register? */ 
 int tms9900_should_save_reg(int regno ATTRIBUTE_UNUSED)
 {
-return 1;
-}
-
 #if 0
+return 1;
+
+#else
 // TODO disabled for now
-{
    return(
       /* Save non-volatile registers or r11 if used */
       (df_regs_ever_live_p(regno) &&
           (
-          // TODO - no longer defined: call_used_regs[regno] == 0 || 
+          // TODO - no longer defined:
+          call_used_regs[regno] == 0 || 
           regno == LR_REGNUM)) ||
       /* Save r11 if this is not a leaf function */
-      (regno == LR_REGNUM && !current_function_is_leaf)
+      (regno == LR_REGNUM && !crtl->is_leaf)
    );
-}
 #endif
+}
 
 /* Get number of bytes used to save registers in the current stack frame */
 static int tms9900_get_saved_reg_size(void)
