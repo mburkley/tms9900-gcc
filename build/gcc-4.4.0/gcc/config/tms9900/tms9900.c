@@ -1247,6 +1247,7 @@ static int regMode[16] =
 
 char *tms9900_get_mode (int mode)
 {
+    return GET_MODE_NAME (mode);
     switch (mode)
     {
     case QImode: return "QI"; break;
@@ -1284,16 +1285,7 @@ extern void tms9900_debug_operands (const char *name, rtx ops[], int count)
         print_rtx_head = "; ";
 
         print_inline_rtx (file, ops[i], 0);
-        char *code = "??";
-        switch (GET_CODE (ops[i]))
-        {
-        case SUBREG: code = "SUBREG"; break;
-        case TRUNCATE: code = "TRUNCATE"; break;
-        case CONST_INT: code = "CONST_INT"; break;
-        case REG: code = "REG"; break;
-        case MEM: code = "MEM"; break;
-        }
-        fprintf (file, "code=[%s:%s]\n", code, tms9900_get_mode (GET_MODE (ops[i])));
+        fprintf (file, "code=[%s:%s]\n", GET_RTX_NAME(GET_CODE(ops[i])), tms9900_get_mode (GET_MODE (ops[i])));
     }
     fprintf (file, "\n");
 }
