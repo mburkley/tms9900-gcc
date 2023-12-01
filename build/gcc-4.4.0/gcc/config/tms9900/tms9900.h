@@ -563,6 +563,11 @@ enum reg_class
    must be defined too. */
 #define PUSH_ARGS 0
 
+/* We want the stack and args grow in opposite directions, even if
+   PUSH_ARGS is 0.
+   MGB added, var param lists not working */
+#define PUSH_ARGS_REVERSED 1
+
 /* Value is 1 if returning from a function call automatically pops the
    arguments described by the number-of-args field in the call. FUNTYPE is
    the data type of the function (as a tree), or for a library call it is
