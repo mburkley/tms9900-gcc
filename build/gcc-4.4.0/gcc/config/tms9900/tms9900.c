@@ -27,6 +27,9 @@
 #include "target-def.h"
 #include "df.h"
 
+/* Define this to put insn debugs into output files */
+#undef TMS9900_DEBUG
+
 static bool tms9900_pass_by_reference (CUMULATIVE_ARGS *,
                                        enum machine_mode, const_tree, bool);
 static bool tms9900_asm_integer(rtx x, unsigned int size, int aligned_p);
@@ -83,9 +86,9 @@ int tms9900_function_arg_padding (enum machine_mode mode,
 {
   if (type != 0 && AGGREGATE_TYPE_P (type))
   {
-  printf ("%s upward\n", __func__);
+    // printf ("%s upward\n", __func__);
     return upward;
-}
+  }
 
   /* Fall back to the default.  */
   return DEFAULT_FUNCTION_ARG_PADDING (mode, type);
@@ -110,7 +113,7 @@ void tms9900_function_arg_advance (CUMULATIVE_ARGS *cum,
      arg_bytes = GET_MODE_SIZE (mode);
   }
   cum->nregs += ((arg_bytes + 1)/ UNITS_PER_WORD) * REGS_PER_WORD;
-  printf("%s bytes=%d\n", __func__, arg_bytes);
+  // printf("%s bytes=%d\n", __func__, arg_bytes);
   return;
 }
 
@@ -157,12 +160,12 @@ rtx tms9900_function_arg (CUMULATIVE_ARGS *cum,
       /* Argument doesn't completely fit in arg registers */      
       GET_MODE_SIZE(mode) + cum->nregs > TMS9900_ARG_REGS)
     {
-    printf ("%s alloc on stack\n", __func__);
+    // printf ("%s alloc on stack\n", __func__);
     return NULL_RTX;
     }
 
   /* Allocate registers for argument */
-    printf ("%s alloc in reg %d\n", __func__, cum->nregs+1);
+  // printf ("%s alloc in reg %d\n", __func__, cum->nregs+1);
   return gen_rtx_REG (mode, cum->nregs + HARD_R1_REGNUM);
 }
 
@@ -315,10 +318,10 @@ int tms9900_initial_elimination_offset (int from,
       . <- frame pointer
   */
 
-  printf("%s savedregs=%d frame=%d ", __func__,
-      tms9900_get_saved_reg_size(), get_frame_size());
-  print_arg_offset (from);
-  print_arg_offset (to);
+  // printf("%s savedregs=%d frame=%d ", __func__,
+  //     tms9900_get_saved_reg_size(), get_frame_size());
+  // print_arg_offset (from);
+  // print_arg_offset (to);
   int ret = 0;
   if (from == ARG_POINTER_REGNUM && to == HARD_SP_REGNUM)
   {
@@ -339,7 +342,7 @@ int tms9900_initial_elimination_offset (int from,
     // ret =(tms9900_get_saved_reg_size());
   }
   // ret =(0);
-  printf ("%s res=%d\n", __func__, ret);
+  // printf ("%s res=%d\n", __func__, ret);
   return ret;
 }
 
@@ -583,7 +586,7 @@ void tms9900_expand_prologue (void)
       idx++;
    }
 
-  printf("%s saving regs=%d frame=%d ", __func__, regcount, frame_size);
+  // printf("%s saving regs=%d frame=%d ", __func__, regcount, frame_size);
    /* Allocate stack space for saved regs */
    if(regcount > 0)
    {
@@ -671,7 +674,7 @@ void tms9900_expand_prologue (void)
 
    if(frame_size > 0)
    {
-  printf("%s alloc frame\n", __func__);
+      // printf("%s alloc frame\n", __func__);
       /* Emit "ai sp, -framesize" */
       emit_insn(gen_addhi3(stack_pointer_rtx, stack_pointer_rtx, 
                           GEN_INT(-frame_size)));
@@ -680,11 +683,12 @@ void tms9900_expand_prologue (void)
    /* Set frame pointer */
    if(frame_pointer_needed)
    {
-  printf("%s set fp\n", __func__);
+      // printf("%s set fp\n", __func__);
       emit_insn(gen_movhi(gen_rtx_REG(HImode, FRAME_POINTER_REGNUM),
                           stack_pointer_rtx));
    }
-  printf("%s done\n", __func__);
+
+   // printf("%s done\n", __func__);
 }
 
 
@@ -709,7 +713,7 @@ void tms9900_expand_epilogue (bool is_sibcall)
 
    if(frame_size != 0)
    {
-  printf("%s delete frame\n", __func__);
+      // printf("%s delete frame\n", __func__);
       /* Emit "ai sp, frame_size" */
       emit_insn(gen_addhi3(stack_pointer_rtx, stack_pointer_rtx, 
                            GEN_INT(frame_size)));
@@ -731,7 +735,7 @@ void tms9900_expand_epilogue (bool is_sibcall)
       idx++;
    }
 
-  printf("%s restore %d regs\n", __func__, regcount);
+   // printf("%s restore %d regs\n", __func__, regcount);
    idx = 0;
    restored = 0;
    while(nvolregs[idx] != 0)
@@ -753,13 +757,13 @@ void tms9900_expand_epilogue (bool is_sibcall)
    
    if(!is_sibcall)
    {
-  printf("%s return\n", __func__);
+      // printf("%s return\n", __func__);
       /* Emit the return instruction "b *R11" */
       emit_insn(gen_rtx_UNSPEC(HImode, 
                                gen_rtvec (1, gen_rtx_REG(HImode, HARD_R11_REGNUM)),
                                UNSPEC_RETURN));
    }
-  printf("%s done\n", __func__);
+   // printf("%s done\n", __func__);
 }
 
 
@@ -913,10 +917,10 @@ tms9900_asm_integer(rtx x, unsigned int size, int aligned_p)
 static void
 tms9900_extract_subreg(rtx insn, rtx arg, rtx* parg)
 {
-  printf("%s\n", __func__);
+  // printf("%s\n", __func__);
   if(BINARY_P(arg))
   {
-  printf("%s recurse\n", __func__);
+    // printf("%s recurse\n", __func__);
     /* Recurse until we find a leaf expression */
     tms9900_extract_subreg(insn, XEXP(arg,0), &XEXP(arg,0));
     tms9900_extract_subreg(insn, XEXP(arg,1), &XEXP(arg,1));
@@ -926,7 +930,7 @@ tms9900_extract_subreg(rtx insn, rtx arg, rtx* parg)
   {
     if(GET_CODE(arg) == SUBREG && GET_MODE(arg) == QImode)
     {
-      printf ("%s creating extract\n", __func__);
+      // printf ("%s creating extract\n", __func__);
       /* Found a subreg expression we need to extract.
          Place it in a seperate instruction before this one */
       rtx temp_reg = gen_reg_rtx(QImode);
@@ -961,17 +965,17 @@ gate_tms9900_subreg (void)
 static unsigned int
 tms9900_subreg (void)
 {
-  printf("%s\n", __func__);
+  // printf("%s\n", __func__);
   return 0;
   basic_block bb;
   rtx insn;
 
   FOR_EACH_BB (bb)
     FOR_BB_INSNS (bb, insn)
-  printf("%s loping\n", __func__);
+    // printf("%s looping\n", __func__);
     if (INSN_P (insn))
     {
-  printf("%s get single_set\n", __func__);
+      // printf("%s get single_set\n", __func__);
       rtx set=single_set (insn);
       if(set !=NULL)
       {
@@ -987,10 +991,10 @@ tms9900_subreg (void)
         }
       }
     }
-    else
-  printf("%s not INSN_P\n", __func__);
+    // else
+    //   printf("%s not INSN_P\n", __func__);
 
-  printf("%s done\n", __func__);
+  // printf("%s done\n", __func__);
   return 0;
 }
 
@@ -1259,6 +1263,10 @@ char *tms9900_get_mode (int mode)
 
 extern void tms9900_inline_debug (const char *fmt,...)
 {
+#ifndef TMS900_DEBUG
+    return;
+#endif
+
     FILE *file = outputFile?outputFile:stdout;
 
     va_list ap;
@@ -1270,6 +1278,10 @@ extern void tms9900_inline_debug (const char *fmt,...)
 
 extern void tms9900_debug_operands (const char *name, rtx ops[], int count)
 {
+#ifndef TMS900_DEBUG
+    return;
+#endif
+
     FILE *file = outputFile?outputFile:stdout;
 
     static int refcount;
@@ -1288,87 +1300,5 @@ extern void tms9900_debug_operands (const char *name, rtx ops[], int count)
         fprintf (file, "code=[%s:%s]\n", GET_RTX_NAME(GET_CODE(ops[i])), tms9900_get_mode (GET_MODE (ops[i])));
     }
     fprintf (file, "\n");
-}
-
-
-void tms9900_register_mode_set (rtx operand, int mode)
-{
-   return;
-   if (!REG_P (operand))
-       return;
-
-   int regno = REGNO (operand);
-
-   if (regno > 15)
-   {
-       printf("Pseudo r%d ignored\n", regno);
-       return;
-   }
-   printf("Mode set r%d to %s\n", regno, tms9900_get_mode (mode));
-   regMode[regno] = mode;
-}
-
-void tms9900_register_convert (rtx operand, int mode, int sign)
-{
-   return;
-   if (!REG_P (operand))
-       return;
-
-   int regno = REGNO (operand);
-
-   if (regno > 15)
-   {
-       printf("Pseudo r%d ignored\n", regno);
-       return;
-   }
-
-   if (regMode[regno] == mode)
-   {
-       printf("Mode r%d is already %s\n", regno, tms9900_get_mode (mode));
-       return;
-   }
-
-   printf ("Converting r%d from %s to %s\n", regno,
-            tms9900_get_mode (regMode[regno]),
-            tms9900_get_mode (mode));
-
-   regMode[regno] = mode;
-
-   if (mode == QImode)
-   {
-      /*  This register is in HI mode and we need it to be in QI mode so emit a
-       *  sla */
-      /* Emit "sla %0, 8" */
-      output_asm_insn("sla  %0, 8", &operand);
-      // output_asm_insn("sla %0, 8", gen_rtx_REG(QImode, regno));
-      // emit_insn(gen_ashlhi3(gen_rtx_REG(HImode, regno),
-      //                       gen_rtx_REG(HImode, regno),
-      //                       GEN_INT(8)));
-   }
-   else
-   {
-      /*  This register is in QI mode and we need it to be in HI mode so emit a
-       *  sra or srl depending on sign */
-      if (sign)
-      {
-          /* Emit "sra %0, 8" */
-          output_asm_insn("sra  %0, 8", &operand);
-          // output_asm_insn("sra %0, 8", gen_rtx_REG(HImode, regno));
-          // emit_insn(gen_ashrhi3(gen_rtx_REG(HImode, regno),
-          //                   gen_rtx_REG(HImode, regno),
-          //                   GEN_INT(8)));
-
-      }
-      else
-      {
-          /* Emit "srl %0, 8" */
-          output_asm_insn("srl  %0, 8", &operand);
-          // output_asm_insn("srl %0, 8", gen_rtx_REG(HImode, regno));
-          // emit_insn(gen_lshrhi3(gen_rtx_REG(HImode, regno),
-          //                   gen_rtx_REG(HImode, regno),
-          //                   GEN_INT(8)));
-
-      } 
-   }
 }
 

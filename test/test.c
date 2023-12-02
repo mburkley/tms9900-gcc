@@ -12,6 +12,7 @@ void test_double_init (void)
 }
 #endif
 
+#if 1
 void test_mul_short_long (void)
 {
     int x =6;
@@ -52,22 +53,24 @@ void test_stack_func_arg (void)
     res = stack_func_arg (a, b, c, d, e, f, g, h, 0, 0);
     test_execute (__func__, res != 0);
 }
+#endif
 
 void test_us_byte_divmod()
 {
-    unsigned char x = 13;
-    unsigned char y = -5;
+    unsigned char x = -7; // should be interpreted as 249
+    unsigned char y = 5;
     unsigned char z;
 
     z= x / y;
-    printf("# div res=%d\n", (int)z);
-    test_execute (__func__, z==-2);
+    // printf("# div res=%d\n", (int)z);
+    test_execute (__func__, z==49);
 
     z= x % y;
-    printf("# mod res=%d\n", (int)z);
-    test_execute (__func__, z==3);
+    // printf("# mod res=%d\n", (int)z);
+    test_execute (__func__, z==4);
 }
 
+#if 1
 void test_s_byte_divmod()
 {
     char x = 13;
@@ -75,23 +78,23 @@ void test_s_byte_divmod()
     char z;
 
     z= x / y;
-    printf("# div res=%d\n", (int)z);
+    // printf("# div res=%d\n", (int)z);
     test_execute (__func__, z==-2);
 
     z= x % y;
-    printf("# mod res=%d\n", (int)z);
+    // printf("# mod res=%d\n", (int)z);
     test_execute (__func__, z==3);
 }
 
 void test_us_byte_mpy()
 {
     unsigned char x = 7;
-    unsigned char y = -9;
+    unsigned char y = -9; //  should interpret as 247
     unsigned char z;
 
     z= x * y;
-    printf("# res=%d\n", (int)z);
-    test_execute (__func__, z==-63);
+    // printf("# res=%d\n", (int)z);
+    test_execute (__func__, z==193);
 }
 
 void test_s_byte_mpy()
@@ -101,16 +104,17 @@ void test_s_byte_mpy()
     char z;
 
     z= x * y;
-    printf("# res=%d\n", (int)z);
+    // printf("# res=%d\n", (int)z);
     test_execute (__func__, z==-63);
 }
+#endif
 
 int main(void)
 {
     set_graphics(0);
     charset();
 
-    printf ("1..1\n");
+    printf ("1..10\n");
 
     test_mul_short_long ();
     test_stack_func_arg ();
