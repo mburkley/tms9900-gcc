@@ -4466,7 +4466,8 @@ subst (rtx x, rtx from, rtx to, int in_dest, int unique_copy)
 		    return gen_rtx_CLOBBER (VOIDmode, const0_rtx);
 #endif
 
-#ifdef TMS9900
+/*  MGB disabled, compilers knows we are big endian */
+#ifdef TMS9900xxx
                   /* Added for TMS9900
                      Do not assume QI value is in low part of register */
 		  if (code == SUBREG
@@ -9946,7 +9947,8 @@ gen_lowpart_for_combine (enum machine_mode omode, rtx x)
 	 of the original memref X.  */
       if (isize < osize)
         {
-#ifdef TMS9900
+/*  MGB disabled, compilers knows we are big endian */
+#ifdef TMS9900xx
           /* Added for TMS9900.
              Do not convert to subreg if source is a byte. */
           if(isize == 1)
