@@ -241,6 +241,10 @@ extern short *reg_renumber;	/* def in local_alloc.c */
 
 /* Shift count register */
 #define HARD_SC_REGNUM		HARD_R0_REGNUM
+/* Arg pointer */
+#define HARD_AP_REGNUM		HARD_R8_REGNUM
+/* Base pointer */
+#define HARD_BP_REGNUM		HARD_R9_REGNUM
 /* Stack pointer */
 #define HARD_SP_REGNUM		HARD_R10_REGNUM
 /* Old PC after BL instruction */
@@ -267,15 +271,23 @@ extern short *reg_renumber;	/* def in local_alloc.c */
 #define FIRST_PSEUDO_REGISTER	(16)
 
 /* 1 for registers that have pervasive standard uses and are not available
-   for the register allocator.  */
+   for the register allocator.
+
+   MGB TODO move BP, AP to R12/R13 so that we can have 1-10 as general regs
+*/
 #define FIXED_REGISTERS \
   {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0}
-/* SC 1  2  3  4  5  6  7  8  9  SP LR CB LW LP LS*/
+/* SC 1  2  3  4  5  6  7  AP BP SP LR CB LW LP LS*/
 
 /* 0 for registers which must be preserved across function call boundaries */
+/* MGB TODO seems excessive to always preserve R13,R14,R15 as these will only
+ * have values to be saved if we were invokved by a BLWP which is never emitted
+ * by this backend.  If someone is writing an ISR / DSR which is invoked by a
+ * BLWP then we can ask them to save R13/R14/R15 themselves.
+ */
 #define CALL_USED_REGISTERS \
   {1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 0}
-/* SC 1  2  3  4  5  6  7  8  9  SP LR CB LW LP LS*/
+/* SC 1  2  3  4  5  6  7  AP BP SP LR CB LW LP LS*/
 
 /* Define this macro to change register usage conditional on target flags. */
 #define CONDITIONAL_REGISTER_USAGE 
@@ -285,8 +297,8 @@ extern short *reg_renumber;	/* def in local_alloc.c */
 #define REG_ALLOC_ORDER	\
    {HARD_R1_REGNUM, HARD_R2_REGNUM, HARD_R3_REGNUM, HARD_R4_REGNUM,\
     HARD_R5_REGNUM, HARD_R6_REGNUM, HARD_R7_REGNUM, HARD_R8_REGNUM,\
-    HARD_CB_REGNUM, HARD_SC_REGNUM, HARD_R9_REGNUM, HARD_LW_REGNUM,\
-    HARD_LP_REGNUM, HARD_LS_REGNUM, HARD_LR_REGNUM, HARD_SP_REGNUM}
+    HARD_CB_REGNUM, HARD_SC_REGNUM, HARD_LW_REGNUM, HARD_LP_REGNUM,\
+    HARD_LS_REGNUM, HARD_R9_REGNUM, HARD_LR_REGNUM, HARD_SP_REGNUM}
 
 /* A C expression for the number of consecutive hard registers,
    starting at register number REGNO, required to hold a value of
@@ -294,7 +306,9 @@ extern short *reg_renumber;	/* def in local_alloc.c */
 #define HARD_REGNO_NREGS(REGNO, MODE) \
    ((GET_MODE_SIZE (MODE) + HARD_REG_SIZE - 1) / HARD_REG_SIZE)
 
-/* Value is 1 if hard register REGNO (or starting with REGNO) can hold a value of machine-mode MODE */
+/* Value is 1 if hard register REGNO (or starting with REGNO) can hold a value of machine-mode MODE
+ *
+ *  MGB TODO could include 64-bit as well */
 #define HARD_REGNO_MODE_OK(REGNO, MODE) \
    (!(MODE == SImode && REGNO==HARD_R15_REGNUM))
   
@@ -320,7 +334,10 @@ extern short *reg_renumber;	/* def in local_alloc.c */
    in a smaller-numbered class.
 
    For any two classes, it is very desirable that there be another
-   class that represents their union.  */
+   class that represents their union.
+
+   MGB TODO remove CRU.  No CRU code is emitted by this back end
+*/
 enum reg_class
 {
   NO_REGS,
@@ -363,8 +380,8 @@ enum reg_class
    R5      0x00000020
    R6      0x00000040
    R7      0x00000080
-   R8      0x00000100
-   R9      0x00000200
+   AP      0x00000100
+   BP      0x00000200
    SP      0x00000400
    LR      0x00000800
    CB      0x00001000
@@ -497,10 +514,10 @@ enum reg_class
 #define FRAME_POINTER_REGNUM		HARD_R9_REGNUM
 
 /* Base register for access to arguments of the function.  */
-#define ARG_POINTER_REGNUM		HARD_R7_REGNUM
+#define ARG_POINTER_REGNUM		HARD_R8_REGNUM
 
 /* Register in which static-chain is passed to a function.  */
-#define STATIC_CHAIN_REGNUM	        HARD_R9_REGNUM
+#define STATIC_CHAIN_REGNUM	        HARD_R7_REGNUM
 
 /* Definitions for register eliminations.
 
@@ -545,6 +562,11 @@ enum reg_class
    arguments into it.  When `PUSH_ARGS' is nonzero, `PUSH_ROUNDING'
    must be defined too. */
 #define PUSH_ARGS 0
+
+/* We want the stack and args grow in opposite directions, even if
+   PUSH_ARGS is 0.
+   MGB added, var param lists not working */
+#define PUSH_ARGS_REVERSED 1
 
 /* Value is 1 if returning from a function call automatically pops the
    arguments described by the number-of-args field in the call. FUNTYPE is

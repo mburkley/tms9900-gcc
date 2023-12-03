@@ -268,7 +268,7 @@ int main(int argc, char **argv)
       section = &all_sections[i];
 
       fseek(input,
-            all_sections[header.e_shstrndx].sh_offset +
+            all_sections[header.e_shstrndx].sh_offset+
             section->sh_name, SEEK_SET);
       if(fread(name, 64, 1, input) <= 0)
       {
@@ -318,18 +318,19 @@ int main(int argc, char **argv)
    // for us when it loads the EA5 file.
    memset(&init_data, 0, sizeof(init_data_struct));
    if(data_section != NULL &&
-      data_section->sh_addr != text_section->sh_addr +
+      data_section->sh_addr != text_section->sh_addr+
                                text_section->sh_size)
    {
       init_data.data_addr   = convert2(data_section->sh_addr);
       init_data.data_size   = convert2(data_section->sh_size);
-      init_data.data_src    = convert2(text_section->sh_addr +
+      init_data.data_src    = convert2(text_section->sh_addr+
                                        text_section->sh_size);
    }
    if(bss_section != NULL)
    {
       init_data.bss_addr    = convert2(bss_section->sh_addr);
       init_data.bss_size    = convert2(bss_section->sh_size);
+      printf ("bss = %04x+%04x\n", init_data.bss_addr, init_data.bss_size);
    }
 
    // Try to find "_init_data" symbol

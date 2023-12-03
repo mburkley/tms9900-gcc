@@ -27,6 +27,9 @@
 #include "target-def.h"
 #include "df.h"
 
+/* Define this to put insn debugs into output files */
+#undef TMS9900_DEBUG
+
 static bool tms9900_pass_by_reference (CUMULATIVE_ARGS *,
                                        enum machine_mode, const_tree, bool);
 static bool tms9900_asm_integer(rtx x, unsigned int size, int aligned_p);
@@ -65,7 +68,7 @@ struct gcc_target targetm = TARGET_INITIALIZER;
 /* Non-volatile registers to be saved across function calls */
 static int nvolregs[]={
    HARD_LR_REGNUM,
-   HARD_R9_REGNUM,
+   HARD_BP_REGNUM,
    HARD_LW_REGNUM,
    HARD_LP_REGNUM,
    HARD_LS_REGNUM,
@@ -82,7 +85,10 @@ int tms9900_function_arg_padding (enum machine_mode mode,
                                   const_tree type)
 {
   if (type != 0 && AGGREGATE_TYPE_P (type))
+  {
+    // printf ("%s upward\n", __func__);
     return upward;
+  }
 
   /* Fall back to the default.  */
   return DEFAULT_FUNCTION_ARG_PADDING (mode, type);
@@ -107,6 +113,7 @@ void tms9900_function_arg_advance (CUMULATIVE_ARGS *cum,
      arg_bytes = GET_MODE_SIZE (mode);
   }
   cum->nregs += ((arg_bytes + 1)/ UNITS_PER_WORD) * REGS_PER_WORD;
+  // printf("%s bytes=%d\n", __func__, arg_bytes);
   return;
 }
 
@@ -152,9 +159,13 @@ rtx tms9900_function_arg (CUMULATIVE_ARGS *cum,
       cum->nregs >= TMS9900_ARG_REGS ||
       /* Argument doesn't completely fit in arg registers */      
       GET_MODE_SIZE(mode) + cum->nregs > TMS9900_ARG_REGS)
+    {
+    // printf ("%s alloc on stack\n", __func__);
     return NULL_RTX;
+    }
 
   /* Allocate registers for argument */
+  // printf ("%s alloc in reg %d\n", __func__, cum->nregs+1);
   return gen_rtx_REG (mode, cum->nregs + HARD_R1_REGNUM);
 }
 
@@ -168,11 +179,14 @@ static void tms9900_output_addr_const(FILE *file, rtx addr)
     output_addr_const(file, addr);
 }
 
+static FILE *outputFile;
 
 /* Construct string expression matching an address operand */
 void print_operand_address (FILE *file,
                             register rtx addr)
 {
+  if (!outputFile) outputFile=file;
+
   retry:
   switch (GET_CODE (addr))
     {
@@ -276,35 +290,60 @@ static int tms9900_get_saved_reg_size(void)
    return(size);
 }
 
+static void print_arg_offset (int from)
+{
+    switch (from)
+    {
+    case ARG_POINTER_REGNUM: printf ("%d=ARG_PTR_R ", from); break;
+    case HARD_SP_REGNUM: printf ("%d=HARD_SP_R ", from); break;
+    case FRAME_POINTER_REGNUM: printf ("%d=FR_PTR_R ", from); break;
+    default: printf ("%d=dunno? ", from); break;
+    }
+}
 
 /* Define the offset between two registers, one to be eliminated, and the
-   other its replacement, at the start of a routine.  */
+   other its replacement, at the start of a routine.
+   MGB return values as they are AFTER the prolog */
 int tms9900_initial_elimination_offset (int from,
                                         int to)
 {
   /*  
+      [argn]
+      .
+      [arg0]
       . <- arg pointer
-      [args]
-      . <- frame pointer
       [saved regs]
       [frame]
       . <- stack pointer
+      . <- frame pointer
   */
 
+  // printf("%s savedregs=%d frame=%d ", __func__,
+  //     tms9900_get_saved_reg_size(), get_frame_size());
+  // print_arg_offset (from);
+  // print_arg_offset (to);
+  int ret = 0;
   if (from == ARG_POINTER_REGNUM && to == HARD_SP_REGNUM)
   {
-    return(tms9900_get_saved_reg_size()+
+    ret =(tms9900_get_saved_reg_size()+
            get_frame_size ());
   }
   if (from == FRAME_POINTER_REGNUM && to == HARD_SP_REGNUM)
   {
-    return(get_frame_size());
+    // ret =(tms9900_get_saved_reg_size()+
+    //        get_frame_size ());
+    // ret =(get_frame_size());
+    ret = 0;
   }
   if (from == ARG_POINTER_REGNUM && to == FRAME_POINTER_REGNUM)
   {
-    return(tms9900_get_saved_reg_size());
+    ret =(tms9900_get_saved_reg_size()+
+           get_frame_size ());
+    // ret =(tms9900_get_saved_reg_size());
   }
-  return(0);
+  // ret =(0);
+  // printf ("%s res=%d\n", __func__, ret);
+  return ret;
 }
 
 
@@ -547,6 +586,7 @@ void tms9900_expand_prologue (void)
       idx++;
    }
 
+  // printf("%s saving regs=%d frame=%d ", __func__, regcount, frame_size);
    /* Allocate stack space for saved regs */
    if(regcount > 0)
    {
@@ -556,8 +596,8 @@ void tms9900_expand_prologue (void)
    }
 
    /* Actually save registers */
-   if(regcount > 2)
-   {
+   // if(regcount > 2)
+   // {
       /*
       Form 1:
       ai sp, -regs*2        4      14+8+8   = 30
@@ -599,6 +639,7 @@ void tms9900_expand_prologue (void)
          }
          idx++;
       }
+   #if 0
    }
    else
    {
@@ -629,9 +670,11 @@ void tms9900_expand_prologue (void)
          idx++;
       }
    }
+   #endif
 
    if(frame_size > 0)
    {
+      // printf("%s alloc frame\n", __func__);
       /* Emit "ai sp, -framesize" */
       emit_insn(gen_addhi3(stack_pointer_rtx, stack_pointer_rtx, 
                           GEN_INT(-frame_size)));
@@ -640,9 +683,12 @@ void tms9900_expand_prologue (void)
    /* Set frame pointer */
    if(frame_pointer_needed)
    {
+      // printf("%s set fp\n", __func__);
       emit_insn(gen_movhi(gen_rtx_REG(HImode, FRAME_POINTER_REGNUM),
                           stack_pointer_rtx));
    }
+
+   // printf("%s done\n", __func__);
 }
 
 
@@ -667,6 +713,7 @@ void tms9900_expand_epilogue (bool is_sibcall)
 
    if(frame_size != 0)
    {
+      // printf("%s delete frame\n", __func__);
       /* Emit "ai sp, frame_size" */
       emit_insn(gen_addhi3(stack_pointer_rtx, stack_pointer_rtx, 
                            GEN_INT(frame_size)));
@@ -688,6 +735,7 @@ void tms9900_expand_epilogue (bool is_sibcall)
       idx++;
    }
 
+   // printf("%s restore %d regs\n", __func__, regcount);
    idx = 0;
    restored = 0;
    while(nvolregs[idx] != 0)
@@ -709,11 +757,13 @@ void tms9900_expand_epilogue (bool is_sibcall)
    
    if(!is_sibcall)
    {
+      // printf("%s return\n", __func__);
       /* Emit the return instruction "b *R11" */
       emit_insn(gen_rtx_UNSPEC(HImode, 
                                gen_rtvec (1, gen_rtx_REG(HImode, HARD_R11_REGNUM)),
                                UNSPEC_RETURN));
    }
+   // printf("%s done\n", __func__);
 }
 
 
@@ -859,6 +909,7 @@ tms9900_asm_integer(rtx x, unsigned int size, int aligned_p)
 //==================================================================
 // Code for tms9900_subreg pass
 
+
 #include "tree-pass.h"
 #include "basic-block.h"
 #include "rtl.h"
@@ -866,8 +917,10 @@ tms9900_asm_integer(rtx x, unsigned int size, int aligned_p)
 static void
 tms9900_extract_subreg(rtx insn, rtx arg, rtx* parg)
 {
+  // printf("%s\n", __func__);
   if(BINARY_P(arg))
   {
+    // printf("%s recurse\n", __func__);
     /* Recurse until we find a leaf expression */
     tms9900_extract_subreg(insn, XEXP(arg,0), &XEXP(arg,0));
     tms9900_extract_subreg(insn, XEXP(arg,1), &XEXP(arg,1));
@@ -877,6 +930,7 @@ tms9900_extract_subreg(rtx insn, rtx arg, rtx* parg)
   {
     if(GET_CODE(arg) == SUBREG && GET_MODE(arg) == QImode)
     {
+      // printf ("%s creating extract\n", __func__);
       /* Found a subreg expression we need to extract.
          Place it in a seperate instruction before this one */
       rtx temp_reg = gen_reg_rtx(QImode);
@@ -911,13 +965,17 @@ gate_tms9900_subreg (void)
 static unsigned int
 tms9900_subreg (void)
 {
+  // printf("%s\n", __func__);
+  return 0;
   basic_block bb;
   rtx insn;
 
   FOR_EACH_BB (bb)
     FOR_BB_INSNS (bb, insn)
+    // printf("%s looping\n", __func__);
     if (INSN_P (insn))
     {
+      // printf("%s get single_set\n", __func__);
       rtx set=single_set (insn);
       if(set !=NULL)
       {
@@ -933,6 +991,10 @@ tms9900_subreg (void)
         }
       }
     }
+    // else
+    //   printf("%s not INSN_P\n", __func__);
+
+  // printf("%s done\n", __func__);
   return 0;
 }
 
@@ -956,7 +1018,6 @@ struct rtl_opt_pass pass_tms9900_subreg =
   TODO_ggc_collect                      /* todo_flags_finish */
  }
 };
-
 
 //==================================================================
 // Code for tms9900_postinc pass
@@ -1124,4 +1185,120 @@ struct rtl_opt_pass pass_tms9900_postinc =
   TODO_ggc_collect                      /* todo_flags_finish */
  }
 };
+
+// MGB additions start here - mostly for debug
+
+#if 0
+
+// Abandoned functions to expand mult and div with no temps.  Woudl generate a
+// huge amount of code to have 4 complete sets of instructions to cater for +/-
+// operands.
+
+/*  Issue a mult insn, signed or unsigned.  TMS9900 only supports unsigned mult
+ *  so if signed, take note of the signs, do abs and reapply sign to result
+ *
+ *  op[0] : SI : result
+ *  op[1] : HI : operand1
+ *  op[2] : HI : operand2
+ */
+void tms9900_mult (int sign, rtx ops[])
+{
+}
+
+/*  Issue a divide/modulo insn, signed or unsigned.  TMS9900 only supports
+ *  unsigned div so if signed, take note of the signs, do abs and reapply sign
+ *  to result
+ *
+ *  op[0] : HI : quotient / result
+ *  op[1] : SI : dividend
+ *  op[2] : HI : divisor
+ *  op[3] : HI : modulo / remainder
+ */
+void tms9900_divmod (int sign, rtx operands[])
+{
+    if (sign)
+    {
+    if(which_alternative == 2)
+      offset[0] = GEN_INT(6);
+    else
+      offset[0] = GEN_INT(4);
+        output_asm_insn("mov  %1, %1", operands);
+        output_asm_insn("jle  $+%0", offset);
+        output_asm_insn("neg  %1", operands);
+
+        output_asm_insn("mov  %2, %2", operands);
+        output_asm_insn("jle  $+%0", offset);
+        output_asm_insn("neg  %2", operands);
+
+        output_asm_insn("div  %2, %1", operands);
+        output_asm_insn("neg  %2", operands);
+        output_asm_insn("neg  %0", operands);
+        output
+
+    }
+#endif
+
+#include <stdlib.h>
+#include <stdarg.h>
+
+static int regMode[16] =
+{
+    HImode, HImode, HImode, HImode,
+    HImode, HImode, HImode, HImode,
+    HImode, HImode, HImode, HImode,
+    HImode, HImode, HImode, HImode
+};
+
+char *tms9900_get_mode (int mode)
+{
+    return GET_MODE_NAME (mode);
+    switch (mode)
+    {
+    case QImode: return "QI"; break;
+    case HImode: return "HI"; break;
+    case SImode: return "SI"; break;
+    }
+    return "??";
+}
+
+extern void tms9900_inline_debug (const char *fmt,...)
+{
+#ifndef TMS900_DEBUG
+    return;
+#endif
+
+    FILE *file = outputFile?outputFile:stdout;
+
+    va_list ap;
+
+    va_start (ap, fmt);
+    vfprintf (file, fmt, ap);
+    va_end (ap);
+}
+
+extern void tms9900_debug_operands (const char *name, rtx ops[], int count)
+{
+#ifndef TMS900_DEBUG
+    return;
+#endif
+
+    FILE *file = outputFile?outputFile:stdout;
+
+    static int refcount;
+    fprintf(file, "\n; %s-%d\n", name, ++refcount);
+    for (int i = 0; i < count; i++)
+    {
+        fprintf(file, "; OP%d : ", i);
+
+        /* For print_inline_rtx to prefix its output with a comment indicator.
+         * This is similar to passing -dP to gcc but more specific to our needs
+         */
+        extern const char *print_rtx_head;
+        print_rtx_head = "; ";
+
+        print_inline_rtx (file, ops[i], 0);
+        fprintf (file, "code=[%s:%s]\n", GET_RTX_NAME(GET_CODE(ops[i])), tms9900_get_mode (GET_MODE (ops[i])));
+    }
+    fprintf (file, "\n");
+}
 
