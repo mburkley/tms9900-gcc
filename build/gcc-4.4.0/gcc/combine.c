@@ -4466,17 +4466,6 @@ subst (rtx x, rtx from, rtx to, int in_dest, int unique_copy)
 		    return gen_rtx_CLOBBER (VOIDmode, const0_rtx);
 #endif
 
-/*  MGB disabled, compilers knows we are big endian */
-#ifdef TMS9900xxx
-                  /* Added for TMS9900
-                     Do not assume QI value is in low part of register */
-		  if (code == SUBREG
-		      && REG_P (to)
-		      && REGNO (to) < FIRST_PSEUDO_REGISTER
-                      && ((GET_MODE(x) ==QImode && GET_MODE(to)!=QImode) ||
-                          (GET_MODE(to)==QImode && GET_MODE(x) !=QImode)))
-		    return gen_rtx_CLOBBER (VOIDmode, const0_rtx);
-#endif
 
 		  new_rtx = (unique_copy && n_occurrences ? copy_rtx (to) : to);
 		  n_occurrences++;
@@ -9946,17 +9935,7 @@ gen_lowpart_for_combine (enum machine_mode omode, rtx x)
 	 generate a paradoxical subreg instead.  That will force a reload
 	 of the original memref X.  */
       if (isize < osize)
-        {
-/*  MGB disabled, compilers knows we are big endian */
-#ifdef TMS9900xx
-          /* Added for TMS9900.
-             Do not convert to subreg if source is a byte. */
-          if(isize == 1)
-            return x;
-          else
-#endif
-            return gen_rtx_SUBREG (omode, x, 0);
-        }
+        return gen_rtx_SUBREG (omode, x, 0);
 
       if (WORDS_BIG_ENDIAN)
 	offset = MAX (isize, UNITS_PER_WORD) - MAX (osize, UNITS_PER_WORD);

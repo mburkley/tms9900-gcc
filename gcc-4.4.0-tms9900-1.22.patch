@@ -1,6 +1,6 @@
-diff -ru gcc-orig/config.sub gcc-4.4.0/config.sub
---- gcc-orig/config.sub	2023-11-09 21:04:18.754191922 +0000
-+++ gcc-4.4.0/config.sub	2023-11-09 21:20:48.382867405 +0000
+diff -ru gcc-4.4.0-orig/config.sub gcc-4.4.0/config.sub
+--- gcc-4.4.0-orig/config.sub	2023-12-03 08:29:52.803081578 +0000
++++ gcc-4.4.0/config.sub	2023-12-03 08:30:36.864796887 +0000
 @@ -285,7 +285,7 @@
  	| sparc | sparc64 | sparc64b | sparc64v | sparc86x | sparclet | sparclite \
  	| sparcv8 | sparcv9 | sparcv9b | sparcv9v \
@@ -10,49 +10,31 @@ diff -ru gcc-orig/config.sub gcc-4.4.0/config.sub
  	| v850 | v850e \
  	| we32k \
  	| x86 | xc16x | xscale | xscalee[bl] | xstormy16 | xtensa \
-diff -ru gcc-orig/gcc/combine.c gcc-4.4.0/gcc/combine.c
---- gcc-orig/gcc/combine.c	2023-11-09 21:04:18.758191908 +0000
-+++ gcc-4.4.0/gcc/combine.c	2023-11-09 21:20:48.390867377 +0000
-@@ -4466,6 +4466,17 @@
+diff -ru gcc-4.4.0-orig/gcc/combine.c gcc-4.4.0/gcc/combine.c
+--- gcc-4.4.0-orig/gcc/combine.c	2023-12-03 08:29:52.807081769 +0000
++++ gcc-4.4.0/gcc/combine.c	2023-12-03 11:30:03.298414954 +0000
+@@ -4466,6 +4466,7 @@
  		    return gen_rtx_CLOBBER (VOIDmode, const0_rtx);
  #endif
  
-+#ifdef TMS9900
-+                  /* Added for TMS9900
-+                     Do not assume QI value is in low part of register */
-+		  if (code == SUBREG
-+		      && REG_P (to)
-+		      && REGNO (to) < FIRST_PSEUDO_REGISTER
-+                      && ((GET_MODE(x) ==QImode && GET_MODE(to)!=QImode) ||
-+                          (GET_MODE(to)==QImode && GET_MODE(x) !=QImode)))
-+		    return gen_rtx_CLOBBER (VOIDmode, const0_rtx);
-+#endif
 +
  		  new_rtx = (unique_copy && n_occurrences ? copy_rtx (to) : to);
  		  n_occurrences++;
  		}
-@@ -9934,7 +9945,16 @@
+@@ -9934,7 +9935,7 @@
  	 generate a paradoxical subreg instead.  That will force a reload
  	 of the original memref X.  */
        if (isize < osize)
 -	return gen_rtx_SUBREG (omode, x, 0);
-+        {
-+#ifdef TMS9900
-+          /* Added for TMS9900.
-+             Do not convert to subreg if source is a byte. */
-+          if(isize == 1)
-+            return x;
-+          else
-+#endif
-+            return gen_rtx_SUBREG (omode, x, 0);
-+        }
++        return gen_rtx_SUBREG (omode, x, 0);
  
        if (WORDS_BIG_ENDIAN)
  	offset = MAX (isize, UNITS_PER_WORD) - MAX (osize, UNITS_PER_WORD);
-diff -ru gcc-orig/gcc/config/tms9900/lib1funcs.asm gcc-4.4.0/gcc/config/tms9900/lib1funcs.asm
---- gcc-orig/gcc/config/tms9900/lib1funcs.asm	2023-11-09 21:11:39.804718373 +0000
-+++ gcc-4.4.0/gcc/config/tms9900/lib1funcs.asm	2023-11-09 21:20:48.394867365 +0000
-@@ -0,0 +1,820 @@
+diff -ru gcc-4.4.0-orig/gcc/config/tms9900/lib1funcs.asm gcc-4.4.0/gcc/config/tms9900/lib1funcs.asm
+--- gcc-4.4.0-orig/gcc/config/tms9900/lib1funcs.asm	2023-12-03 08:29:52.807081769 +0000
++++ gcc-4.4.0/gcc/config/tms9900/lib1funcs.asm	2023-12-03 09:29:40.689109797 +0000
+@@ -0,0 +1,821 @@
++  broken r1,r1
 +/******************************************************************************
 +*                               __clzM2
 +*******************************************************************************
@@ -873,10 +855,34 @@ diff -ru gcc-orig/gcc/config/tms9900/lib1funcs.asm gcc-4.4.0/gcc/config/tms9900/
 +  b    *r11
 +#endif
 +
-diff -ru gcc-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms9900/tms9900.c
---- gcc-orig/gcc/config/tms9900/tms9900.c	2023-11-09 21:11:39.808718359 +0000
-+++ gcc-4.4.0/gcc/config/tms9900/tms9900.c	2023-11-09 21:20:48.394867365 +0000
-@@ -0,0 +1,1127 @@
+diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms9900/tms9900.c
+--- gcc-4.4.0-orig/gcc/config/tms9900/tms9900.c	2023-12-03 08:29:52.807081769 +0000
++++ gcc-4.4.0/gcc/config/tms9900/tms9900.c	2023-12-03 09:08:19.603150407 +0000
+@@ -0,0 +1,1220 @@
++/* Subroutines for insn-output.c for TMS9900.
++   Copyright (C) 1987, 1994, 1995, 1997, 1998, 1999, 2000, 2001, 2002,
++   2004, 2005, 2006, 2007, 2008
++   Free Software Foundation, Inc.
++
++Copyright 2009 Eric Welser (EMW)
++Copyright 2023 Mark Burkley (MGB)
++
++This file is part of GCC.
++
++GCC is free software; you can redistribute it and/or modify
++it under the terms of the GNU General Public License as published by
++the Free Software Foundation; either version 3, or (at your option)
++any later version.
++
++GCC is distributed in the hope that it will be useful,
++but WITHOUT ANY WARRANTY; without even the implied warranty of
++MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++GNU General Public License for more details.
++
++You should have received a copy of the GNU General Public License
++along with GCC; see the file COPYING3.  If not see
++<http://www.gnu.org/licenses/>.  */
++
 +#include "insn-modes.h"
 +#include <stdio.h>
 +#include "config.h"
@@ -905,6 +911,9 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms9900/tms9
 +#include "target.h"
 +#include "target-def.h"
 +#include "df.h"
++
++/* Define this to put insn debugs into output files */
++#undef TMS9900_DEBUG
 +
 +static bool tms9900_pass_by_reference (CUMULATIVE_ARGS *,
 +                                       enum machine_mode, const_tree, bool);
@@ -944,7 +953,7 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms9900/tms9
 +/* Non-volatile registers to be saved across function calls */
 +static int nvolregs[]={
 +   HARD_LR_REGNUM,
-+   HARD_R9_REGNUM,
++   HARD_BP_REGNUM,
 +   HARD_LW_REGNUM,
 +   HARD_LP_REGNUM,
 +   HARD_LS_REGNUM,
@@ -961,7 +970,10 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms9900/tms9
 +                                  const_tree type)
 +{
 +  if (type != 0 && AGGREGATE_TYPE_P (type))
++  {
++    // printf ("%s upward\n", __func__);
 +    return upward;
++  }
 +
 +  /* Fall back to the default.  */
 +  return DEFAULT_FUNCTION_ARG_PADDING (mode, type);
@@ -986,6 +998,7 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms9900/tms9
 +     arg_bytes = GET_MODE_SIZE (mode);
 +  }
 +  cum->nregs += ((arg_bytes + 1)/ UNITS_PER_WORD) * REGS_PER_WORD;
++  // printf("%s bytes=%d\n", __func__, arg_bytes);
 +  return;
 +}
 +
@@ -1031,9 +1044,13 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms9900/tms9
 +      cum->nregs >= TMS9900_ARG_REGS ||
 +      /* Argument doesn't completely fit in arg registers */      
 +      GET_MODE_SIZE(mode) + cum->nregs > TMS9900_ARG_REGS)
++    {
++    // printf ("%s alloc on stack\n", __func__);
 +    return NULL_RTX;
++    }
 +
 +  /* Allocate registers for argument */
++  // printf ("%s alloc in reg %d\n", __func__, cum->nregs+1);
 +  return gen_rtx_REG (mode, cum->nregs + HARD_R1_REGNUM);
 +}
 +
@@ -1047,11 +1064,14 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms9900/tms9
 +    output_addr_const(file, addr);
 +}
 +
++static FILE *outputFile;
 +
 +/* Construct string expression matching an address operand */
 +void print_operand_address (FILE *file,
 +                            register rtx addr)
 +{
++  if (!outputFile) outputFile=file;
++
 +  retry:
 +  switch (GET_CODE (addr))
 +    {
@@ -1155,35 +1175,55 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms9900/tms9
 +   return(size);
 +}
 +
++static void print_arg_offset (int from)
++{
++    switch (from)
++    {
++    case ARG_POINTER_REGNUM: printf ("%d=ARG_PTR_R ", from); break;
++    case HARD_SP_REGNUM: printf ("%d=HARD_SP_R ", from); break;
++    case FRAME_POINTER_REGNUM: printf ("%d=FR_PTR_R ", from); break;
++    default: printf ("%d=dunno? ", from); break;
++    }
++}
 +
 +/* Define the offset between two registers, one to be eliminated, and the
-+   other its replacement, at the start of a routine.  */
++   other its replacement, at the start of a routine.
++   MGB return values as they are AFTER the prolog */
 +int tms9900_initial_elimination_offset (int from,
 +                                        int to)
 +{
 +  /*  
++      [argn]
++      .
++      [arg0]
 +      . <- arg pointer
-+      [args]
-+      . <- frame pointer
 +      [saved regs]
 +      [frame]
 +      . <- stack pointer
++      . <- frame pointer
 +  */
 +
++  // printf("%s savedregs=%d frame=%d ", __func__,
++  //     tms9900_get_saved_reg_size(), get_frame_size());
++  // print_arg_offset (from);
++  // print_arg_offset (to);
++  int ret = 0;
 +  if (from == ARG_POINTER_REGNUM && to == HARD_SP_REGNUM)
 +  {
-+    return(tms9900_get_saved_reg_size()+
++    ret =(tms9900_get_saved_reg_size()+
 +           get_frame_size ());
 +  }
 +  if (from == FRAME_POINTER_REGNUM && to == HARD_SP_REGNUM)
 +  {
-+    return(get_frame_size());
++    ret = 0;
 +  }
 +  if (from == ARG_POINTER_REGNUM && to == FRAME_POINTER_REGNUM)
 +  {
-+    return(tms9900_get_saved_reg_size());
++    ret =(tms9900_get_saved_reg_size()+
++           get_frame_size ());
 +  }
-+  return(0);
++  // printf ("%s res=%d\n", __func__, ret);
++  return ret;
 +}
 +
 +
@@ -1426,6 +1466,7 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms9900/tms9
 +      idx++;
 +   }
 +
++  // printf("%s saving regs=%d frame=%d ", __func__, regcount, frame_size);
 +   /* Allocate stack space for saved regs */
 +   if(regcount > 0)
 +   {
@@ -1435,8 +1476,6 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms9900/tms9
 +   }
 +
 +   /* Actually save registers */
-+   if(regcount > 2)
-+   {
 +      /*
 +      Form 1:
 +      ai sp, -regs*2        4      14+8+8   = 30
@@ -1478,39 +1517,10 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms9900/tms9
 +         }
 +         idx++;
 +      }
-+   }
-+   else
-+   {
-+      /*
-+      Form 2:
-+      ai sp, -regs*2       4      14+8+8   = 30
-+      mov r9, *sp          2      14+8+4+8 = 34
-+      mov r13, @2(sp)      4      14+8+8+8 = 38
-+      mov r14, @4(sp)      4      14+8+8+8 = 38
-+      mov r15, @6(sp)      4      14+8+8+8 = 38
-+      mov r11, @8(sp)      4      14+8+8+8 = 38
-+      ai sp, -frame        4      14+8+8   = 30
-+      */
-+      int offset = 0;
-+      idx = 0;
-+      while(nvolregs[idx] != 0)
-+      {
-+         if(saveregs[idx]!=0)
-+         {
-+            /* Emit "mov Rn, @X(sp)" */
-+            int regno = nvolregs[idx];
-+            emit_insn(gen_movhi(
-+               adjust_address(gen_rtx_MEM(HImode, stack_pointer_rtx), 
-+                              HImode, offset),
-+               gen_rtx_REG(HImode, regno)));
-+            offset += 2;
-+         }
-+         idx++;
-+      }
-+   }
 +
 +   if(frame_size > 0)
 +   {
++      // printf("%s alloc frame\n", __func__);
 +      /* Emit "ai sp, -framesize" */
 +      emit_insn(gen_addhi3(stack_pointer_rtx, stack_pointer_rtx, 
 +                          GEN_INT(-frame_size)));
@@ -1519,9 +1529,12 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms9900/tms9
 +   /* Set frame pointer */
 +   if(frame_pointer_needed)
 +   {
++      // printf("%s set fp\n", __func__);
 +      emit_insn(gen_movhi(gen_rtx_REG(HImode, FRAME_POINTER_REGNUM),
 +                          stack_pointer_rtx));
 +   }
++
++   // printf("%s done\n", __func__);
 +}
 +
 +
@@ -1546,6 +1559,7 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms9900/tms9
 +
 +   if(frame_size != 0)
 +   {
++      // printf("%s delete frame\n", __func__);
 +      /* Emit "ai sp, frame_size" */
 +      emit_insn(gen_addhi3(stack_pointer_rtx, stack_pointer_rtx, 
 +                           GEN_INT(frame_size)));
@@ -1567,6 +1581,7 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms9900/tms9
 +      idx++;
 +   }
 +
++   // printf("%s restore %d regs\n", __func__, regcount);
 +   idx = 0;
 +   restored = 0;
 +   while(nvolregs[idx] != 0)
@@ -1588,11 +1603,13 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms9900/tms9
 +   
 +   if(!is_sibcall)
 +   {
++      // printf("%s return\n", __func__);
 +      /* Emit the return instruction "b *R11" */
 +      emit_insn(gen_rtx_UNSPEC(HImode, 
 +                               gen_rtvec (1, gen_rtx_REG(HImode, HARD_R11_REGNUM)),
 +                               UNSPEC_RETURN));
 +   }
++   // printf("%s done\n", __func__);
 +}
 +
 +
@@ -1738,6 +1755,7 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms9900/tms9
 +//==================================================================
 +// Code for tms9900_subreg pass
 +
++
 +#include "tree-pass.h"
 +#include "basic-block.h"
 +#include "rtl.h"
@@ -1745,8 +1763,10 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms9900/tms9
 +static void
 +tms9900_extract_subreg(rtx insn, rtx arg, rtx* parg)
 +{
++  // printf("%s\n", __func__);
 +  if(BINARY_P(arg))
 +  {
++    // printf("%s recurse\n", __func__);
 +    /* Recurse until we find a leaf expression */
 +    tms9900_extract_subreg(insn, XEXP(arg,0), &XEXP(arg,0));
 +    tms9900_extract_subreg(insn, XEXP(arg,1), &XEXP(arg,1));
@@ -1756,6 +1776,7 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms9900/tms9
 +  {
 +    if(GET_CODE(arg) == SUBREG && GET_MODE(arg) == QImode)
 +    {
++      // printf ("%s creating extract\n", __func__);
 +      /* Found a subreg expression we need to extract.
 +         Place it in a seperate instruction before this one */
 +      rtx temp_reg = gen_reg_rtx(QImode);
@@ -1790,13 +1811,17 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms9900/tms9
 +static unsigned int
 +tms9900_subreg (void)
 +{
++  // printf("%s\n", __func__);
++  return 0;
 +  basic_block bb;
 +  rtx insn;
 +
 +  FOR_EACH_BB (bb)
 +    FOR_BB_INSNS (bb, insn)
++    // printf("%s looping\n", __func__);
 +    if (INSN_P (insn))
 +    {
++      // printf("%s get single_set\n", __func__);
 +      rtx set=single_set (insn);
 +      if(set !=NULL)
 +      {
@@ -1812,6 +1837,10 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms9900/tms9
 +        }
 +      }
 +    }
++    // else
++    //   printf("%s not INSN_P\n", __func__);
++
++  // printf("%s done\n", __func__);
 +  return 0;
 +}
 +
@@ -1835,7 +1864,6 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms9900/tms9
 +  TODO_ggc_collect                      /* todo_flags_finish */
 + }
 +};
-+
 +
 +//==================================================================
 +// Code for tms9900_postinc pass
@@ -2004,13 +2032,63 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms9900/tms9
 + }
 +};
 +
-diff -ru gcc-orig/gcc/config/tms9900/tms9900.h gcc-4.4.0/gcc/config/tms9900/tms9900.h
---- gcc-orig/gcc/config/tms9900/tms9900.h	2023-11-09 21:11:39.812718346 +0000
-+++ gcc-4.4.0/gcc/config/tms9900/tms9900.h	2023-11-09 21:20:48.394867365 +0000
-@@ -0,0 +1,1178 @@
++// MGB additions start here - mostly for debug
++
++#include <stdlib.h>
++#include <stdarg.h>
++
++extern void tms9900_inline_debug (const char *fmt,...)
++{
++#ifndef TMS900_DEBUG
++    return;
++#endif
++
++    FILE *file = outputFile?outputFile:stdout;
++
++    va_list ap;
++
++    va_start (ap, fmt);
++    vfprintf (file, fmt, ap);
++    va_end (ap);
++}
++
++extern void tms9900_debug_operands (const char *name, rtx ops[], int count)
++{
++#ifndef TMS900_DEBUG
++    return;
++#endif
++
++    FILE *file = outputFile?outputFile:stdout;
++
++    static int refcount;
++    fprintf(file, "\n; %s-%d\n", name, ++refcount);
++    for (int i = 0; i < count; i++)
++    {
++        fprintf(file, "; OP%d : ", i);
++
++        /* For print_inline_rtx to prefix its output with a comment indicator.
++         * This is similar to passing -dP to gcc but more specific to our needs
++         */
++        extern const char *print_rtx_head;
++        print_rtx_head = "; ";
++
++        print_inline_rtx (file, ops[i], 0);
++        fprintf (file, "code=[%s:%s]\n", GET_RTX_NAME(GET_CODE(ops[i])),
++                 GET_MODE_NAME (GET_MODE (ops[i])));
++    }
++    fprintf (file, "\n");
++}
++
+diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.h gcc-4.4.0/gcc/config/tms9900/tms9900.h
+--- gcc-4.4.0-orig/gcc/config/tms9900/tms9900.h	2023-12-03 08:29:52.807081769 +0000
++++ gcc-4.4.0/gcc/config/tms9900/tms9900.h	2023-12-03 09:06:52.722572054 +0000
+@@ -0,0 +1,1203 @@
 +/* Definitions of target machine for GNU compiler.
 +   Texas Instruments TMS9900
 +   Copyright (C) 2009
++
++Copyright 2009 Eric Welser (EMW)
++Copyright 2023 Mark Burkley (MGB)
 +
 +This file is part of GCC.
 +
@@ -2251,6 +2329,10 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.h gcc-4.4.0/gcc/config/tms9900/tms9
 +
 +/* Shift count register */
 +#define HARD_SC_REGNUM		HARD_R0_REGNUM
++/* Arg pointer */
++#define HARD_AP_REGNUM		HARD_R8_REGNUM
++/* Base pointer */
++#define HARD_BP_REGNUM		HARD_R9_REGNUM
 +/* Stack pointer */
 +#define HARD_SP_REGNUM		HARD_R10_REGNUM
 +/* Old PC after BL instruction */
@@ -2277,15 +2359,23 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.h gcc-4.4.0/gcc/config/tms9900/tms9
 +#define FIRST_PSEUDO_REGISTER	(16)
 +
 +/* 1 for registers that have pervasive standard uses and are not available
-+   for the register allocator.  */
++   for the register allocator.
++
++   MGB TODO move BP, AP to R12/R13 so that we can have 1-10 as general regs
++*/
 +#define FIXED_REGISTERS \
 +  {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0}
-+/* SC 1  2  3  4  5  6  7  8  9  SP LR CB LW LP LS*/
++/* SC 1  2  3  4  5  6  7  AP BP SP LR CB LW LP LS*/
 +
 +/* 0 for registers which must be preserved across function call boundaries */
++/* MGB TODO seems excessive to always preserve R13,R14,R15 as these will only
++ * have values to be saved if we were invokved by a BLWP which is never emitted
++ * by this backend.  If someone is writing an ISR / DSR which is invoked by a
++ * BLWP then we can ask them to save R13/R14/R15 themselves.
++ */
 +#define CALL_USED_REGISTERS \
 +  {1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 0}
-+/* SC 1  2  3  4  5  6  7  8  9  SP LR CB LW LP LS*/
++/* SC 1  2  3  4  5  6  7  AP BP SP LR CB LW LP LS*/
 +
 +/* Define this macro to change register usage conditional on target flags. */
 +#define CONDITIONAL_REGISTER_USAGE 
@@ -2295,8 +2385,8 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.h gcc-4.4.0/gcc/config/tms9900/tms9
 +#define REG_ALLOC_ORDER	\
 +   {HARD_R1_REGNUM, HARD_R2_REGNUM, HARD_R3_REGNUM, HARD_R4_REGNUM,\
 +    HARD_R5_REGNUM, HARD_R6_REGNUM, HARD_R7_REGNUM, HARD_R8_REGNUM,\
-+    HARD_CB_REGNUM, HARD_SC_REGNUM, HARD_R9_REGNUM, HARD_LW_REGNUM,\
-+    HARD_LP_REGNUM, HARD_LS_REGNUM, HARD_LR_REGNUM, HARD_SP_REGNUM}
++    HARD_CB_REGNUM, HARD_SC_REGNUM, HARD_LW_REGNUM, HARD_LP_REGNUM,\
++    HARD_LS_REGNUM, HARD_R9_REGNUM, HARD_LR_REGNUM, HARD_SP_REGNUM}
 +
 +/* A C expression for the number of consecutive hard registers,
 +   starting at register number REGNO, required to hold a value of
@@ -2304,7 +2394,9 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.h gcc-4.4.0/gcc/config/tms9900/tms9
 +#define HARD_REGNO_NREGS(REGNO, MODE) \
 +   ((GET_MODE_SIZE (MODE) + HARD_REG_SIZE - 1) / HARD_REG_SIZE)
 +
-+/* Value is 1 if hard register REGNO (or starting with REGNO) can hold a value of machine-mode MODE */
++/* Value is 1 if hard register REGNO (or starting with REGNO) can hold a value of machine-mode MODE
++ *
++ *  MGB TODO could include 64-bit as well */
 +#define HARD_REGNO_MODE_OK(REGNO, MODE) \
 +   (!(MODE == SImode && REGNO==HARD_R15_REGNUM))
 +  
@@ -2330,7 +2422,10 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.h gcc-4.4.0/gcc/config/tms9900/tms9
 +   in a smaller-numbered class.
 +
 +   For any two classes, it is very desirable that there be another
-+   class that represents their union.  */
++   class that represents their union.
++
++   MGB TODO remove CRU.  No CRU code is emitted by this back end
++*/
 +enum reg_class
 +{
 +  NO_REGS,
@@ -2373,8 +2468,8 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.h gcc-4.4.0/gcc/config/tms9900/tms9
 +   R5      0x00000020
 +   R6      0x00000040
 +   R7      0x00000080
-+   R8      0x00000100
-+   R9      0x00000200
++   AP      0x00000100
++   BP      0x00000200
 +   SP      0x00000400
 +   LR      0x00000800
 +   CB      0x00001000
@@ -2507,10 +2602,10 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.h gcc-4.4.0/gcc/config/tms9900/tms9
 +#define FRAME_POINTER_REGNUM		HARD_R9_REGNUM
 +
 +/* Base register for access to arguments of the function.  */
-+#define ARG_POINTER_REGNUM		HARD_R7_REGNUM
++#define ARG_POINTER_REGNUM		HARD_R8_REGNUM
 +
 +/* Register in which static-chain is passed to a function.  */
-+#define STATIC_CHAIN_REGNUM	        HARD_R9_REGNUM
++#define STATIC_CHAIN_REGNUM	        HARD_R7_REGNUM
 +
 +/* Definitions for register eliminations.
 +
@@ -2555,6 +2650,11 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.h gcc-4.4.0/gcc/config/tms9900/tms9
 +   arguments into it.  When `PUSH_ARGS' is nonzero, `PUSH_ROUNDING'
 +   must be defined too. */
 +#define PUSH_ARGS 0
++
++/* We want the stack and args grow in opposite directions, even if
++   PUSH_ARGS is 0.
++   MGB added, var param lists not working */
++#define PUSH_ARGS_REVERSED 1
 +
 +/* Value is 1 if returning from a function call automatically pops the
 +   arguments described by the number-of-args field in the call. FUNTYPE is
@@ -3186,10 +3286,17 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.h gcc-4.4.0/gcc/config/tms9900/tms9
 +                               const char *lab1, const char *lab2);
 +#endif
 +
-diff -ru gcc-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms9900/tms9900.md
---- gcc-orig/gcc/config/tms9900/tms9900.md	2023-11-09 21:11:39.816718332 +0000
-+++ gcc-4.4.0/gcc/config/tms9900/tms9900.md	2023-11-09 21:22:42.246466181 +0000
-@@ -0,0 +1,2954 @@
+diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms9900/tms9900.md
+--- gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md	2023-12-03 08:29:52.807081769 +0000
++++ gcc-4.4.0/gcc/config/tms9900/tms9900.md	2023-12-03 10:19:59.690744517 +0000
+@@ -0,0 +1,2720 @@
++;;- Machine description for the TMS9900 for GNU C compiler
++;; Copyright (C) 1994, 1995, 1997, 1998, 1999, 2000, 2001, 2004, 2005
++;; 2007, 2008 Free Software Foundation, Inc.
++
++;; Copyright 2009 Eric Welser (EMW)
++;; Copyright 2023 Mark Burkley (MGB)
++
 +;; This file is part of GCC.
 +
 +;; GCC is free software; you can redistribute it and/or modify
@@ -3209,6 +3316,23 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms9900/tms
 +;; SI is 32 bit
 +;; HI is 16 bit
 +;; QI is 8 bit 
++
++;; MGB NOTES
++;;    - rtx notation is insn(dst,src) but tms asm notation is <op> src,dst so
++;;      beware of operand ordering
++;;    - all byte (QI) ops need to have expands to cater for the fact that in
++;;      TMS9900 a 16-bit operation can't be done on a reg that contains an 8-bit value
++;;      unless it has been shifted by 8
++;;    - Many byte insns are restricted to registers only as TMS9900 doesn't have
++;;      byte version of abs, neg, etc.
++;;    - Insns like exend, trunc, abs, etc, are done in place but passed two
++;;      distinct params.  This is ok, the compiler is forced to move src and dst to the
++;;      same reg by the "0" constraint.
++;;    - optimiser doesn't understand opcodes, just insns.  So keep insns as
++;;      short as possible.  One opcode preferable, two max.  Any more, use an expand instead
++;;    - I'm avoiding clobbers in expands and declaring temp rtx regs inside code instead
++;;    - 32-bit arith insns have been moved to C code.  Emitting lengthy opcode
++;;      sequences shouldn't be part of a md file.
 +
 +;; Description of class IDs
 +;;   'C  is for CRU register
@@ -3242,8 +3366,8 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms9900/tms
 +;; default is arith
 +(define_attr "type" "unknown,arith,fp" (const_string "arith"))
 +
-+;; length default is 1 word each
-+(define_attr "length" "" (const_int 1))
++;; length default is 1 words each
++(define_attr "length" "" (const_int 2))
 +
 +;; a user's asm statement
 +(define_asm_attributes
@@ -3251,6 +3375,9 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms9900/tms
 +; all bets are off how long it is - make it 256, forces long jumps 
 +; whenever jumping around it !!!
 +   (set_attr "length" "256")])
++
++;; MGB To address the issue where tms9900 stores bytes in the MSB position, all
++;; QI loads to registers are right-shifted 8 bits before storage as a HI value
 +
 +;;-------------------------------------------------------------------
 +;;  UNSPEC Definitions
@@ -3277,7 +3404,7 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms9900/tms
 +;; Jump to a subroutine which returns a value
 +(define_insn "call"
 +  [(call (match_operand:HI 0 "general_operand" "rR,Q")
-+         (match_operand:HI 1 "general_operand" "g,g"))
++         (match_operand:HI 1 "general_operand"  "g,g"))
 +  ]
 +  ""
 +  {
@@ -3357,41 +3484,42 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms9900/tms
 +;;-------------------------------------
 +(define_insn "tsthi"
 +  [(set (cc0)
-+	(match_operand:HI 0 "register_operand" "r"))]
++	(match_operand:HI 0 "nonimmediate_operand" "rR,Q"))]
 +  ""
 +  {
-+    return("ci   %0, 0");
++    tms9900_debug_operands ("tsthi", operands, 1);
++    return("mov  %0, %0");
 +  }
-+  [(set_attr "length" "4")])
++  [(set_attr "length" "2,6")])
 +
 +
 +;;-------------------------------------
-+; TODO commented out for now - causes compiler assert
-+;;-------------------------------------
-+; (define_insn "tstqi"
-+;   [(set (cc0)
-+; 	(match_operand:QI 0 "nonimmediate_operand" "rR,Q"))]
-+;   ""
-+;   {
-+;     output_asm_insn("jeq  0",       operands);  /* +0: No-op instruction with zero at +1 */
-+;     output_asm_insn("cb  %0, @$-1", operands);  /* +2: Compare value against the zero at +1 */
-+;     return("");
-+;   }
-+;   [(set_attr "length" "4,6")])
++(define_insn "tstqi"
++  [(set (cc0)
++	(match_operand:QI 0 "nonimmediate_operand" "rR,Q"))]
++  ""
++  {
++    tms9900_debug_operands ("tstqi", operands, 1);
++    return("movb %0, %0");
++  }
++  [(set_attr "length" "2,6")])
 + 
-+
 +;;-------------------------------------
 +(define_insn "cmphi"
 +  [(set (cc0)
 +	(compare (match_operand:HI 0 "nonimmediate_operand" "rR,rR,Q,Q,r")
-+		 (match_operand:HI 1 "general_operand" "rR,Q,rR,Q,i")))]
++		 (match_operand:HI 1 "general_operand"      "rR,Q,rR,Q,i")))]
 +  ""
 +  {
++    tms9900_debug_operands ("cmphi", operands, 2);
 +    if (which_alternative == 4)
 +    {
 +       return("ci   %0, %1");
 +    }
-+    return("c    %0, %1");
++    else
++    {
++      return("c    %0, %1");
++    }
 +  }
 +  [(set_attr "length" "2,4,4,6,4")])
 +
@@ -3399,12 +3527,255 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms9900/tms
 +;;-------------------------------------
 +(define_insn "cmpqi"
 +  [(set (cc0)
-+	(compare (match_operand:QI 0 "nonimmediate_operand" "rR,rR,Q,Q")
-+		 (match_operand:QI 1 "nonimmediate_operand" "rR,Q,rR,Q")))]
++	(compare (match_operand:QI 0 "register_operand" "rR>,Q,  rR>,Q,r")
++		 (match_operand:QI 1 "general_operand"  "rR>,rR>,Q,  Q,i")))]
 +  ""
-+  "cb   %0, %1"
-+  [(set_attr "length" "2,4,4,6")])
++  {
++    tms9900_debug_operands ("cmpqi", operands, 2);
++    if (which_alternative == 4)
++    {
++      int val = INTVAL(operands[1]);
++      operands[1] = GEN_INT(val*256);
++      output_asm_insn("andi %0, >ff00",  operands);
++      output_asm_insn("ci   %0, %1",  operands);
++    }
++    else
++      output_asm_insn("cb   %1, %0",  operands);
 +
++    return("");
++  }
++  [(set_attr "length" "2,4,4,6,8")])
++
++;;-------------------------------------------------------------------
++;;  Move Operations
++;;-------------------------------------------------------------------
++
++
++;;-------------------------------------------------------------------
++;; Move byte value
++(define_insn "movqi"
++  [(set (match_operand:QI 0 "nonimmediate_operand" "=rR>,Q,  rR>,Q,r,r")
++        (match_operand:QI 1 "general_operand"      "rR>, rR>,Q,  Q,i,OM"))]
++  ""
++  {
++    tms9900_debug_operands ("movqi", operands, 2);
++    int val;
++    switch (which_alternative)
++    {
++    case 4:
++        val = INTVAL(operands[1]);
++        tms9900_inline_debug ("; movqi imm MUL const %d * 256\n", val);
++        operands[1] = GEN_INT(val*256);
++        return("li   %0, %1");
++    case 5:
++        val = INTVAL(operands[1]);
++
++        if (val == 0)
++            return("clr  %0");
++        else
++            return("seto %0");
++    default:
++      return ("movb %1, %0");
++    }
++  }
++  [(set_attr "length" "2,4,4,6,4,2")])
++
++;; MGB TODO use which_alt for consistency
++;;-------------------------------------------------------------------
++;; Move two-byte value
++(define_insn "movhi"
++  [(set (match_operand:HI 0 "nonimmediate_operand" "=UrR>,rR>,Q,Q,r,W,r")
++	(match_operand:HI 1 "general_operand" "rROM>,Q,rROM>,Q,i,r,W"))]
++  ""
++  {
++    tms9900_debug_operands ("movhi", operands, 2);
++    switch(GET_CODE(operands[1]))
++    {
++      case CONST_INT:
++        if (INTVAL(operands[1]) == 0)
++          return("clr  %0");
++        else if (INTVAL(operands[1]) == -1)
++          return("seto %0");
++        else
++          return("li   %0, %1");
++
++      case REG:
++        return ("mov  %1, %0");
++
++      case MEM:
++        return("mov  %1, %0");
++
++      default:
++        return("li   %0, %1");
++    }
++  }
++  [(set_attr "length" "2,4,4,6,4,2,2")])
++
++;;-------------------------------------------------------------------
++;; Move four-byte value as two 2-byte regs
++(define_expand "movsi"
++  [(set (match_operand:SI 0 "nonimmediate_operand" "=UrR>,rR>,Q,Q,r,W,r")
++	(match_operand:SI 1 "general_operand" "rROM>,Q,rROM>,Q,i,r,W"))]
++  ""
++  {
++    tms9900_debug_operands ("movsi", operands, 2);
++    emit_move_insn(gen_highpart (HImode, operands[0]),
++                   gen_highpart (HImode, operands[1]));
++    emit_move_insn(gen_lowpart (HImode, operands[0]),
++                   gen_lowpart (HImode, operands[1]));
++    DONE;
++  }
++)
++
++;;-------------------------------------------------------------------
++;; Type Conversions
++;;-------------------------------------------------------------------
++
++
++;;-------------------------------------------------------------------
++;; Zero Extend
++;; TODO create strict (srl) and non strict (swpb) variants as swpb is faster
++;;-------------------------------------
++
++(define_insn "zero_extendqihi2"
++  [(set (match_operand:HI 0 "register_operand" "=r")
++	(zero_extend:HI (match_operand:QI 1 "register_operand" "0")))]
++  ""
++  {
++    tms9900_debug_operands ("zero_extendqihi2", operands, 2);
++    output_asm_insn ("srl  %0, 8", operands);
++    return("");
++  }
++  [(set_attr "length" "2")])
++
++
++;;-------------------------------------
++(define_expand "zero_extendqisi2"
++  [(set (match_operand:SI 0 "nonimmediate_operand" "=r,R,Q")
++	(zero_extend:SI (match_operand:QI 1 "general_operand" "g,g,g")))]
++  ""
++  {
++    tms9900_debug_operands ("zero_extendqisi2", operands, 2);
++    rtx tmp = gen_reg_rtx (HImode);
++    emit_insn (gen_zero_extendqihi2 (tmp, operands[1]));
++    emit_insn (gen_zero_extendhisi2 (operands[0], tmp));
++    DONE;
++  }
++)
++
++(define_insn "zero_extendhisi2"
++  [(set (match_operand:SI 0 "nonimmediate_operand" "=r,R,Q")
++	(zero_extend:SI (match_operand:HI 1 "general_operand" "g,g,g")))]
++  ""
++  {
++    tms9900_debug_operands ("zero_extendhisi2", operands, 2);
++    rtx args[3];
++    args[0] = gen_highpart (HImode, operands[0]);
++    args[1] = gen_lowpart (HImode, operands[0]);
++    args[2] = operands[1];
++
++    output_asm_insn("mov  %2, %1", args);
++    output_asm_insn("clr  %0", args);
++    return("");
++  }
++  [(set_attr "length" "4,8,10")])
++
++
++;;-------------------------------------------------------------------
++;; Sign Extend
++;;-------------------------------------------------------------------
++
++(define_insn "extendqihi2"
++  [(set (match_operand:HI 0 "register_operand" "=r")
++	(sign_extend:HI (match_operand:QI 1 "register_operand" "0")))]
++  ""
++  {
++    tms9900_debug_operands ("extendqihi2", operands, 2);
++    output_asm_insn("sra  %0, 8", operands);
++    return("");
++  }
++  [(set_attr "length" "2")])
++			 
++
++(define_expand "extendqisi2"
++  [(set (match_operand:SI 0 "register_operand" "=r")
++	(sign_extend:SI (match_operand:QI 1 "register_operand" "0")))]
++  ""
++  {
++    tms9900_debug_operands ("extendqisi2", operands, 2);
++    rtx tmp = gen_reg_rtx (HImode);
++    emit_insn (gen_extendqihi2 (tmp, operands[1]));
++    emit_insn (gen_extendhisi2 (operands[0], tmp));
++    DONE;
++  }
++)
++
++;;-------------------------------------
++(define_insn "extendhisi2"
++  [(set (match_operand:SI 0 "nonimmediate_operand" "=rR,Q")
++	(sign_extend:SI (match_operand:HI 1 "general_operand" "g,g")))]
++  ""
++  {
++    tms9900_debug_operands ("extendhisi2", operands, 2);
++    rtx args[3];
++    rtx offset[1];
++    args[0] = gen_highpart (HImode, operands[0]);
++    args[1] = gen_lowpart (HImode, operands[0]);
++    args[2] = operands[1];
++
++    if(which_alternative == 1)
++      offset[0] = GEN_INT(6);
++    else
++      offset[0] = GEN_INT(4);
++
++    output_asm_insn("mov  %2, %1", args);
++    /* sign extend.  If highpart is negative, seto, else clr.  This is slightly
++     * cheaper (either 20 or 30 cycles) than doing sra 16 (44 cycles) */
++    output_asm_insn("seto %0", args);
++    output_asm_insn("jlt  $+%0", offset);
++    output_asm_insn("clr  %0", args);
++    return("");
++  }
++  [(set_attr "length" "8,12")])
++
++;;-------------------------------------------------------------------
++;; Truncate
++; TODO swpb will suffice for non-strict truncation
++;;-------------------------------------
++
++(define_insn "trunchiqi2"
++  [(set (match_operand:QI 0 "register_operand" "=r")
++	(truncate:QI (match_operand:HI 1 "register_operand" "0")))]
++  ""
++  {
++    tms9900_debug_operands ("trunchiqi2", operands, 2);
++    output_asm_insn ("sla  %0, 8", operands);
++    return("");
++  }
++  [(set_attr "length" "2")])
++
++(define_insn "truncsiqi2"
++  [(set (match_operand:QI 0 "register_operand" "=r")
++	(truncate:QI (match_operand:SI 1 "register_operand" "0")))]
++  ""
++  {
++    tms9900_debug_operands ("truncsiqi2", operands, 2);
++    output_asm_insn ("sla  %0, 8", operands);
++    // TODO any action needed to discard high word?
++    return("");
++  }
++  [(set_attr "length" "2")])
++
++(define_insn "truncsihi2"
++  [(set (match_operand:HI 0 "register_operand" "=r")
++	(truncate:HI (match_operand:SI 1 "register_operand" "0")))]
++  ""
++  {
++    tms9900_debug_operands ("truncsihi2", operands, 2);
++    // TODO any action needed to discard high word?
++    return("");
++  }
++  [(set_attr "length" "2")])
 +
 +;;-------------------------------------------------------------------
 +;;  Branch Instructions
@@ -3873,90 +4244,6 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms9900/tms
 +
 +;;-------------------------------------------------------------------
 +;; Arithmetic shift left
-+
-+
-+;;-------------------------------------
-+(define_insn "ashlsi3"
-+  [(set (match_operand:SI 0 "register_operand" "=r,r")
-+	(ashift:SI (match_operand:SI 1 "register_operand" "0,0")
-+		   (match_operand:HI 2 "shift_count_operand" "S,i")))
-+   (clobber (match_scratch:HI 3 "=&r,&r"))]
-+     ""
-+  {
-+    rtx ops[7];
-+    ops[0] = operands[0];  /* Destination */
-+    ops[1] = operands[1];  /* Source */
-+    ops[2] = operands[2];  /* Shift count */
-+    ops[3] = operands[3];  /* Scratch reg */
-+    ops[4] = gen_rtx_REG (HImode, REGNO (operands[0]) + REGS_PER_WORD);  /* Low word of source */
-+    if(which_alternative == 0)
-+    {
-+      /* Variable shift */
-+      output_asm_insn("ci   %2, 16",  ops);  /* +0: Compare shift to 16 */
-+      output_asm_insn("jlt  $+12",    ops);  /* +4: If shift was < 16, goto lt_16 */
-+      output_asm_insn("jeq  $+4",     ops);  /* +6: If shift was 16, goto eq_16 */
-+     
-+      /* Shift count greater than 16 */
-+      output_asm_insn("sla  %4, %2",  ops);  /* +8: Shift low word */
-+
-+      /* eq_16: Shift count equals 16 */
-+      output_asm_insn("mov  %4, %1",  ops);  /* +10: Copy low word to high word */ 
-+      output_asm_insn("clr  %4",      ops);  /* +12: Clear low word */
-+      output_asm_insn("jmp  $+20",    ops);  /* +14: Goto end */
-+
-+      /* lt_16: Shift count less than 16 */
-+      output_asm_insn("abs  %2",      ops);  /* +16: Test shift count */
-+      output_asm_insn("jeq  $+16",    ops);  /* +18: If shift==0, goto end */
-+      output_asm_insn("mov  %4, %3",  ops);  /* +20: Save low word to temp */
-+      output_asm_insn("sla  %1, %2",  ops);  /* +22: Shift high word */
-+      output_asm_insn("sla  %4, %2",  ops);  /* +24: Shift low word */
-+      output_asm_insn("neg  %2",      ops);  /* +26: Get complement of shift count */
-+      output_asm_insn("srl  %3, %2",  ops);  /* +28: Shift low word bits into high word position */
-+      output_asm_insn("soc  %3, %1",  ops);  /* +30: Merge shifted low word bits into high word */
-+      output_asm_insn("neg  %2",      ops);  /* +32: Restore shift count */
-+      /* +34: End */
-+    }
-+    else
-+    {
-+      /* Constant shift */
-+      int offset = INTVAL(operands[2]);
-+      ops[5] = GEN_INT(16-offset);  /* Complement of shift count */
-+      ops[6] = GEN_INT(offset%16);  /* Modulo of shift count */
-+  
-+      if(offset < 16)
-+      {
-+        if(offset == 8)
-+        {
-+          output_asm_insn("movb %4, %1",  ops);  /* Move MSB of high word */
-+          output_asm_insn("sb   %4, %4",  ops);  /* Clear MSB of high word */
-+          output_asm_insn("swpb %1",      ops);  /* Swap bytes in low word */
-+          output_asm_insn("swpb %4",      ops);  /* Swap bytes in high word */
-+        }
-+        else
-+        {
-+          output_asm_insn("mov  %4, %3", ops);  /* Save low word to temp */
-+          output_asm_insn("sla  %1, %2", ops);  /* Shift high word */
-+          output_asm_insn("sla  %4, %2", ops);  /* Shift low word */
-+          output_asm_insn("srl  %3, %5", ops);  /* Shift low word bits into high word position */
-+          output_asm_insn("soc  %3, %1", ops);  /* Merge low word bits into high word */
-+        }
-+      } 
-+      else
-+      {
-+        if(offset > 16)
-+        {
-+          output_asm_insn("sla  %4, %6", ops);  /* Shift low word */
-+        }
-+        output_asm_insn("mov  %4, %1", ops);  /* Move low word into high word */
-+        output_asm_insn("clr  %4",     ops);  /* Clear low word */
-+      }
-+    }
-+    return "";
-+  }
-+  [(set_attr "length" "34, 10")]
-+)
-+
-+
 +;;-------------------------------------
 +(define_insn "ashlhi3"
 +  [(set (match_operand:HI 0 "register_operand" "=r,r")
@@ -3964,6 +4251,7 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms9900/tms
 +		   (match_operand:HI 2 "shift_count_operand" "S,i")))]
 +  ""
 +  {
++    tms9900_debug_operands ("ashlhi3", operands, 3);
 +    if(which_alternative == 0)
 +    {
 +      output_asm_insn("abs  r0",     operands);
@@ -3986,6 +4274,7 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms9900/tms
 +		   (match_operand:HI 2 "shift_count_operand" "S,i")))]
 +  ""
 +  {
++    tms9900_debug_operands ("ashlqi3", operands, 3);
 +    if(which_alternative == 0)
 +    {
 +      output_asm_insn("abs  r0",        operands);
@@ -4022,84 +4311,6 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms9900/tms
 +  "")
 +
 +
-+;;-------------------------------------------------------------------
-+;; Arithmetic shift right
-+
-+(define_insn "ashrsi3"
-+  [(set (match_operand:SI 0 "register_operand" "=r,r")
-+	(ashiftrt:SI (match_operand:SI 1 "register_operand" "0,0")
-+		     (match_operand:HI 2 "shift_count_operand" "S,i")))
-+   (clobber (match_scratch:HI 3 "=&r,&r"))]
-+     ""
-+  {
-+    rtx ops[7];
-+    ops[0] = operands[0];  /* Destination */
-+    ops[1] = operands[1];  /* Source */
-+    ops[2] = operands[2];  /* Shift count */
-+    ops[3] = operands[3];  /* Scratch reg */
-+    ops[4] = gen_rtx_REG (HImode, REGNO (operands[0]) + REGS_PER_WORD);  /* Low word of source */
-+    if(which_alternative == 0)
-+    {
-+      /* Variable shift */
-+      output_asm_insn("ci   %2, 16",  ops);  /* +0: Compare shift to 16 */
-+      output_asm_insn("jlt  $+16",    ops);  /* +4: If shift was < 16, goto lt_16 */
-+      output_asm_insn("jeq  $+4",     ops);  /* +6: If shift was 16, goto eq_16 */
-+
-+      /* Shift count greater than 16 */
-+      output_asm_insn("sra  %1, %2",  ops);  /* +8: Shift high word */
-+
-+      /* eq_16: Shift count equals 16 */
-+      output_asm_insn("mov  %1, %4",  ops);  /* +10: Copy high word to low word */ 
-+      output_asm_insn("seto %1",      ops);  /* +12: Assume negative value, set high word */
-+      output_asm_insn("jlt  $+4",     ops);  /* +14: If value was negative, skip next instruction */
-+      output_asm_insn("clr  %1",      ops);  /* +16: Clear high word */
-+      output_asm_insn("jmp  $+20",    ops);  /* +18: Goto end */
-+
-+      /* lt_16: Shift count less than 16 */
-+      output_asm_insn("abs  %2",      ops);  /* +20: Test shift count */
-+      output_asm_insn("jeq  $+16",    ops);  /* +22: If shift==0, goto end */
-+      output_asm_insn("mov  %4, %3",  ops);  /* +24: Save high word to temp */
-+      output_asm_insn("sra  %1, %2",  ops);  /* +26: Shift high word */
-+      output_asm_insn("srl  %4, %2",  ops);  /* +28: Shift low word */
-+      output_asm_insn("neg  %2",      ops);  /* +30: Get complement of shift count */
-+      output_asm_insn("sla  %3, %2",  ops);  /* +32: Shift high word bits into low word position */
-+      output_asm_insn("soc  %3, %4",  ops);  /* +34: Merge shifted high word bits into low word */
-+      output_asm_insn("neg  %2",      ops);  /* +36: Restore shift count */
-+      /* +38: End */
-+    }
-+    else
-+    {
-+      /* Constant shift */
-+      int offset = INTVAL(operands[2]);
-+      ops[5] = GEN_INT(16-offset);  /* Complement of shift count */
-+      ops[6] = GEN_INT(offset%16);  /* Modulo of shift count */
-+  
-+      if(offset < 16)
-+      {
-+        output_asm_insn("mov  %1, %3",  ops);  /* Save high word to temp */
-+        output_asm_insn("sra  %1, %6",  ops);  /* Shift high word */
-+        output_asm_insn("srl  %4, %6",  ops);  /* Shift low word */
-+        output_asm_insn("sla  %3, %5",  ops);  /* Shift high word bits into low word position */
-+        output_asm_insn("soc  %3, %4",  ops);  /* Merge shifted high word bits into low word */
-+      } 
-+      else
-+      {
-+        if(offset > 16)
-+        {
-+          output_asm_insn("sra  %1, %6", ops);  /* Shift high word */
-+        }
-+        output_asm_insn("mov  %1, %4",  ops);  /* Copy high word to low word */ 
-+        output_asm_insn("seto %1",      ops);  /* Assume negative value, set high word */
-+        output_asm_insn("jlt  $+4",     ops);  /* If value was negative, skip next instruction */
-+        output_asm_insn("clr  %1",      ops);  /* Clear high word */
-+      }
-+    }
-+    return "";
-+  }
-+  [(set_attr "length" "38, 10")]
-+)
-+
-+
 +;;-------------------------------------
 +(define_insn "ashrhi3"
 +  [(set (match_operand:HI 0 "register_operand" "=r,r")
@@ -4107,6 +4318,7 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms9900/tms
 +		     (match_operand:HI 2 "shift_count_operand" "S,i")))]
 +  ""
 +  {
++    tms9900_debug_operands ("ashrhi3", operands, 3);
 +    if(which_alternative == 0)
 +    {
 +      output_asm_insn("abs  r0",     operands);
@@ -4129,6 +4341,7 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms9900/tms
 +		     (match_operand:HI 2 "shift_count_operand" "S,i")))]
 +  ""
 +  {
++    tms9900_debug_operands ("ashrqi3", operands, 3);
 +    if(which_alternative == 0)
 +    {
 +      output_asm_insn("abs  r0",        operands);
@@ -4166,87 +4379,6 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms9900/tms
 +;; Logical shift right
 +
 +
-+;;-------------------------------------
-+(define_insn "lshrsi3"
-+  [(set (match_operand:SI 0 "register_operand" "=r,r")
-+	(lshiftrt:SI (match_operand:SI 1 "register_operand" "0,0")
-+		     (match_operand:HI 2 "shift_count_operand" "S,i")))
-+   (clobber (match_scratch:HI 3 "=&r,&r"))]
-+     ""
-+  {
-+    rtx ops[7];
-+    ops[0] = operands[0];  /* Destination */
-+    ops[1] = operands[1];  /* Source */
-+    ops[2] = operands[2];  /* Shift count */
-+    ops[3] = operands[3];  /* Scratch reg */
-+    ops[4] = gen_rtx_REG (HImode, REGNO (operands[0]) + REGS_PER_WORD);  /* Low word of source */
-+    if(which_alternative == 0)
-+    {
-+      /* Variable shift */
-+      output_asm_insn("ci   %2, 16",  ops);  /* +0: Compare shift to 16 */
-+      output_asm_insn("jlt  $+12",    ops);  /* +4: If shift was < 16, goto lt_16 */
-+      output_asm_insn("jeq  $+4",     ops);  /* +6: If shift was 16, goto eq_16 */
-+
-+      /* Shift count greater than 16 */
-+      output_asm_insn("srl  %1, %2",  ops);  /* +8: Shift high word */
-+
-+      /* eq_16: Shift count equals 16 */
-+      output_asm_insn("mov  %1, %4",  ops);  /* +10: Copy high word to low word */ 
-+      output_asm_insn("clr  %1",      ops);  /* +12: Clear high word */
-+      output_asm_insn("jmp  $+20",    ops);  /* +14: Goto end */
-+
-+      /* lt_16: Shift count less than 16 */
-+      output_asm_insn("abs  %2",      ops);  /* +16: Test shift count */
-+      output_asm_insn("jeq  $+16",    ops);  /* +18: If shift==0, goto end */
-+      output_asm_insn("mov  %1, %3",  ops);  /* +20: Save high word to temp */
-+      output_asm_insn("srl  %1, %2",  ops);  /* +22: Shift high word */
-+      output_asm_insn("srl  %4, %2",  ops);  /* +24: Shift low word */
-+      output_asm_insn("neg  %2",      ops);  /* +26: Get complement of shift count */
-+      output_asm_insn("sla  %3, %2",  ops);  /* +28: Shift high word bits into low word position */
-+      output_asm_insn("soc  %3, %4",  ops);  /* +30: Merge shifted high word bits into low word */
-+      output_asm_insn("neg  %2",      ops);  /* +32: Restore shift count */
-+      /* +34: End */
-+    }
-+    else
-+    {
-+      /* Constant shift */
-+      int offset = INTVAL(operands[2]);
-+      ops[5] = GEN_INT(16-offset);  /* Complement of shift count */
-+      ops[6] = GEN_INT(offset%16);  /* Modulo of shift count */
-+  
-+      if(offset < 16)
-+      {
-+        if(offset == 8)
-+        {
-+          output_asm_insn("swpb %1",      ops);  /* Swap bytes in low word */
-+          output_asm_insn("swpb %4",      ops);  /* Swap bytes in high word */
-+          output_asm_insn("movb %1, %4",  ops);  /* Move MSB of high word */
-+          output_asm_insn("sb   %1, %1",  ops);  /* Clear MSB of high word */
-+        }
-+        else
-+        {
-+          output_asm_insn("mov  %1, %3",  ops);  /* Save high word to temp */
-+          output_asm_insn("srl  %1, %6",  ops);  /* Shift high word */
-+          output_asm_insn("srl  %4, %6",  ops);  /* Shift low word */
-+          output_asm_insn("sla  %3, %5",  ops);  /* Shift high word bits into low word position */
-+          output_asm_insn("soc  %3, %4",  ops);  /* Merge shifted high word bits into low word */
-+        }
-+      } 
-+      else
-+      {
-+        if(offset > 16)
-+        {
-+          output_asm_insn("srl  %1, %6", ops);  /* Shift high word */
-+        }
-+        output_asm_insn("mov  %1, %4",  ops);  /* Copy high word to low word */ 
-+        output_asm_insn("clr  %1",      ops);  /* Clear high word */
-+      }
-+    }
-+    return "";
-+  }
-+  [(set_attr "length" "34, 10")]
-+)
-+
 +
 +;;-------------------------------------
 +(define_insn "lshrhi3"
@@ -4255,6 +4387,7 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms9900/tms
 +		     (match_operand:HI 2 "shift_count_operand" "S,i")))]
 +  ""
 +  {
++    tms9900_debug_operands ("lshrhi3", operands, 3);
 +    if(which_alternative == 0)
 +    {
 +      output_asm_insn("abs  r0",     operands);
@@ -4277,6 +4410,7 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms9900/tms
 +		     (match_operand:HI 2 "shift_count_operand" "S,i")))]
 +  ""
 +  {
++    tms9900_debug_operands ("lshrqi3", operands, 3);
 +    if(which_alternative == 0)
 +    {
 +      output_asm_insn("abs  r0",        operands);
@@ -4321,6 +4455,7 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms9900/tms
 +                     (match_operand:HI 2 "shift_count_operand" "S,i")))]
 +  ""
 +  {
++    tms9900_debug_operands ("rotlhi3", operands, 3);
 +    if (GET_CODE (operands[2]) == CONST_INT)
 +      operands[2] = GEN_INT ((16 - INTVAL (operands[2])) % 16);
 +    else
@@ -4361,6 +4496,7 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms9900/tms
 +		(match_operand:HI 2 "general_operand" "rR>,Q,rR>,Q,i,i,i")))]
 +  ""
 +  {
++    tms9900_debug_operands ("andhi3", operands, 3);
 +    if(which_alternative >= 4)
 +    {
 +      int val = INTVAL(operands[2]) & 0xFFFF;
@@ -4423,56 +4559,38 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms9900/tms
 +
 +;;-------------------------------------
 +(define_insn "andqi3"
-+  [(clobber (match_scratch:QI 3 "=r,r,r,r,r,r,r"))
-+   (set (match_operand:QI 0 "nonimmediate_operand" "=rR>,rR>,Q,Q,r,R>,Q")
-+	(and:QI (match_operand:QI 1 "nonimmediate_operand" "0,0,0,0,0,0,0")
-+		(match_operand:QI 2 "general_operand" "rR>,Q,rR>,Q,i,i,i")))]
++  [(clobber (match_scratch:QI 3                            "=r,  r,  r,  r,r"))
++   (set (match_operand:QI 0 "nonimmediate_operand"         "=rR>,Q,  rR>,Q,r")
++	(and:QI (match_operand:QI 1 "nonimmediate_operand" "0,   0,  0,  0,0")
++		(match_operand:QI 2 "general_operand"      "rR>, rR>,Q,  Q,i")))]
 +  ""
 +  {
-+    if(which_alternative >= 4)
++    tms9900_debug_operands ("andqi3", operands, 3);
++    int val;
++    if (which_alternative < 4)
 +    {
-+      int val = INTVAL(operands[2]) & 0xFF;
-+      if(which_alternative == 4)
-+      {
-+        /* AND const value and register */
-+        if(val == 0)
-+          output_asm_insn("clr  %0", operands);
-+        else if(val == 0xff)
-+          return("");
-+        else
-+        {
-+          operands[2] = GEN_INT(val*256);
-+          output_asm_insn("andi %0, %2", operands);
-+        }
-+      }
-+      else if(which_alternative >= 5)
-+      {
-+        /* AND const value and memory */
-+        if(val == 0)
-+          output_asm_insn("sb %0 %0", operands);
-+        else if(val == 0xff)
-+          return("");
-+        else
-+        {
-+          operands[2] = GEN_INT((~val)*256);
-+          output_asm_insn("li   %3, %2", operands);
-+          output_asm_insn("szc  %3, %0", operands);
-+        }
-+      }
++      output_asm_insn("movb %2, %3", operands);
++      output_asm_insn("inv  %3", operands);
++      output_asm_insn("szcb %3, %0", operands);
 +    }
 +    else
 +    {
-+      /* AND against non-const value */
-+      if(!rtx_equal_p(operands[2], operands[3]))
++      val = INTVAL(operands[2]) & 0xFF00;
++      /* AND const value and register */
++      if(val == 0)
++        output_asm_insn("clr %0", operands);
++      else if(val == 0xff00)
++        return("");
++      else
 +      {
-+        output_asm_insn("movb %2, %3", operands);
++        operands[2] = GEN_INT(~val);
++        output_asm_insn("li   %3, %2", operands);
++        output_asm_insn("szcb %3, %0", operands);
 +      }
-+      output_asm_insn("inv  %3",     operands);
-+      output_asm_insn("szcb %3, %0", operands);
 +    }
-+    return(""); 
++    return("");
 +  }
-+  [(set_attr "length" "6,8,8,10,4,6,8")])
++  [(set_attr "length" "6,8,8,10,6")])
 +
 +
 +(define_insn "*andnotqi"
@@ -4505,6 +4623,7 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms9900/tms
 +		(match_operand:HI 2 "general_operand" "rR>,Q,rR>,Q,i,M")))]
 +  ""
 +  {
++    tms9900_debug_operands ("iorhi3", operands, 3);
 +    if (GET_CODE (operands[2]) == CONST_INT)
 +      {
 +        int val = INTVAL(operands[2]) & 0xFFFF;
@@ -4522,23 +4641,30 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms9900/tms
 +
 +;;-------------------------------------
 +(define_insn "iorqi3"
-+  [(set (match_operand:QI 0 "nonimmediate_operand" "=rR>,rR>,Q,Q,r")
-+	(ior:QI (match_operand:QI 1 "nonimmediate_operand" "%0,0,0,0,0")
-+		(match_operand:QI 2 "general_operand" "rR>,Q,rR>,Q,i")))]
++   [(set (match_operand:QI 0 "nonimmediate_operand"        "=rR>,Q,  rR>,Q,r")
++	(ior:QI (match_operand:QI 1 "nonimmediate_operand" "0,   0,  0,  0,0")
++		(match_operand:QI 2 "general_operand"       "rR>,rR>,Q,  Q,i")))]
 +  ""
 +  {
-+    if (GET_CODE (operands[2]) == CONST_INT)
++    tms9900_debug_operands ("iorqi3", operands, 3);
++    int val;
++    if (which_alternative < 4)
++      output_asm_insn("socb %3, %0", operands);
++    else
 +    {
-+      int val = INTVAL(operands[2]) & 0xFF;
-+      operands[2] = GEN_INT(val * 256);
-+      if(val == 0xFF)
-+        return "seto %0";
-+      else if(val == 0)
-+        return "";
++      val = INTVAL(operands[2]) & 0xFF00;
++      /* AND const value and register */
++      if(val == 0)
++        return("");
++      else if(val == 0xff00)
++        output_asm_insn("seto %0", operands);
 +      else
-+        return("ori  %0, %2");
++      {
++        operands[2] = GEN_INT(val);
++        output_asm_insn("ori  %0, %2", operands);
++      }
 +    }
-+    return("socb %2, %0");
++    return("");
 +  }
 +  [(set_attr "length" "2,4,4,6,4")])
 +
@@ -4558,19 +4684,19 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms9900/tms
 +
 +
 +;;-------------------------------------
++;; This works for regs only as xor is 16-bit only and should not be used on
++;; memory locations as it will affect the neighbouring byte
 +(define_insn "xorqi3"
-+  [(set (match_operand:QI 0 "register_operand" "=r,r")
-+	(xor:QI (match_operand:QI 1 "register_operand" "%0,0")
-+		(match_operand:QI 2 "nonimmediate_operand" "rR>,Q")))]
++  [(set (match_operand:QI 0 "register_operand" "=r")
++	(xor:QI (match_operand:QI 1 "register_operand" "%0")
++		(match_operand:QI 2 "nonimmediate_operand" "r")))]
 +  ""
 +  "xor  %2, %0"
-+  [(set_attr "length" "2,4")])
++  [(set_attr "length" "2")])
 +
 +
 +;;-------------------------------------------------------------------
 +;; Not
-+
-+
 +;;-------------------------------------
 +(define_insn "one_cmplhi2"
 +  [(set (match_operand:HI 0 "nonimmediate_operand" "=rR>,Q")
@@ -4581,12 +4707,14 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms9900/tms
 +
 +
 +;;-------------------------------------
++;; This works for regs only as inv is 16-bit only and should not be used on
++;; memory locations as it will affect the neighbouring byte
 +(define_insn "one_cmplqi2"
-+  [(set (match_operand:QI 0 "nonimmediate_operand" "=rR>,Q")
-+        (not:QI (match_operand:QI 1 "nonimmediate_operand" "0,0")))]
++  [(set (match_operand:QI 0 "nonimmediate_operand" "=r")
++        (not:QI (match_operand:QI 1 "nonimmediate_operand" "0")))]
 +  ""
 +  "inv  %0"
-+  [(set_attr "length" "2,4")])
++  [(set_attr "length" "2")])
 +
 +
 +;;-------------------------------------------------------------------
@@ -4598,109 +4726,13 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms9900/tms
 +;; Add
 +
 +;;-------------------------------------
-+(define_insn "addsi3"
-+  [(set (match_operand:SI 0 "nonimmediate_operand"          "=r,r,r,r,r,r, R,R,R,R,R,R, Q,Q,Q,Q,Q,Q")
-+	(plus:SI (match_operand:SI 1 "nonimmediate_operand" "%0,0,0,0,0,0, 0,0,0,0,0,0, 0,0,0,0,0,0")
-+		 (match_operand:SI 2 "general_operand"       "r,R,Q,I,J,K, r,R,Q,I,J,K, r,R,Q,I,J,K")))
-+   (clobber (match_scratch:HI 3                             "=r,r,r,r,r,r, r,r,r,r,r,r, r,r,r,r,r,r"))]
-+  ""
-+  { 
-+    rtx low_words[4];
-+    rtx offset[3];
-+    low_words[3] = operands[3];
-+
-+    if(REG_P (operands[0]))
-+      low_words[0] = gen_rtx_REG (HImode, REGNO (operands[0]) + REGS_PER_WORD);
-+    else
-+      low_words[0] = adjust_address (operands[0], HImode, 2);
-+
-+    if(which_alternative >= 12)
-+      offset[0] = GEN_INT(6);
-+    else
-+      offset[0] = GEN_INT(4);
-+  
-+    if(! CONSTANT_P(operands[2]))
-+    {
-+      /* Adding two variables */
-+      if(REG_P (operands[2]))
-+        low_words[2] = gen_rtx_REG (HImode, REGNO (operands[2]) + REGS_PER_WORD);
-+      else
-+        low_words[2] = adjust_address (operands[2], HImode, 2);
-+
-+      output_asm_insn("a    %2, %0", operands);
-+      output_asm_insn("a    %2, %0", low_words);
-+      output_asm_insn("jnc  $+%0",   offset);
-+      output_asm_insn("inc  %0",     operands);
-+      return("");
-+    }
-+    else
-+    {
-+      /* Adding a constant */
-+      int low_const  =  INTVAL(operands[2])        & 0xffff;
-+      int high_const = (INTVAL(operands[2]) >> 16) & 0xffff;
-+      low_words[2] = GEN_INT(low_const);
-+      operands[2]  = GEN_INT(high_const);
-+
-+      if(low_const != 0)
-+      {
-+        switch(low_const)
-+        {
-+          case 0xFFFE: output_asm_insn("dect %0",     low_words); break;
-+          case 0xFFFF: output_asm_insn("dec  %0",     low_words); break;
-+          case      1: output_asm_insn("inc  %0",     low_words); break;
-+          case      2: output_asm_insn("inct %0",     low_words); break;
-+          default:
-+            if(REG_P(operands[0]))
-+              output_asm_insn("ai   %0, %2", low_words);
-+            else
-+            {
-+              output_asm_insn("li   %3, %2", low_words);              
-+              output_asm_insn("a    %3, %0", low_words);              
-+            }
-+        }
-+        /* DEC and DECT use inverted carry flags */
-+        /*
-+        if(low_const == 0xFFFF || low_const == 0xFFFE)
-+          output_asm_insn("joc  $+%0",   offset);
-+        else
-+        */
-+          output_asm_insn("jnc  $+%0",   offset);
-+
-+        /* Handle carry to high word */
-+        output_asm_insn("inc  %0",     operands);
-+      }
-+      if(high_const != 0)
-+      {
-+        switch(high_const)
-+        {
-+          case 0xFFFE: output_asm_insn("dect %0",     operands); break;
-+          case 0xFFFF: output_asm_insn("dec  %0",     operands); break;
-+          case      1: output_asm_insn("inc  %0",     operands); break;
-+          case      2: output_asm_insn("inct %0",     operands); break;
-+          default:
-+            if(REG_P(operands[0]))
-+              output_asm_insn("ai   %0, %2", operands);
-+            else
-+            {
-+              output_asm_insn("li   %3, %2", operands);              
-+              output_asm_insn("a    %3, %0", operands);              
-+            }
-+        }
-+      }
-+    }
-+
-+    return("");
-+  }
-+  [(set_attr "length" "8,10,14,4,8,12, 10,12,16,6,12,16,  14,16,18,8,16,20")])
-+
-+
-+;;-------------------------------------
 +(define_insn "addhi3"
 +  [(set (match_operand:HI 0 "nonimmediate_operand" "=rR>,Q,r,rR>,Q")
 +	(plus:HI (match_operand:HI 1 "nonimmediate_operand" "%0,0,0,0,0")
 +		 (match_operand:HI 2 "general_operand" "rR>LMNO,rR>LNMO,i,Q,Q")))]
 +  ""
 +  {
++    tms9900_debug_operands ("addhi3", operands, 3);
 +    switch(GET_CODE(operands[2]))
 +    {
 +      case CONST_INT:
@@ -4735,6 +4767,7 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms9900/tms
 +		 (match_operand:QI 2 "general_operand" "rR>,Q,rR>,Q,i")))]
 +  ""
 +  {
++    tms9900_debug_operands ("addqi3", operands, 3);
 +  if (GET_CODE (operands[2]) == CONST_INT)
 +    {
 +      operands[2] = GEN_INT(INTVAL(operands[2]) * 256);
@@ -4747,65 +4780,6 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms9900/tms
 +
 +;;-------------------------------------------------------------------
 +;; Subtract
-+
-+
-+;;-------------------------------------
-+(define_insn "subsi3"
-+  [(set (match_operand:SI 0 "nonimmediate_operand"          "=r,r,r,r,r,r,R,R,R,R,R,R,Q,Q,Q,Q,Q,Q")
-+	(minus:SI (match_operand:SI 1 "nonimmediate_operand" "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0")
-+		  (match_operand:SI 2 "general_operand"      "r,R,Q,I,J,K,r,R,Q,I,J,K,r,R,Q,I,J,K")))]
-+  ""
-+  {
-+    rtx lateoperands[3];
-+    rtx offset[3];
-+
-+    lateoperands[0] = operands[0];
-+    if(REG_P(operands[0]))
-+    {
-+      operands[0] = gen_rtx_REG(HImode, REGNO (operands[0]) + REGS_PER_WORD);
-+      offset[0] = GEN_INT(4);
-+    }
-+    else
-+    {
-+      operands[0] = adjust_address(operands[0], HImode, 2);
-+      offset[0] = GEN_INT(6);
-+    }
-+  
-+    if(! CONSTANT_P(operands[2]))
-+    {
-+      lateoperands[2] = operands[2];
-+
-+      if(REG_P(operands[2]))
-+        operands[2] = gen_rtx_REG(HImode, REGNO (operands[2]) + REGS_PER_WORD);
-+      else
-+        operands[2] = adjust_address(operands[2], HImode, 2);
-+
-+      output_asm_insn("s    %2, %0", lateoperands);
-+      output_asm_insn("s    %2, %0", operands);
-+      output_asm_insn("joc  $+%0", offset);
-+      output_asm_insn("dec  %0", lateoperands);
-+      return("");
-+    }
-+    /* EMW - This never seems to be called... */
-+    lateoperands[2] = GEN_INT((INTVAL(operands[2]) >> 16) & 0xffff);
-+    operands[2] = GEN_INT(INTVAL(operands[2]) & 0xffff);
-+  
-+    if(INTVAL(operands[2]))
-+    { 
-+      output_asm_insn("ai   %0, %2", operands);
-+      output_asm_insn("jnc  $+%0", offset);
-+      output_asm_insn("dec  %0", lateoperands);
-+    }
-+    if(INTVAL(lateoperands[2]))
-+    {
-+      operands[2] = GEN_INT(-INTVAL(operands[2]));
-+      output_asm_insn("ai   %0, %2", lateoperands);
-+    }
-+    return("");
-+  }
-+  [(set_attr "length" "8,10,12,4,8,12, 12,14,16,4,12,16,  16,18,18,6,12,18")])
-+
-+
 +;;-------------------------------------
 +(define_insn "subhi3"
 +  [(set (match_operand:HI 0 "nonimmediate_operand" "=rR>,Q,rR>,Q,rR>,Q,rR>,Q")
@@ -4813,6 +4787,7 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms9900/tms
 +		  (match_operand:HI 2 "nonimmediate_operand" "rR>,rR>,Q,Q,0,0,0,0")))]
 +  ""
 +  {
++    tms9900_debug_operands ("subhi3", operands, 3);
 +    if(which_alternative < 4)
 +    {
 +      output_asm_insn("s    %2, %0",operands);
@@ -4854,12 +4829,15 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms9900/tms
 +
 +
 +;;-------------------------------------
++;; MGB TODO why negate?  In case operands are swapped. Why not just constrain
++;; the compiler?
 +(define_insn "subqi3"
 +  [(set (match_operand:QI 0 "nonimmediate_operand" "=rR>,Q,rR>,Q,rR>,Q,rR>,Q")
 +	(minus:QI (match_operand:QI 1 "nonimmediate_operand" "0,0,0,0,rR>,rR>,Q,Q")
 +		  (match_operand:QI 2 "nonimmediate_operand" "rR>,rR>,Q,Q,0,0,0,0")))]
 +  ""
 +  {
++    tms9900_debug_operands ("subqi3", operands, 3);
 +    if(which_alternative < 4)
 +    {
 +      output_asm_insn("sb   %2, %0",operands);
@@ -4876,143 +4854,304 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms9900/tms
 +
 +;;-------------------------------------------------------------------
 +;; Multiply
-+
++;;
 +
 +;;-------------------------------------
-+(define_insn "mulsi3"
-+  [(set (match_operand:SI 0 "register_operand" "=r,r,r")
-+        (mult:SI (match_operand:SI 1 "register_operand" "0,0,0")
-+                 (match_operand:SI 2 "nonimmediate_operand"  "r,R,Q")))
-+   (clobber (match_scratch:HI 3 "=r,r,r"))
-+   (clobber (match_scratch:HI 4 "=r,r,r"))]
++; Expand for signed HI = QI x QI
++; TODO check sign of highpart of HI
++(define_expand "mulqihi3"
++   [(set (match_operand:HI 0 "register_operand" "=r")
++        (mult:HI (match_operand:QI 1 "register_operand" "r")
++                 (match_operand:QI 2 "register_operand" "rRQ>")))]
 +  ""
 +  {
-+    rtx args[6];
++    tms9900_debug_operands ("mulqihi3", operands, 3);
 +
-+    args[0] = operands[0];  // Destination R
-+    args[1] = gen_lowpart_SUBREG(HImode, operands[0]);
-+
-+    args[2] = operands[2];  // Source G
-+    if(REG_P(operands[2]))
-+    {
-+      args[3] = gen_lowpart_SUBREG(HImode, operands[2]);
-+    }
-+    else
-+    {
-+      args[3] = adjust_address(operands[2], HImode, 2);
-+    }
-+
-+    args[4] = operands[3];  // Temp
-+    args[5] = operands[4];  // Hold
-+
-+    /*
-+    Since we only have a 16-bit multiply, we need to expand
-+    this math.
-+
-+    (R0*N+R1)*(G0*N+G1) = R0*G0*N*N + R0*G1*N + R1*G0*N + R1*G1
-+
-+    We can omit the R0*G0 term since it won't fit into 32 bits
-+    */
-+
-+    output_asm_insn("mov  %1, %5",args);  // H = R1
-+    output_asm_insn("mpy  %3, %0",args);  // [R0,R1] = R0*G1
-+    output_asm_insn("mov  %1, %4",args);  // T = LSW(R0*G1)
-+    output_asm_insn("mov  %5, %0",args);  // R0 = H
-+    output_asm_insn("mpy  %2, %0",args);  // [R0,R1] = R1*G0
-+    output_asm_insn("a    %1, %4",args);  // T += LSW(R1*G0)
-+    output_asm_insn("mov  %5, %0",args);  // R0 = H
-+    output_asm_insn("mpy  %3, %0",args);  // [R0,R1] = R1*G1
-+    output_asm_insn("a    %4, %0",args);  // R0 += T
-+    return("");
++    rtx result = gen_reg_rtx (SImode);
++    rtx op1 = gen_reg_rtx (HImode);
++    rtx op2 = gen_reg_rtx (HImode);
++    emit_insn (gen_extendqihi2 (op1, operands[1]));
++    emit_insn (gen_extendqihi2 (op2, operands[2]));
++    emit_move_insn(gen_highpart (HImode, result), op1);
++    emit_insn(gen_mulnative(result, result, op2));
++    emit_move_insn (operands[0], gen_lowpart (HImode, result));
++    DONE;
 +  }
-+  [(set_attr "length" "18,22,26")])
-+
++)
 +
 +;;-------------------------------------
-+(define_insn "umulhisi3"
++; Expand for unsigned HI = QI x QI
++;
++(define_expand "umulqihi3"
++   [(set (match_operand:HI 0 "register_operand" "=r")
++        (mult:HI (match_operand:QI 1 "register_operand" "r")
++                 (match_operand:QI 2 "register_operand" "rRQ>")))]
++  ""
++  {
++    tms9900_debug_operands ("umulqihi3", operands, 3);
++
++    rtx result = gen_reg_rtx (SImode);
++    rtx op1 = gen_reg_rtx (HImode);
++    rtx op2 = gen_reg_rtx (HImode);
++
++    /* Extend expects both regs to be the same but passing two operands is legit
++     * as it forces the compiler to copy them to one reg first */
++    emit_insn (gen_zero_extendqihi2 (op1, operands[1]));
++    emit_insn (gen_zero_extendqihi2 (op2, operands[2]));
++    emit_move_insn(gen_highpart (HImode, result), op1);
++    emit_insn(gen_mulnative(result, result, op2));
++    emit_move_insn (operands[0], gen_lowpart (HImode, result));
++    DONE;
++  }
++)
++
++;;-------------------------------------
++; Expand for signed SI = HI x HI
++;
++(define_expand "mulhisi3"
 +  [(set (match_operand:SI 0 "register_operand" "=r,r")
-+	(mult:SI (match_operand:HI 1 "register_operand" "r,r")
++	(mult:SI (zero_extend (match_operand:HI 1 "register_operand" "=r,r"))
 +		 (match_operand:HI 2 "nonimmediate_operand" "rR>,Q")))]
 +  ""
 +  {
-+    if(REG_P(operands[1]) && (REGNO(operands[1]) == REGNO(operands[0])))
-+    {
-+      /* op[1] == op[0], arguments in proper location */
-+      output_asm_insn("mpy  %2, %0", operands);
-+    }
-+    else
-+    {
-+      /* Arguments need to move */
-+      if(!REG_P(operands[2]) || (REGNO(operands[2]) != REGNO(operands[0])))
-+      {
-+        /* op[2] != op[0], fix that */
-+        output_asm_insn("mov  %2, %0", operands);
-+      }
-+      output_asm_insn("mpy  %1, %0", operands);
-+    }
-+    return("");
-+  }
-+  [(set_attr "length" "4,6")])
++    tms9900_debug_operands ("mulqihi3", operands, 3);
 +
++    rtx result = gen_reg_rtx (SImode);
++    emit_move_insn(gen_highpart (HImode, result), operands[1]);
++    emit_insn(gen_mulnative(result, result, operands[2]));
++    emit_move_insn (operands[0], result);
++    DONE;
++  }
++)
++
++;;-------------------------------------
++; Expand for unsigned SI = HI x HI
++;
++(define_expand "umulhisi3"
++  [(set (match_operand:SI 0 "register_operand" "=r,r")
++	(mult:SI (zero_extend (match_operand:HI 1 "register_operand" "=r,r"))
++		 (match_operand:HI 2 "nonimmediate_operand" "rR>,Q")))]
++  ""
++  {
++    tms9900_debug_operands ("umulhisi3", operands, 3);
++
++    rtx result = gen_reg_rtx (SImode);
++    emit_move_insn(gen_highpart (HImode, result), operands[1]);
++    emit_insn(gen_mulnative(result, result, operands[2]));
++    emit_move_insn (operands[0], result);
++    DONE;
++  }
++)
++
++;;-------------------------------------
++; expand HI=HIxHI to native SI=SIxHI
 +
 +(define_expand "mulhi3"
-+  [(set (match_dup 3)
-+        (mult:SI (match_operand:HI 1 "register_operand" "r,r")
-+                 (match_operand:HI 2 "nonimmediate_operand" "rR>,Q")))
-+   (set (match_operand:HI 0 "register_operand" "=r,r")
-+        (subreg:HI (match_dup 3) 2))]
-+   ""
-+   "operands[3] = force_reg(SImode, GEN_INT(0));"
++  [(set (match_operand:HI 0 "register_operand" "=r,r")
++        (mult:HI (match_operand:HI 1 "register_operand" "+0,0")
++                 (match_operand:HI 2 "nonimmediate_operand" "rR>,Q")))]
++  ""
++  {
++    tms9900_debug_operands ("mulhi3", operands, 3);
++
++    rtx result = gen_reg_rtx (SImode);
++    emit_move_insn(gen_highpart (HImode, result), operands[1]);
++    emit_insn(gen_mulnative(result, result, operands[2]));
++    emit_move_insn (operands[0], gen_lowpart (HImode, result));
++    DONE;
++   }
 +)
++
++;;-------------------------------------
++; This is the native multiplication on the tms9900.  SI=HIxHI
++;  Note it is expected that op1 == op0 so we specify that op1 is SI.
++;  All other variants, QIxQI, etc, should expand to this insn.
++;  Also, mpy is unsigned so signed variants need to expand differently.
++;  Signed vs unsigned makes no difference if operands and results are the same
++;  size but will yield wrong results if result is wider than operands.
++
++(define_insn "mulnative"
++  [(set (match_operand:SI 0 "register_operand" "=r,r")
++	(mult:SI (match_operand:SI 1 "register_operand" "0,0")
++		 (match_operand:HI 2 "nonimmediate_operand" "rR>,Q")))]
++  ""
++  {
++    tms9900_debug_operands ("mulnative", operands, 3);
++    return ("mpy  %2, %0");
++  }
++  [(set_attr "length" "2,4")])
++
++;;-------------------------------------
++;; byte mul can only work in registers as we need to expand to HI mode
++
++(define_expand "udivmodqi4"
++  [(parallel [
++     (set (match_operand:QI 0 "register_operand" "=r")
++          (div:QI (match_operand:QI 1 "register_operand" "0")
++                  (match_operand:QI 2 "register_operand" "r")))
++     (set (match_operand:QI 3 "register_operand" "=r")
++          (mod:QI (match_dup 1) 
++                  (match_dup 2)))])]
++  ""
++  {
++    tms9900_debug_operands ("udivmodqi4", operands, 4);
++
++    /* Move and extend QI dividend to SI */
++    rtx dividend = gen_reg_rtx (SImode);
++    rtx scratch = gen_reg_rtx (HImode);
++    emit_insn(gen_zero_extendqihi2 (scratch, operands[1]));
++    emit_insn(gen_zero_extendhisi2 (dividend, scratch));
++
++    /* Extend the divisor */
++    rtx divisor = gen_reg_rtx (HImode);
++    emit_insn(gen_zero_extendqihi2 (divisor, operands[2]));
++
++    /* Do the division */
++    emit_insn(gen_udivmodsihi3(dividend, dividend, divisor));
++
++    /* Convert and store quotient from HI to QI */
++    rtx quotient = gen_reg_rtx (HImode);
++    emit_move_insn (quotient, gen_highpart (HImode, dividend));
++    emit_insn(gen_trunchiqi2 (operands[0], quotient));
++
++    /* Convert and store quotient from HI to QI */
++    rtx remainder = gen_reg_rtx (HImode);
++    emit_move_insn (remainder, gen_lowpart (HImode, dividend));
++    emit_insn(gen_trunchiqi2 (operands[3], remainder));
++    DONE;
++  })
++
++(define_expand "udivmodhi4"
++  [(parallel [
++     (set (match_operand:HI 0 "register_operand" "=r,r")
++          (div:HI (match_operand:HI 1 "register_operand" "+0,0")
++                  (match_operand:HI 2 "nonimmediate_operand" "+rR>,Q")))
++     (set (match_operand:HI 3 "register_operand" "=r,r")
++          (mod:HI (match_dup 1) 
++                  (match_dup 2)))])]
++  ""
++  {
++    tms9900_debug_operands ("udivmodhi4", operands, 4);
++    rtx dividend = gen_reg_rtx (SImode);
++    rtx tmp = gen_reg_rtx (HImode);
++    emit_move_insn(tmp, operands[1]);
++    emit_insn(gen_zero_extendhisi2 (dividend, tmp));
++    emit_insn(gen_udivmodsihi3(dividend, dividend, operands[2]));
++    emit_move_insn (operands[0], gen_highpart (HImode, dividend));
++    emit_move_insn (operands[3], gen_lowpart (HImode, dividend));
++    DONE;
++  })
++
 +
 +
 +;;-------------------------------------
-+(define_insn "*mulqisi3"
-+  [
-+   (set (match_operand:SI 0 "register_operand" "=r")
-+        (mult:SI (match_operand:QI 1 "register_operand" "0")
-+                 (match_operand:QI 2 "register_operand" "r")))
-+  ]
++;; Signed div/mod.  Native method is unsigned so record the sign of the result
++;; by xor'ing operands together to examine highest bit.  Then take abs of operands.
++;; Correct the sign of the quotient after the operation
++(define_expand "divmodqi4"
++  [(parallel [
++     (set (match_operand:QI 0 "register_operand" "=r,r")
++          (div:QI (match_operand:QI 1 "register_operand" "0,0")
++                  (match_operand:QI 2 "nonimmediate_operand" "rR>,Q")))
++     (set (match_operand:QI 3 "register_operand" "=r,r")
++          (mod:QI (match_dup 1) 
++                  (match_dup 2)))])]
 +  ""
 +  {
-+    rtx ops[4];
-+    ops[0] = operands[0];  /* Destination */
-+    ops[1] = operands[1];  /* Source 1 */
-+    ops[2] = operands[2];  /* Source 2 */
-+    ops[3] = gen_rtx_REG (HImode, REGNO (operands[0]) + REGS_PER_WORD);  /* Low word of source */
++    tms9900_debug_operands ("divmodqi4", operands, 4);
 +
-+    // Sometimes the source operands can get swapped, fix that here
-+    if(REGNO(operands[2]) != REGNO(operands[0]))
-+    {
-+      /* ops[2] != ops[0], fix that */
-+      output_asm_insn("mov  %2, %0", ops);
-+    }
-+    output_asm_insn("mpy  %1, %0", ops);
-+    output_asm_insn("mov  %0, %3", ops);
-+    return("");
++    /* Find quotient sign */
++    rtx sign = gen_reg_rtx (HImode); // sign of quotient
++    emit_insn(gen_extendqihi2 (operands[1], sign));
++    // emit_move_insn(sign, operands[1]);
++    emit_insn(gen_extendqihi2 (operands[2], operands[2]));
++    emit_insn(gen_xorhi3(sign, sign, operands[2]));
++
++    /* Use temp for operand2 and get abs value */
++    rtx divisor = gen_reg_rtx (HImode);
++    emit_move_insn(divisor, operands[2]);
++    emit_insn(gen_abshi2(divisor, divisor));
++
++    /* Use temp for operand1, get absolute value and extend to SI.  We don't
++     * have abssi2 so do abs on a tmp before extend  */
++    rtx dividend = gen_reg_rtx (SImode);
++    rtx tmp = gen_reg_rtx (HImode);
++    emit_move_insn(tmp, operands[1]);
++    emit_insn(gen_abshi2(tmp, tmp));
++    emit_insn(gen_extendhisi2 (dividend, tmp));
++
++    /* Perform division and modulus */
++    emit_insn(gen_udivmodsihi3(dividend, dividend, divisor));
++
++    /* Convert and store quotient from HI to QI */
++    rtx quotient = gen_reg_rtx (HImode);
++    emit_move_insn (quotient, gen_highpart (HImode, dividend));
++
++    /* Correct sign of quotient */
++    emit_insn(gen_divfixuphi2(quotient, sign));
++
++    /* Convert and store quotient from HI to QI */
++    emit_insn(gen_trunchiqi2 (operands[0], quotient));
++
++    /* Convert and store remainder from HI to QI */
++    rtx remainder = gen_reg_rtx (HImode);
++    emit_move_insn (remainder, gen_lowpart (HImode, dividend));
++    emit_insn(gen_trunchiqi2 (operands[3], remainder));
++
++    DONE;
 +  }
-+  [(set_attr "length" "6")])
++)
 +
 +
-+(define_expand "mulqi3"
-+  [
-+   (set (match_dup 3)
-+        (mult:SI (match_operand:QI 1 "register_operand" "3")
-+                 (match_operand:QI 2 "register_operand" "r")))
-+   (set (match_operand:QI 0 "register_operand" "=r")
-+        (subreg:QI (match_dup 3) 3))
-+  ]
++(define_expand "divmodhi4"
++  [(parallel [
++     (set (match_operand:HI 0 "register_operand" "=r,r")
++          (div:HI (match_operand:HI 1 "register_operand" "0,0")
++                  (match_operand:HI 2 "nonimmediate_operand" "rR>,Q")))
++     (set (match_operand:HI 3 "register_operand" "=r,r")
++          (mod:HI (match_dup 1) 
++                  (match_dup 2)))])]
 +  ""
-+  "operands[3] = force_reg(SImode, GEN_INT(0));"
++  {
++    tms9900_debug_operands ("divmodhi4", operands, 4);
++    // rtx insn, div_equal, mod_equal, equal;
++
++    /* Find quotient sign */
++    rtx sign = gen_reg_rtx (HImode); // sign of quotient
++    emit_move_insn(sign, operands[1]);
++    emit_insn(gen_xorhi3(sign, sign, operands[2]));
++
++    /* Use temp for operand2 and get abs value */
++    rtx divisor = gen_reg_rtx (HImode);
++    emit_move_insn(divisor, operands[2]);
++    emit_insn(gen_abshi2(divisor, divisor));
++
++    /* Use temp for operand1, get absolute value and extend to SI.  We don't
++     * have abssi2 so do abs on a tmp before extend  */
++    rtx dividend = gen_reg_rtx (SImode);
++    rtx tmp = gen_reg_rtx (HImode);
++    emit_move_insn(tmp, operands[1]);
++    emit_insn(gen_abshi2(tmp, tmp));
++    emit_insn(gen_extendhisi2 (dividend, tmp));
++
++    /* Perform division and modulus */
++    emit_insn(gen_udivmodsihi3(dividend, dividend, divisor));
++    emit_move_insn (operands[0], gen_highpart (HImode, dividend));
++    emit_move_insn (operands[3], gen_lowpart (HImode, dividend));
++
++    /* Correct sign of quotient */
++    emit_insn(gen_divfixuphi2(operands[0], sign));
++
++    DONE;
++  }
 +)
 +
 +
 +;;-------------------------------------------------------------------
 +;; Divide and Modulus
-+
-+
++;; native method HI = SI / HI , HI = SI % HI
 +;;-------------------------------------
-+(define_insn "divmodsihi3"
++(define_insn "udivmodsihi3"
 +  [(set (match_operand:SI 0 "register_operand" "=r,r")
 +        (ior:SI
 +          (ashift:SI
@@ -5024,91 +5163,13 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms9900/tms
 +            (mod:HI (match_dup 1)
 +                    (match_dup 2)))))]
 +  ""
-+  "div  %2, %0"
++  {
++    tms9900_debug_operands ("udivmodsihi3", operands, 3);
++    output_asm_insn ("div  %2, %0", operands);
++    return("");
++  }
 +  [(set_attr "length" "2,4")])
 +
-+
-+(define_expand "udivmodhi4"
-+  [(parallel [
-+     (set (match_operand:HI 0 "register_operand" "=r,r")
-+          (div:HI (match_operand:SI 1 "register_operand" "+0,0")
-+                  (match_operand:HI 2 "nonimmediate_operand" "+rR>,Q")))
-+     (set (match_operand:HI 3 "register_operand" "=r,r")
-+          (mod:HI (match_dup 1) 
-+                  (match_dup 2)))])]
-+  ""
-+  {
-+    rtx insn, div_equal, mod_equal, equal;
-+    div_equal = gen_rtx_DIV (HImode, operands[1], operands[2]);
-+    mod_equal = gen_rtx_MOD (HImode, operands[1], operands[2]);
-+    equal = gen_rtx_IOR (SImode,
-+                         gen_rtx_ASHIFT (SImode,
-+                                         gen_rtx_ZERO_EXTEND (SImode, div_equal),
-+                                         GEN_INT (16)),
-+                         gen_rtx_ZERO_EXTEND (SImode, mod_equal));
-+
-+    insn = emit_insn (gen_divmodsihi3 (operands[1], operands[1], operands[2]));
-+    set_unique_reg_note (insn, REG_EQUAL, equal);
-+
-+    insn = emit_move_insn (operands[0], gen_highpart (HImode, operands[1]));
-+    set_unique_reg_note (insn, REG_EQUAL, mod_equal);
-+
-+    insn = emit_move_insn (operands[3], gen_lowpart (HImode, operands[1]));
-+    set_unique_reg_note (insn, REG_EQUAL, div_equal);
-+
-+    DONE;
-+  })
-+
-+
-+;;-------------------------------------
-+(define_expand "divmodhi4"
-+  [(parallel [
-+     (clobber (match_scratch:HI 4 "+r,r"))
-+     (clobber (match_scratch:HI 5 "+r,r"))
-+     (clobber (match_scratch:SI 6 "+r,r"))
-+     (clobber (match_scratch:HI 7 "+r,r"))
-+     (clobber (match_scratch:HI 8 "+r,r"))
-+     (set (match_operand:HI 0 "register_operand" "=r,r")
-+          (div:HI (match_operand:HI 1 "register_operand" "0,0")
-+                  (match_operand:HI 2 "nonimmediate_operand" "rR>,Q")))
-+     (set (match_operand:HI 3 "register_operand" "=r,r")
-+          (mod:HI (match_dup 1) 
-+                  (match_dup 2)))
-+])]
-+  ""
-+  {
-+    operands[4] = gen_reg_rtx(HImode);
-+    operands[5] = gen_reg_rtx(HImode);
-+    operands[6] = gen_reg_rtx(SImode);
-+    operands[7] = gen_reg_rtx(HImode);
-+    operands[8] = gen_reg_rtx(HImode);
-+
-+    /* Use temp for operands */
-+    emit_move_insn(operands[7], operands[1]);
-+    emit_move_insn(operands[8], operands[2]);
-+
-+    /* Find quotient sign */
-+    emit_move_insn(operands[4], operands[1]);
-+    emit_insn(gen_xorhi3(operands[4], operands[4], operands[8]));
-+  
-+    /* Find modulus sign */
-+    emit_move_insn(operands[5], operands[1]);
-+
-+    /* Convert operands to absolute value */
-+    emit_insn(gen_abshi2(operands[7], operands[7]));
-+    emit_insn(gen_abshi2(operands[8], operands[8]));
-+
-+    /* Perform division and modulus */
-+    emit_move_insn(operands[6],gen_rtx_ZERO_EXTEND(SImode, operands[7]));
-+    emit_insn(gen_udivmodhi4(operands[0], operands[6], operands[8], operands[3]));
-+
-+    /* Correct sign of results */
-+    emit_insn(gen_divfixuphi2(operands[0], operands[4]));  /* Correct quotient sign */
-+    emit_insn(gen_divfixuphi2(operands[3], operands[5]));  /* Correct modulus sign */
-+
-+    DONE;
-+  }
-+)
 +
 +
 +(define_insn "divfixuphi2"
@@ -5119,6 +5180,7 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms9900/tms
 +           (neg:HI (match_dup 0)) (match_dup 0)))]
 +  ""
 +  {
++    tms9900_debug_operands ("divfixuphi2", operands, 2);
 +    output_asm_insn("inv  %1", operands);
 +    output_asm_insn("jlt  $+4", operands);
 +    output_asm_insn("neg  %0", operands);
@@ -5130,258 +5192,62 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms9900/tms
 +;;-------------------------------------------------------------------
 +;; Absolute Value
 +
-+
 +;;-------------------------------------
 +(define_insn "abshi2"
 +  [(set (match_operand:HI 0 "nonimmediate_operand" "=rR>,Q")
 +	(abs:HI (match_operand:HI 1 "nonimmediate_operand" "0,0")))]
 +  ""
-+  "abs  %0"
++  {
++    tms9900_debug_operands ("abshi2", operands, 2);
++    output_asm_insn ("abs  %0", operands);
++    return("");
++  }
 +  [(set_attr "length" "2,4")])
 +
 +
 +;;-------------------------------------
++;; register only as abs is 16-bit
 +(define_insn "absqi2"
 +  [(set (match_operand:QI 0 "register_operand" "=r")
 +	(abs:QI (match_operand:QI 1 "register_operand" "0")))]
 +  ""
-+  "abs  %0"
++  {
++    tms9900_debug_operands ("absqi2", operands, 2);
++    output_asm_insn ("abs  %0", operands);
++    return("");
++  }
 +  [(set_attr "length" "2")])
 +
 +
 +;;-------------------------------------------------------------------
 +;; Negate
 +
-+
-+;;-------------------------------------
-+(define_insn "negsi2"
-+  [(set (match_operand:SI 0 "nonimmediate_operand" "=rR,Q")
-+	(neg:SI (match_operand:SI 1 "nonimmediate_operand" "0,0")))]
-+  ""
-+  {
-+    rtx word[2];
-+    rtx offset[1];
-+
-+    /* word 0 is most significant */
-+    word[0] = operands[0];
-+    if (REG_P (operands[0]))
-+    {
-+      word[1] = gen_rtx_REG(HImode, REGNO(operands[0]) + REGS_PER_WORD);
-+      offset[0] = GEN_INT(4);
-+    }
-+    else
-+    {
-+      word[1] = adjust_address(operands[0], HImode, 2);
-+      offset[0] = GEN_INT(6);
-+    }
-+    output_asm_insn("inv  %0", word);
-+    output_asm_insn("neg  %1", word);
-+    output_asm_insn("jnc  $+%0", offset);
-+    output_asm_insn("inc  %0", word);
-+    return("");
-+  }
-+  [(set_attr "length" "8,14")])
-+
-+
 +;;-------------------------------------
 +(define_insn "neghi2"
 +  [(set (match_operand:HI 0 "nonimmediate_operand" "=rR>,Q")
 +	(neg:HI (match_operand:HI 1 "nonimmediate_operand" "0,0")))]
 +  ""
-+  "neg  %0"
++  {
++    tms9900_debug_operands ("neghi2", operands, 2);
++    output_asm_insn("neg  %0", operands);
++    return("");
++  }
 +  [(set_attr "length" "2,4")])
 +
 +
 +;;-------------------------------------
++;; TODO andi only reqiured for strict
 +(define_insn "negqi2"
 +  [(set (match_operand:QI 0 "register_operand" "=r")
 +	(neg:QI (match_operand:QI 1 "register_operand" "0")))]
 +  ""
 +  {
++    tms9900_debug_operands ("negqi2", operands, 2);
 +    output_asm_insn("andi %0, 0xFF00", operands);
 +    output_asm_insn("neg  %0", operands);
 +    return("");
 +  }
 +  [(set_attr "length" "6")])
-+
-+
-+;;-------------------------------------------------------------------
-+;;  Move Operations
-+;;-------------------------------------------------------------------
-+
-+
-+;;-------------------------------------------------------------------
-+;; Move byte value
-+(define_insn "movqi"
-+  [(set (match_operand:QI 0 "nonimmediate_operand" "=rR>,rR>,Q,  Q,r, r,W,r")
-+        (match_operand:QI 1 "general_operand"       "rR>,Q,  rR>,Q,MO,i,r,W"))]
-+  ""
-+  {
-+    if (GET_CODE (operands[1]) == CONST_INT)
-+    {
-+      if(GET_CODE (operands[0]) == REG)
-+      {
-+        if (INTVAL(operands[1]) == 0)
-+          return("clr  %0");
-+        else if (INTVAL(operands[1]) == -1)
-+          return("seto %0");
-+        else
-+        {
-+          operands[1] = GEN_INT(INTVAL(operands[1]) * 256);
-+          return("li   %0, %1");
-+        }
-+      }
-+    }
-+    else if(GET_CODE (operands[1]) == SUBREG ||
-+            GET_CODE (operands[1]) == TRUNCATE)
-+    {
-+      /* Mode change required, HI to QI */
-+      rtx suboperands[2];
-+      suboperands[0] = operands[0];
-+      suboperands[1] = SUBREG_REG(operands[1]);
-+      if(GET_CODE(operands[0]) == REG)
-+      {
-+        /* Reg-to-reg copy */ 
-+        if(REGNO(suboperands[0]) == REGNO(suboperands[1]))
-+        {
-+          /* Convert within the register */
-+          output_asm_insn ("swpb %0", suboperands);
-+        }
-+        else
-+        {
-+          /* Copy to other register, then convert */
-+          output_asm_insn ("mov  %1, %0", suboperands);
-+          output_asm_insn ("swpb %0", suboperands);            
-+        }
-+      }
-+      else
-+      {
-+        /* Reg-to-mem copy */
-+        if(find_regno_note(insn, REG_DEAD, REGNO(suboperands[1])))
-+        {
-+          output_asm_insn ("swpb %1", suboperands);                       
-+          output_asm_insn ("movb %1, %0", suboperands);
-+          /* Operand 1 dies here, no need to restore it */
-+        }
-+        else
-+        {
-+          output_asm_insn ("swpb %1", suboperands);                       
-+          output_asm_insn ("movb %1, %0", suboperands);
-+          output_asm_insn ("swpb %1", suboperands);                       
-+        }
-+      }
-+      return("");
-+    }
-+    return("movb %1, %0");
-+  }
-+  [(set_attr "length" "4,8,4,6,2,4,4,4")])
-+
-+
-+
-+;;-------------------------------------------------------------------
-+;; Move two-byte value
-+(define_insn "movhi"
-+  [(set (match_operand:HI 0 "nonimmediate_operand" "=UrR>,rR>,Q,Q,r,W,r")
-+	(match_operand:HI 1 "general_operand" "rROM>,Q,rROM>,Q,i,r,W"))]
-+  ""
-+  {
-+    switch(GET_CODE(operands[1]))
-+    {
-+      case CONST_INT:
-+        if (INTVAL(operands[1]) == 0)
-+          return("clr  %0");
-+        else if (INTVAL(operands[1]) == -1)
-+          return("seto %0");
-+        else
-+          return("li   %0, %1");
-+
-+      case REG:
-+      case MEM:
-+        return("mov  %1, %0");
-+
-+      default:
-+        return("li   %0, %1");
-+    }
-+  }
-+  [(set_attr "length" "2,4,4,6,4,2,2")])
-+
-+
-+;;-------------------------------------------------------------------
-+;; Type Conversions
-+;;-------------------------------------------------------------------
-+
-+
-+;;-------------------------------------------------------------------
-+;; Zero Extend
-+
-+
-+;;-------------------------------------
-+(define_insn "zero_extendqihi2"
-+  [(set (match_operand:HI 0 "register_operand" "=r")
-+	(zero_extend:HI (match_operand:QI 1 "register_operand" "0")))]
-+  ""
-+  "srl  %0, 8"
-+  [(set_attr "length" "2")])
-+
-+
-+;;-------------------------------------
-+(define_insn "zero_extendhisi2"
-+  [(set (match_operand:SI 0 "nonimmediate_operand" "=r,R,Q")
-+	(zero_extend:SI (match_operand:HI 1 "general_operand" "g,g,g")))]
-+  ""
-+  {
-+    rtx lateoperands[2];
-+
-+    lateoperands[0] = operands[0];
-+    if (REG_P (operands[0]))
-+      operands[0] = gen_rtx_REG(HImode, REGNO(operands[0]) + REGS_PER_WORD);
-+    else
-+      operands[0] = adjust_address(operands[0], HImode, 2);
-+
-+    output_asm_insn("mov  %1, %0", operands);
-+    output_asm_insn("clr  %0", lateoperands);
-+    return("");
-+  }
-+  [(set_attr "length" "4,8,10")])
-+
-+
-+;;-------------------------------------------------------------------
-+;; Sign Extend
-+(define_insn "extendqihi2"
-+  [(set (match_operand:HI 0 "register_operand" "=r")
-+	(sign_extend:HI (match_operand:QI 1 "register_operand" "0")))]
-+  ""
-+  "sra  %0, 8"
-+  [(set_attr "length" "2")])
-+			 
-+
-+;;-------------------------------------
-+(define_insn "extendhisi2"
-+  [(set (match_operand:SI 0 "nonimmediate_operand" "=r,R,Q")
-+	(sign_extend:SI (match_operand:HI 1 "general_operand" "g,g,g")))]
-+  ""
-+  {
-+    rtx latehalf[2];
-+    rtx offset[2];
-+
-+    latehalf[0] = operands[0];
-+    if (REG_P (operands[0]))
-+      operands[0] = gen_rtx_REG(HImode, REGNO(operands[0]) + REGS_PER_WORD);
-+    else
-+      operands[0] = adjust_address(operands[0], HImode, 2);
-+
-+    if(which_alternative == 2)
-+      offset[0] = GEN_INT(6);
-+    else
-+      offset[0] = GEN_INT(4);
-+
-+    output_asm_insn("mov  %1, %0", operands);
-+    output_asm_insn("seto %0", latehalf);
-+    output_asm_insn("jlt  $+%0", offset);
-+    output_asm_insn("clr  %0", latehalf);
-+    return("");
-+  }
-+  [(set_attr "length" "8,12,14")])
 +
 +
 +;;-------------------------------------------------------------------
@@ -5488,7 +5354,7 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms9900/tms
 +                           (pc)))]
 +  )
 +
-+
++;; TODO assume this can be deleted
 +(define_insn "*cmpqi_as_hi"
 +  [(set (cc0)
 +      (compare (match_operand:QI 0 "register_operand" "r")
@@ -6144,11 +6010,14 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms9900/tms
 +  }
 +  [(set_attr "length" "4")])
 +
-diff -ru gcc-orig/gcc/config/tms9900/tms9900-protos.h gcc-4.4.0/gcc/config/tms9900/tms9900-protos.h
---- gcc-orig/gcc/config/tms9900/tms9900-protos.h	2023-11-09 21:11:39.820718319 +0000
-+++ gcc-4.4.0/gcc/config/tms9900/tms9900-protos.h	2023-11-09 21:20:48.402867337 +0000
-@@ -0,0 +1,55 @@
+diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900-protos.h gcc-4.4.0/gcc/config/tms9900/tms9900-protos.h
+--- gcc-4.4.0-orig/gcc/config/tms9900/tms9900-protos.h	2023-12-03 08:29:52.807081769 +0000
++++ gcc-4.4.0/gcc/config/tms9900/tms9900-protos.h	2023-12-03 09:08:06.775093446 +0000
+@@ -0,0 +1,62 @@
 +/* Definitions of target machine for GNU compiler, for the TMS9900
++
++Copyright 2009 Eric Welser (EMW)
++Copyright 2023 Mark Burkley (MGB)
 +
 +This file is part of GCC.
 +
@@ -6203,9 +6072,13 @@ diff -ru gcc-orig/gcc/config/tms9900/tms9900-protos.h gcc-4.4.0/gcc/config/tms99
 +extern int tms9900_reg_ok_for_base(int strict, rtx reg);
 +extern int tms9900_go_if_legitimate_address(enum machine_mode mode ATTRIBUTE_UNUSED, rtx operand, int strict);
 +
-diff -ru gcc-orig/gcc/config.gcc gcc-4.4.0/gcc/config.gcc
---- gcc-orig/gcc/config.gcc	2023-11-09 21:04:18.758191908 +0000
-+++ gcc-4.4.0/gcc/config.gcc	2023-11-09 21:20:48.402867337 +0000
++extern void tms9900_register_mode_set (rtx operand, int mode);
++extern void tms9900_register_convert (rtx operand, int mode, int sign);
++extern void tms9900_inline_debug (const char *fmt,...);
++extern void tms9900_debug_operands (const char *name, rtx ops[], int count);
+diff -ru gcc-4.4.0-orig/gcc/config.gcc gcc-4.4.0/gcc/config.gcc
+--- gcc-4.4.0-orig/gcc/config.gcc	2023-12-03 08:29:52.807081769 +0000
++++ gcc-4.4.0/gcc/config.gcc	2023-12-03 08:43:31.228644467 +0000
 @@ -2314,6 +2314,8 @@
  	c_target_objs="${c_target_objs} spu-c.o"
  	cxx_target_objs="${cxx_target_objs} spu-c.o"
@@ -6215,9 +6088,9 @@ diff -ru gcc-orig/gcc/config.gcc gcc-4.4.0/gcc/config.gcc
  v850e1-*-*)
  	target_cpu_default="TARGET_CPU_v850e1"
  	tm_file="dbxelf.h elfos.h svr4.h v850/v850.h"
-diff -ru gcc-orig/gcc/cp/cfns.h gcc-4.4.0/gcc/cp/cfns.h
---- gcc-orig/gcc/cp/cfns.h	2023-11-09 21:04:18.758191908 +0000
-+++ gcc-4.4.0/gcc/cp/cfns.h	2023-11-09 21:20:48.402867337 +0000
+diff -ru gcc-4.4.0-orig/gcc/cp/cfns.h gcc-4.4.0/gcc/cp/cfns.h
+--- gcc-4.4.0-orig/gcc/cp/cfns.h	2023-12-03 08:29:52.807081769 +0000
++++ gcc-4.4.0/gcc/cp/cfns.h	2023-12-03 08:44:48.960310031 +0000
 @@ -1,4 +1,4 @@
 -/* ANSI-C code produced by gperf version 3.0.1 */
 +/* ANSI-C code produced by gperf version 3.0.4 */
@@ -6316,50 +6189,14 @@ diff -ru gcc-orig/gcc/cp/cfns.h gcc-4.4.0/gcc/cp/cfns.h
      }
    return 0;
  }
-diff -ru gcc-orig/gcc/cp/except.c gcc-4.4.0/gcc/cp/except.c
---- gcc-orig/gcc/cp/except.c	2023-11-09 21:04:18.758191908 +0000
-+++ gcc-4.4.0/gcc/cp/except.c	2023-11-09 21:20:48.402867337 +0000
-@@ -926,7 +926,6 @@
-    Standard C library shall report an error by throwing an
-    exception, unless it calls a program-supplied function that
-    throws an exception.  */
--
- #include "cfns.h"
- 
- int
-diff -ru gcc-orig/gcc/DEV-PHASE gcc-4.4.0/gcc/DEV-PHASE
---- gcc-orig/gcc/DEV-PHASE	2023-11-09 21:04:18.754191922 +0000
-+++ gcc-4.4.0/gcc/DEV-PHASE	2023-11-09 21:20:48.402867337 +0000
+diff -ru gcc-4.4.0-orig/gcc/DEV-PHASE gcc-4.4.0/gcc/DEV-PHASE
+--- gcc-4.4.0-orig/gcc/DEV-PHASE	2023-12-03 08:29:52.803081578 +0000
++++ gcc-4.4.0/gcc/DEV-PHASE	2023-12-03 08:16:48.286693044 +0000
 @@ -0,0 +1 @@
 +TMS9900 patch 1.19
-diff -ru gcc-orig/gcc/final.c gcc-4.4.0/gcc/final.c
---- gcc-orig/gcc/final.c	2023-11-09 21:04:18.758191908 +0000
-+++ gcc-4.4.0/gcc/final.c	2023-11-09 21:20:48.406867324 +0000
-@@ -2772,6 +2772,11 @@
-       else if (REG_P (y))
- 	{
- 	  /* Simplify_subreg can't handle some REG cases, but we have to.  */
-+#ifdef TMS9900
-+          if(!((GET_MODE(x) == QImode && GET_MODE(y) != QImode) ||
-+               (GET_MODE(x) != QImode && GET_MODE(y) == QImode)))
-+          {
-+#endif
- 	  unsigned int regno;
- 	  HOST_WIDE_INT offset;
- 
-@@ -2781,6 +2786,9 @@
- 	  else
- 	    offset = SUBREG_BYTE (x);
- 	  *xp = gen_rtx_REG_offset (y, GET_MODE (x), regno, offset);
-+#ifdef TMS9900
-+          }
-+#endif
- 	}
-     }
- 
-diff -ru gcc-orig/gcc/passes.c gcc-4.4.0/gcc/passes.c
---- gcc-orig/gcc/passes.c	2023-11-09 21:04:18.758191908 +0000
-+++ gcc-4.4.0/gcc/passes.c	2023-11-09 21:20:48.406867324 +0000
+diff -ru gcc-4.4.0-orig/gcc/passes.c gcc-4.4.0/gcc/passes.c
+--- gcc-4.4.0-orig/gcc/passes.c	2023-12-03 08:29:52.807081769 +0000
++++ gcc-4.4.0/gcc/passes.c	2023-12-03 08:45:33.893784581 +0000
 @@ -102,6 +102,11 @@
  				   declarations for e.g. AIX 4.x.  */
  #endif
@@ -6383,101 +6220,39 @@ diff -ru gcc-orig/gcc/passes.c gcc-4.4.0/gcc/passes.c
        NEXT_PASS (pass_subregs_of_mode_init);
        NEXT_PASS (pass_ira);
        NEXT_PASS (pass_subregs_of_mode_finish);
-diff -ru gcc-orig/gcc/reload.c gcc-4.4.0/gcc/reload.c
---- gcc-orig/gcc/reload.c	2023-11-09 21:04:18.758191908 +0000
-+++ gcc-4.4.0/gcc/reload.c	2023-11-09 21:20:48.406867324 +0000
-@@ -2166,6 +2166,14 @@
+diff -ru gcc-4.4.0-orig/gcc/reload.c gcc-4.4.0/gcc/reload.c
+--- gcc-4.4.0-orig/gcc/reload.c	2023-12-03 08:29:52.807081769 +0000
++++ gcc-4.4.0/gcc/reload.c	2023-12-03 11:31:57.818044408 +0000
+@@ -5475,7 +5475,7 @@
+ 	    code0 = GET_CODE (op0);
+ 	    if (code0 == REG && REGNO (op0) < FIRST_PSEUDO_REGISTER)
+ 	      op0 = gen_rtx_REG (word_mode,
+-				 (REGNO (op0) +
++				 (REGNO (op0)+
+ 				  subreg_regno_offset (REGNO (SUBREG_REG (orig_op0)),
+ 						       GET_MODE (SUBREG_REG (orig_op0)),
+ 						       SUBREG_BYTE (orig_op0),
+@@ -5490,7 +5490,7 @@
+ 	      /* ??? Why is this given op1's mode and above for
+ 		 ??? op0 SUBREGs we use word_mode?  */
+ 	      op1 = gen_rtx_REG (GET_MODE (op1),
+-				 (REGNO (op1) +
++				 (REGNO (op1)+
+ 				  subreg_regno_offset (REGNO (SUBREG_REG (orig_op1)),
+ 						       GET_MODE (SUBREG_REG (orig_op1)),
+ 						       SUBREG_BYTE (orig_op1),
+@@ -6362,7 +6362,7 @@
  
-   if (x == y)
-     return 1;
-+
-+#ifdef TMS9900
-+  /* We cannot match register subregs for the TMS9900 */
-+  if((GET_MODE(x)==QImode && GET_CODE(x)==SUBREG && REG_P(SUBREG_REG(x))) ||
-+     (GET_MODE(y)==QImode && GET_CODE(y)==SUBREG && REG_P(SUBREG_REG(y))))
-+    return 0;
-+#endif
-+
-   if ((code == REG || (code == SUBREG && REG_P (SUBREG_REG (x))))
-       && (REG_P (y) || (GET_CODE (y) == SUBREG
- 				  && REG_P (SUBREG_REG (y)))))
-@@ -2995,6 +3003,12 @@
- 	      if (REG_P (SUBREG_REG (operand))
- 		  && REGNO (SUBREG_REG (operand)) < FIRST_PSEUDO_REGISTER)
- 		{
-+#ifdef TMS9900
-+                  /* Added for TMS9900, do not attempt reloads of
-+                     registers if byte values are involved */
-+                  if(GET_MODE (operand) != QImode && 
-+                     GET_MODE (SUBREG_REG (operand)) != QImode)
-+#endif
- 		  if (simplify_subreg_regno (REGNO (SUBREG_REG (operand)),
- 					     GET_MODE (SUBREG_REG (operand)),
- 					     SUBREG_BYTE (operand),
-diff -ru gcc-orig/gcc/rtl-error.c gcc-4.4.0/gcc/rtl-error.c
---- gcc-orig/gcc/rtl-error.c	2023-11-09 21:04:18.758191908 +0000
-+++ gcc-4.4.0/gcc/rtl-error.c	2023-11-09 21:20:48.410867309 +0000
-@@ -102,12 +102,14 @@
- _fatal_insn (const char *msgid, const_rtx insn, const char *file, int line,
- 	     const char *function)
- {
-+#if 0
-   error ("%s", _(msgid));
- 
-   /* The above incremented error_count, but isn't an error that we want to
-      count, so reset it here.  */
-   errorcount--;
--
-+#endif
-+  printf("%s\n", msgid);
-   debug_rtx (insn);
-   fancy_abort (file, line, function);
- }
-diff -ru gcc-orig/gcc/rtlhooks.c gcc-4.4.0/gcc/rtlhooks.c
---- gcc-orig/gcc/rtlhooks.c	2023-11-09 21:04:18.758191908 +0000
-+++ gcc-4.4.0/gcc/rtlhooks.c	2023-11-09 21:20:48.410867309 +0000
-@@ -55,6 +55,15 @@
-     {
-       int offset = 0;
- 
-+#ifdef TMS9900
-+      /* Added for TMS9900
-+         If the location is not known yet, take no action now. Return
-+         the original subreg expression until the location is known */
-+      if(!(MEM_P (x)))
-+        {
-+          return gen_lowpart_general (mode, force_reg (GET_MODE (x), x));
-+        }
-+#endif
-       /* The only additional case we can do is MEM.  */
-       gcc_assert (MEM_P (x));
- 
-diff -ru gcc-orig/gcc/simplify-rtx.c gcc-4.4.0/gcc/simplify-rtx.c
---- gcc-orig/gcc/simplify-rtx.c	2023-11-09 21:04:18.762191895 +0000
-+++ gcc-4.4.0/gcc/simplify-rtx.c	2023-11-09 21:20:48.410867309 +0000
-@@ -5094,6 +5094,19 @@
- 		final_offset += difference % UNITS_PER_WORD;
- 	    }
- 
-+#ifdef TMS9900
-+          /* Modification for TMS9900
-+             Do not assume QI quantities are in low part of register */
-+          if(outermode == QImode)
-+          {
-+              /* The code above has determined which register and offset
-+                 are needed for this simplification, just use that to
-+                 specify a subreg of a full HImode register */
-+              x = gen_rtx_SUBREG(outermode, gen_rtx_REG (HImode, final_regno), final_offset % GET_MODE_SIZE(HImode));
-+              return x;
-+          }
-+#endif
-+
- 	  x = gen_rtx_REG_offset (op, outermode, final_regno, final_offset);
- 
- 	  /* Propagate original regno.  We don't have any way to specify
-diff -ru gcc-orig/gcc/toplev.h gcc-4.4.0/gcc/toplev.h
---- gcc-orig/gcc/toplev.h	2023-11-09 21:04:18.762191895 +0000
-+++ gcc-4.4.0/gcc/toplev.h	2023-11-09 21:20:48.410867309 +0000
+ 	  if (REG_P (reloadreg))
+ 	    return gen_rtx_REG (GET_MODE (*loc),
+-				(REGNO (reloadreg) +
++				(REGNO (reloadreg)+
+ 				 subreg_regno_offset (REGNO (SUBREG_REG (*loc)),
+ 						      GET_MODE (SUBREG_REG (*loc)),
+ 						      SUBREG_BYTE (*loc),
+diff -ru gcc-4.4.0-orig/gcc/toplev.h gcc-4.4.0/gcc/toplev.h
+--- gcc-4.4.0-orig/gcc/toplev.h	2023-12-03 08:29:52.811081961 +0000
++++ gcc-4.4.0/gcc/toplev.h	2023-12-03 08:46:51.298273748 +0000
 @@ -186,6 +186,7 @@
  #  define CTZ_HWI __builtin_ctz
  # endif
@@ -6494,9 +6269,9 @@ diff -ru gcc-orig/gcc/toplev.h gcc-4.4.0/gcc/toplev.h
  #endif /* GCC_VERSION >= 3004 */
  
  /* Functions used to get and set GCC's notion of in what directory
-diff -ru gcc-orig/libgcc/config/tms9900/t-tms9900 gcc-4.4.0/libgcc/config/tms9900/t-tms9900
---- gcc-orig/libgcc/config/tms9900/t-tms9900	2023-11-09 21:11:39.828718292 +0000
-+++ gcc-4.4.0/libgcc/config/tms9900/t-tms9900	2023-11-09 21:20:48.410867309 +0000
+diff -ru gcc-4.4.0-orig/libgcc/config/tms9900/t-tms9900 gcc-4.4.0/libgcc/config/tms9900/t-tms9900
+--- gcc-4.4.0-orig/libgcc/config/tms9900/t-tms9900	2023-12-03 08:29:52.811081961 +0000
++++ gcc-4.4.0/libgcc/config/tms9900/t-tms9900	2023-12-03 08:16:48.294694440 +0000
 @@ -0,0 +1,27 @@
 +# Extra 16-bit integer functions.
 +intfuncs16 = _absvXX2 _addvXX3 _subvXX3 _mulvXX3 _negvXX2
@@ -6525,9 +6300,9 @@ diff -ru gcc-orig/libgcc/config/tms9900/t-tms9900 gcc-4.4.0/libgcc/config/tms990
 +libgcc-s-objects += $(patsubst %,%_s$(objext),$(hiintfuncs16))
 +endif
 +
-diff -ru gcc-orig/libgcc/config.host gcc-4.4.0/libgcc/config.host
---- gcc-orig/libgcc/config.host	2023-11-09 21:04:18.762191895 +0000
-+++ gcc-4.4.0/libgcc/config.host	2023-11-09 21:20:48.410867309 +0000
+diff -ru gcc-4.4.0-orig/libgcc/config.host gcc-4.4.0/libgcc/config.host
+--- gcc-4.4.0-orig/libgcc/config.host	2023-12-03 08:29:52.811081961 +0000
++++ gcc-4.4.0/libgcc/config.host	2023-12-03 08:42:41.087387427 +0000
 @@ -127,6 +127,9 @@
  sh[123456789lbe]*-*-*)
  	cpu_type=sh

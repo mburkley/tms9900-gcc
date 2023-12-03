@@ -2,6 +2,9 @@
    Texas Instruments TMS9900
    Copyright (C) 2009
 
+Copyright 2009 Eric Welser (EMW)
+Copyright 2023 Mark Burkley (MGB)
+
 This file is part of GCC.
 
 GCC is free software; you can redistribute it and/or modify

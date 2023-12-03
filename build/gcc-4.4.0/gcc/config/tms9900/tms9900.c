@@ -1,3 +1,27 @@
+/* Subroutines for insn-output.c for TMS9900.
+   Copyright (C) 1987, 1994, 1995, 1997, 1998, 1999, 2000, 2001, 2002,
+   2004, 2005, 2006, 2007, 2008
+   Free Software Foundation, Inc.
+
+Copyright 2009 Eric Welser (EMW)
+Copyright 2023 Mark Burkley (MGB)
+
+This file is part of GCC.
+
+GCC is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3, or (at your option)
+any later version.
+
+GCC is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with GCC; see the file COPYING3.  If not see
+<http://www.gnu.org/licenses/>.  */
+
 #include "insn-modes.h"
 #include <stdio.h>
 #include "config.h"
@@ -330,18 +354,13 @@ int tms9900_initial_elimination_offset (int from,
   }
   if (from == FRAME_POINTER_REGNUM && to == HARD_SP_REGNUM)
   {
-    // ret =(tms9900_get_saved_reg_size()+
-    //        get_frame_size ());
-    // ret =(get_frame_size());
     ret = 0;
   }
   if (from == ARG_POINTER_REGNUM && to == FRAME_POINTER_REGNUM)
   {
     ret =(tms9900_get_saved_reg_size()+
            get_frame_size ());
-    // ret =(tms9900_get_saved_reg_size());
   }
-  // ret =(0);
   // printf ("%s res=%d\n", __func__, ret);
   return ret;
 }
@@ -596,8 +615,6 @@ void tms9900_expand_prologue (void)
    }
 
    /* Actually save registers */
-   // if(regcount > 2)
-   // {
       /*
       Form 1:
       ai sp, -regs*2        4      14+8+8   = 30
@@ -639,38 +656,6 @@ void tms9900_expand_prologue (void)
          }
          idx++;
       }
-   #if 0
-   }
-   else
-   {
-      /*
-      Form 2:
-      ai sp, -regs*2       4      14+8+8   = 30
-      mov r9, *sp          2      14+8+4+8 = 34
-      mov r13, @2(sp)      4      14+8+8+8 = 38
-      mov r14, @4(sp)      4      14+8+8+8 = 38
-      mov r15, @6(sp)      4      14+8+8+8 = 38
-      mov r11, @8(sp)      4      14+8+8+8 = 38
-      ai sp, -frame        4      14+8+8   = 30
-      */
-      int offset = 0;
-      idx = 0;
-      while(nvolregs[idx] != 0)
-      {
-         if(saveregs[idx]!=0)
-         {
-            /* Emit "mov Rn, @X(sp)" */
-            int regno = nvolregs[idx];
-            emit_insn(gen_movhi(
-               adjust_address(gen_rtx_MEM(HImode, stack_pointer_rtx), 
-                              HImode, offset),
-               gen_rtx_REG(HImode, regno)));
-            offset += 2;
-         }
-         idx++;
-      }
-   }
-   #endif
 
    if(frame_size > 0)
    {
@@ -1188,78 +1173,8 @@ struct rtl_opt_pass pass_tms9900_postinc =
 
 // MGB additions start here - mostly for debug
 
-#if 0
-
-// Abandoned functions to expand mult and div with no temps.  Woudl generate a
-// huge amount of code to have 4 complete sets of instructions to cater for +/-
-// operands.
-
-/*  Issue a mult insn, signed or unsigned.  TMS9900 only supports unsigned mult
- *  so if signed, take note of the signs, do abs and reapply sign to result
- *
- *  op[0] : SI : result
- *  op[1] : HI : operand1
- *  op[2] : HI : operand2
- */
-void tms9900_mult (int sign, rtx ops[])
-{
-}
-
-/*  Issue a divide/modulo insn, signed or unsigned.  TMS9900 only supports
- *  unsigned div so if signed, take note of the signs, do abs and reapply sign
- *  to result
- *
- *  op[0] : HI : quotient / result
- *  op[1] : SI : dividend
- *  op[2] : HI : divisor
- *  op[3] : HI : modulo / remainder
- */
-void tms9900_divmod (int sign, rtx operands[])
-{
-    if (sign)
-    {
-    if(which_alternative == 2)
-      offset[0] = GEN_INT(6);
-    else
-      offset[0] = GEN_INT(4);
-        output_asm_insn("mov  %1, %1", operands);
-        output_asm_insn("jle  $+%0", offset);
-        output_asm_insn("neg  %1", operands);
-
-        output_asm_insn("mov  %2, %2", operands);
-        output_asm_insn("jle  $+%0", offset);
-        output_asm_insn("neg  %2", operands);
-
-        output_asm_insn("div  %2, %1", operands);
-        output_asm_insn("neg  %2", operands);
-        output_asm_insn("neg  %0", operands);
-        output
-
-    }
-#endif
-
 #include <stdlib.h>
 #include <stdarg.h>
-
-static int regMode[16] =
-{
-    HImode, HImode, HImode, HImode,
-    HImode, HImode, HImode, HImode,
-    HImode, HImode, HImode, HImode,
-    HImode, HImode, HImode, HImode
-};
-
-char *tms9900_get_mode (int mode)
-{
-    return GET_MODE_NAME (mode);
-    switch (mode)
-    {
-    case QImode: return "QI"; break;
-    case HImode: return "HI"; break;
-    case SImode: return "SI"; break;
-    }
-    return "??";
-}
 
 extern void tms9900_inline_debug (const char *fmt,...)
 {
@@ -1297,7 +1212,8 @@ extern void tms9900_debug_operands (const char *name, rtx ops[], int count)
         print_rtx_head = "; ";
 
         print_inline_rtx (file, ops[i], 0);
-        fprintf (file, "code=[%s:%s]\n", GET_RTX_NAME(GET_CODE(ops[i])), tms9900_get_mode (GET_MODE (ops[i])));
+        fprintf (file, "code=[%s:%s]\n", GET_RTX_NAME(GET_CODE(ops[i])),
+                 GET_MODE_NAME (GET_MODE (ops[i])));
     }
     fprintf (file, "\n");
 }

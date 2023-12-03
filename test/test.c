@@ -1,8 +1,15 @@
+#ifdef __tms9900__
 #include <vdp.h>
+#else
+#include <stdio.h>
+#endif
 
 #include "tap.h"
 
 #if 0
+
+// Disabled for now until float funcs are implemented in libgcc
+
 void test_double_init (void)
 {
     double x = 1.2;
@@ -111,8 +118,10 @@ void test_s_byte_mpy()
 
 int main(void)
 {
+#ifdef __tms9900__
     set_graphics(0);
     charset();
+#endif
 
     printf ("1..10\n");
 
@@ -125,6 +134,8 @@ int main(void)
 
     test_report ();
 
+#ifdef __tms9900__
     while(1);
+#endif
     return 0;
 }

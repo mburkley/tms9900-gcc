@@ -2772,12 +2772,6 @@ alter_subreg (rtx *xp)
       else if (REG_P (y))
 	{
 	  /* Simplify_subreg can't handle some REG cases, but we have to.  */
-/*  MGB disabled */
-#ifdef TMS9900xxx
-          if(!((GET_MODE(x) == QImode && GET_MODE(y) != QImode) ||
-               (GET_MODE(x) != QImode && GET_MODE(y) == QImode)))
-          {
-#endif
 	  unsigned int regno;
 	  HOST_WIDE_INT offset;
 
@@ -2787,9 +2781,6 @@ alter_subreg (rtx *xp)
 	  else
 	    offset = SUBREG_BYTE (x);
 	  *xp = gen_rtx_REG_offset (y, GET_MODE (x), regno, offset);
-#ifdef TMS9900xxx
-          }
-#endif
 	}
     }
 
