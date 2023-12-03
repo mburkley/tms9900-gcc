@@ -2166,14 +2166,6 @@ operands_match_p (rtx x, rtx y)
 
   if (x == y)
     return 1;
-
-#ifdef TMS9900xxx
-  /* We cannot match register subregs for the TMS9900 */
-  if((GET_MODE(x)==QImode && GET_CODE(x)==SUBREG && REG_P(SUBREG_REG(x))) ||
-     (GET_MODE(y)==QImode && GET_CODE(y)==SUBREG && REG_P(SUBREG_REG(y))))
-    return 0;
-#endif
-
   if ((code == REG || (code == SUBREG && REG_P (SUBREG_REG (x))))
       && (REG_P (y) || (GET_CODE (y) == SUBREG
 				  && REG_P (SUBREG_REG (y)))))
@@ -3003,12 +2995,6 @@ find_reloads (rtx insn, int replace, int ind_levels, int live_known,
 	      if (REG_P (SUBREG_REG (operand))
 		  && REGNO (SUBREG_REG (operand)) < FIRST_PSEUDO_REGISTER)
 		{
-#ifdef TMS9900xxx
-                  /* Added for TMS9900, do not attempt reloads of
-                     registers if byte values are involved */
-                  if(GET_MODE (operand) != QImode && 
-                     GET_MODE (SUBREG_REG (operand)) != QImode)
-#endif
 		  if (simplify_subreg_regno (REGNO (SUBREG_REG (operand)),
 					     GET_MODE (SUBREG_REG (operand)),
 					     SUBREG_BYTE (operand),

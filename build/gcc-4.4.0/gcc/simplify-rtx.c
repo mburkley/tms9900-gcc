@@ -5094,19 +5094,6 @@ simplify_subreg (enum machine_mode outermode, rtx op,
 		final_offset += difference % UNITS_PER_WORD;
 	    }
 
-#ifdef TMS9900xxx
-          /* Modification for TMS9900
-             Do not assume QI quantities are in low part of register */
-          if(outermode == QImode)
-          {
-              /* The code above has determined which register and offset
-                 are needed for this simplification, just use that to
-                 specify a subreg of a full HImode register */
-              x = gen_rtx_SUBREG(outermode, gen_rtx_REG (HImode, final_regno), final_offset % GET_MODE_SIZE(HImode));
-              return x;
-          }
-#endif
-
 	  x = gen_rtx_REG_offset (op, outermode, final_regno, final_offset);
 
 	  /* Propagate original regno.  We don't have any way to specify

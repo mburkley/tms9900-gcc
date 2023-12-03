@@ -1,6 +1,6 @@
-diff -ru binutils-orig/bfd/archures.c binutils-2.19.1/bfd/archures.c
---- binutils-orig/bfd/archures.c	2023-11-09 21:04:18.750191935 +0000
-+++ binutils-2.19.1/bfd/archures.c	2023-11-09 21:20:24.402948531 +0000
+diff -ru binutils-2.19.1-orig/bfd/archures.c binutils-2.19.1/bfd/archures.c
+--- binutils-2.19.1-orig/bfd/archures.c	2023-12-03 08:29:52.779080431 +0000
++++ binutils-2.19.1/bfd/archures.c	2023-12-03 08:35:18.191437225 +0000
 @@ -407,6 +407,8 @@
  .#define bfd_mach_z80            3 {* With ixl, ixh, iyl, and iyh.  *}
  .#define bfd_mach_z80full        7 {* All undocumented instructions.  *}
@@ -26,9 +26,9 @@ diff -ru binutils-orig/bfd/archures.c binutils-2.19.1/bfd/archures.c
      &bfd_v850_arch,
      &bfd_vax_arch,
      &bfd_w65_arch,
-diff -ru binutils-orig/bfd/bfd-in2.h binutils-2.19.1/bfd/bfd-in2.h
---- binutils-orig/bfd/bfd-in2.h	2023-11-09 21:04:18.750191935 +0000
-+++ binutils-2.19.1/bfd/bfd-in2.h	2023-11-09 21:20:24.406948516 +0000
+diff -ru binutils-2.19.1-orig/bfd/bfd-in2.h binutils-2.19.1/bfd/bfd-in2.h
+--- binutils-2.19.1-orig/bfd/bfd-in2.h	2023-12-03 08:29:52.783080622 +0000
++++ binutils-2.19.1/bfd/bfd-in2.h	2023-12-03 08:36:39.588683567 +0000
 @@ -2029,6 +2029,8 @@
  #define bfd_mach_z80            3 /* With ixl, ixh, iyl, and iyh.  */
  #define bfd_mach_z80full        7 /* All undocumented instructions.  */
@@ -38,9 +38,9 @@ diff -ru binutils-orig/bfd/bfd-in2.h binutils-2.19.1/bfd/bfd-in2.h
    bfd_arch_last
    };
  
-diff -ru binutils-orig/bfd/config.bfd binutils-2.19.1/bfd/config.bfd
---- binutils-orig/bfd/config.bfd	2023-11-09 21:04:18.750191935 +0000
-+++ binutils-2.19.1/bfd/config.bfd	2023-11-09 21:20:24.406948516 +0000
+diff -ru binutils-2.19.1-orig/bfd/config.bfd binutils-2.19.1/bfd/config.bfd
+--- binutils-2.19.1-orig/bfd/config.bfd	2023-12-03 08:29:52.783080622 +0000
++++ binutils-2.19.1/bfd/config.bfd	2023-12-03 08:35:34.954926209 +0000
 @@ -102,6 +102,7 @@
  spu*)            targ_archs=bfd_spu_arch ;;
  strongarm*)	 targ_archs=bfd_arm_arch ;;
@@ -60,9 +60,9 @@ diff -ru binutils-orig/bfd/config.bfd binutils-2.19.1/bfd/config.bfd
    v850-*-*)
      targ_defvec=bfd_elf32_v850_vec
      ;;
-diff -ru binutils-orig/bfd/configure binutils-2.19.1/bfd/configure
---- binutils-orig/bfd/configure	2023-11-09 21:04:18.750191935 +0000
-+++ binutils-2.19.1/bfd/configure	2023-11-09 21:20:24.418948476 +0000
+diff -ru binutils-2.19.1-orig/bfd/configure binutils-2.19.1/bfd/configure
+--- binutils-2.19.1-orig/bfd/configure	2023-12-03 08:29:52.791081005 +0000
++++ binutils-2.19.1/bfd/configure	2023-12-03 08:35:52.006374716 +0000
 @@ -19740,6 +19740,7 @@
      bfd_elf32_sparc_vec)	tb="$tb elf32-sparc.lo elfxx-sparc.lo elf-vxworks.lo elf32.lo $elf" ;;
      bfd_elf32_sparc_vxworks_vec) tb="$tb elf32-sparc.lo elfxx-sparc.lo elf-vxworks.lo elf32.lo $elf" ;;
@@ -71,9 +71,9 @@ diff -ru binutils-orig/bfd/configure binutils-2.19.1/bfd/configure
      bfd_elf32_tradbigmips_vec)  tb="$tb elf32-mips.lo elfxx-mips.lo elf-vxworks.lo elf32.lo $elf ecofflink.lo" ;;
      bfd_elf32_tradlittlemips_vec) tb="$tb elf32-mips.lo elfxx-mips.lo elf-vxworks.lo elf32.lo $elf ecofflink.lo" ;;
      bfd_elf32_us_cris_vec)	tb="$tb elf32-cris.lo elf32.lo $elf" ;;
-diff -ru binutils-orig/bfd/cpu-tms9900.c binutils-2.19.1/bfd/cpu-tms9900.c
---- binutils-orig/bfd/cpu-tms9900.c	2023-11-09 21:11:39.748718560 +0000
-+++ binutils-2.19.1/bfd/cpu-tms9900.c	2023-11-09 21:20:24.418948476 +0000
+diff -ru binutils-2.19.1-orig/bfd/cpu-tms9900.c binutils-2.19.1/bfd/cpu-tms9900.c
+--- binutils-2.19.1-orig/bfd/cpu-tms9900.c	2023-12-03 08:29:52.791081005 +0000
++++ binutils-2.19.1/bfd/cpu-tms9900.c	2023-12-03 08:16:48.278691649 +0000
 @@ -0,0 +1,57 @@
 +/* BFD library support routines for the TMS9900 architecture.
 +   Copyright 2009 Eric Welser
@@ -132,9 +132,9 @@ diff -ru binutils-orig/bfd/cpu-tms9900.c binutils-2.19.1/bfd/cpu-tms9900.c
 +  bfd_default_scan,  /* Scan function */
 +  NULL               /* Next record */
 +};
-diff -ru binutils-orig/bfd/doc/archures.texi binutils-2.19.1/bfd/doc/archures.texi
---- binutils-orig/bfd/doc/archures.texi	2023-11-09 21:04:18.754191922 +0000
-+++ binutils-2.19.1/bfd/doc/archures.texi	2023-11-09 21:20:24.422948462 +0000
+diff -ru binutils-2.19.1-orig/bfd/doc/archures.texi binutils-2.19.1/bfd/doc/archures.texi
+--- binutils-2.19.1-orig/bfd/doc/archures.texi	2023-12-03 08:29:52.795081195 +0000
++++ binutils-2.19.1/bfd/doc/archures.texi	2023-12-03 08:37:24.518908161 +0000
 @@ -372,6 +372,8 @@
  #define bfd_mach_z80            3 /* With ixl, ixh, iyl, and iyh.  */
  #define bfd_mach_z80full        7 /* All undocumented instructions.  */
@@ -144,9 +144,9 @@ diff -ru binutils-orig/bfd/doc/archures.texi binutils-2.19.1/bfd/doc/archures.te
    bfd_arch_last
    @};
  @end example
-diff -ru binutils-orig/bfd/elf32-tms9900.c binutils-2.19.1/bfd/elf32-tms9900.c
---- binutils-orig/bfd/elf32-tms9900.c	2023-11-09 21:11:39.752718547 +0000
-+++ binutils-2.19.1/bfd/elf32-tms9900.c	2023-11-09 21:20:24.422948462 +0000
+diff -ru binutils-2.19.1-orig/bfd/elf32-tms9900.c binutils-2.19.1/bfd/elf32-tms9900.c
+--- binutils-2.19.1-orig/bfd/elf32-tms9900.c	2023-12-03 08:29:52.795081195 +0000
++++ binutils-2.19.1/bfd/elf32-tms9900.c	2023-12-03 08:16:48.278691649 +0000
 @@ -0,0 +1,128 @@
 +#include "sysdep.h"
 +#include "bfd.h"
@@ -276,9 +276,9 @@ diff -ru binutils-orig/bfd/elf32-tms9900.c binutils-2.19.1/bfd/elf32-tms9900.c
 +#define elf_info_to_howto_rel                 _bfd_elf_no_info_to_howto
 +
 +#include "elf32-target.h"
-diff -ru binutils-orig/bfd/Makefile.in binutils-2.19.1/bfd/Makefile.in
---- binutils-orig/bfd/Makefile.in	2023-11-09 21:04:18.750191935 +0000
-+++ binutils-2.19.1/bfd/Makefile.in	2023-11-09 21:20:24.422948462 +0000
+diff -ru binutils-2.19.1-orig/bfd/Makefile.in binutils-2.19.1/bfd/Makefile.in
+--- binutils-2.19.1-orig/bfd/Makefile.in	2023-12-03 08:29:52.779080431 +0000
++++ binutils-2.19.1/bfd/Makefile.in	2023-12-03 08:33:28.917850685 +0000
 @@ -546,6 +546,7 @@
  	elfxx-sparc.lo \
  	elf32-sparc.lo \
@@ -297,9 +297,9 @@ diff -ru binutils-orig/bfd/Makefile.in binutils-2.19.1/bfd/Makefile.in
  elf32-v850.lo: elf32-v850.c $(INCDIR)/filenames.h $(INCDIR)/bfdlink.h \
    $(INCDIR)/hashtab.h elf-bfd.h $(INCDIR)/elf/common.h \
    $(INCDIR)/elf/external.h $(INCDIR)/elf/internal.h $(INCDIR)/elf/v850.h \
-diff -ru binutils-orig/bfd/targets.c binutils-2.19.1/bfd/targets.c
---- binutils-orig/bfd/targets.c	2023-11-09 21:04:18.754191922 +0000
-+++ binutils-2.19.1/bfd/targets.c	2023-11-09 21:20:24.422948462 +0000
+diff -ru binutils-2.19.1-orig/bfd/targets.c binutils-2.19.1/bfd/targets.c
+--- binutils-2.19.1-orig/bfd/targets.c	2023-12-03 08:29:52.795081195 +0000
++++ binutils-2.19.1/bfd/targets.c	2023-12-03 08:35:57.990173989 +0000
 @@ -660,6 +660,7 @@
  extern const bfd_target bfd_elf32_sparc_vec;
  extern const bfd_target bfd_elf32_sparc_vxworks_vec;
@@ -308,9 +308,9 @@ diff -ru binutils-orig/bfd/targets.c binutils-2.19.1/bfd/targets.c
  extern const bfd_target bfd_elf32_tradbigmips_vec;
  extern const bfd_target bfd_elf32_tradlittlemips_vec;
  extern const bfd_target bfd_elf32_us_cris_vec;
-diff -ru binutils-orig/binutils/dwarf.c binutils-2.19.1/binutils/dwarf.c
---- binutils-orig/binutils/dwarf.c	2023-11-09 21:04:18.754191922 +0000
-+++ binutils-2.19.1/binutils/dwarf.c	2023-11-09 21:20:32.250921982 +0000
+diff -ru binutils-2.19.1-orig/binutils/dwarf.c binutils-2.19.1/binutils/dwarf.c
+--- binutils-2.19.1-orig/binutils/dwarf.c	2023-12-03 08:29:52.795081195 +0000
++++ binutils-2.19.1/binutils/dwarf.c	2023-12-03 08:38:08.525028635 +0000
 @@ -53,7 +53,7 @@
  int do_debug_macinfo;
  int do_debug_str;
@@ -320,9 +320,9 @@ diff -ru binutils-orig/binutils/dwarf.c binutils-2.19.1/binutils/dwarf.c
  
  dwarf_vma (*byte_get) (unsigned char *, int);
  
-diff -ru binutils-orig/binutils/readelf.c binutils-2.19.1/binutils/readelf.c
---- binutils-orig/binutils/readelf.c	2023-11-09 21:04:18.754191922 +0000
-+++ binutils-2.19.1/binutils/readelf.c	2023-11-09 21:20:32.258921954 +0000
+diff -ru binutils-2.19.1-orig/binutils/readelf.c binutils-2.19.1/binutils/readelf.c
+--- binutils-2.19.1-orig/binutils/readelf.c	2023-12-03 08:29:52.799081387 +0000
++++ binutils-2.19.1/binutils/readelf.c	2023-12-03 08:38:26.932206612 +0000
 @@ -152,6 +152,7 @@
  #include "elf/sh.h"
  #include "elf/sparc.h"
@@ -359,9 +359,9 @@ diff -ru binutils-orig/binutils/readelf.c binutils-2.19.1/binutils/readelf.c
      default:
        snprintf (buff, sizeof (buff), _("<unknown>: 0x%x"), e_machine);
        return buff;
-diff -ru binutils-orig/config.sub binutils-2.19.1/config.sub
---- binutils-orig/config.sub	2023-11-09 21:04:18.754191922 +0000
-+++ binutils-2.19.1/config.sub	2023-11-09 21:20:24.426948449 +0000
+diff -ru binutils-2.19.1-orig/config.sub binutils-2.19.1/config.sub
+--- binutils-2.19.1-orig/config.sub	2023-12-03 08:29:52.799081387 +0000
++++ binutils-2.19.1/config.sub	2023-12-03 08:40:09.935290968 +0000
 @@ -148,7 +148,7 @@
  	-convergent* | -ncr* | -news | -32* | -3600* | -3100* | -hitachi* |\
  	-c[123]* | -convex* | -sun | -crds | -omron* | -dg | -ultra | -tti* | \
@@ -380,9 +380,9 @@ diff -ru binutils-orig/config.sub binutils-2.19.1/config.sub
  	| v850 | v850e \
  	| we32k \
  	| x86 | xc16x | xscale | xscalee[bl] | xstormy16 | xtensa \
-diff -ru binutils-orig/gas/config/tc-tms9900.c binutils-2.19.1/gas/config/tc-tms9900.c
---- binutils-orig/gas/config/tc-tms9900.c	2023-11-09 21:11:39.760718520 +0000
-+++ binutils-2.19.1/gas/config/tc-tms9900.c	2023-11-09 21:20:24.430948436 +0000
+diff -ru binutils-2.19.1-orig/gas/config/tc-tms9900.c binutils-2.19.1/gas/config/tc-tms9900.c
+--- binutils-2.19.1-orig/gas/config/tc-tms9900.c	2023-12-03 08:29:52.799081387 +0000
++++ binutils-2.19.1/gas/config/tc-tms9900.c	2023-12-03 08:16:48.282692346 +0000
 @@ -0,0 +1,1276 @@
 +/* tc-tms9900.c -- Assemble code for the Texas Instruments TMS9900
 +   Copyright 2009 Eric Welser
@@ -1660,9 +1660,9 @@ diff -ru binutils-orig/gas/config/tc-tms9900.c binutils-2.19.1/gas/config/tc-tms
 +  return reloc;
 +}
 +
-diff -ru binutils-orig/gas/config/tc-tms9900.h binutils-2.19.1/gas/config/tc-tms9900.h
---- binutils-orig/gas/config/tc-tms9900.h	2023-11-09 21:11:39.764718507 +0000
-+++ binutils-2.19.1/gas/config/tc-tms9900.h	2023-11-09 21:20:24.430948436 +0000
+diff -ru binutils-2.19.1-orig/gas/config/tc-tms9900.h binutils-2.19.1/gas/config/tc-tms9900.h
+--- binutils-2.19.1-orig/gas/config/tc-tms9900.h	2023-12-03 08:29:52.799081387 +0000
++++ binutils-2.19.1/gas/config/tc-tms9900.h	2023-12-03 08:16:48.282692346 +0000
 @@ -0,0 +1,118 @@
 +/* this is tc-tms9900.h
 +   Copyright 2009 Eric Welser
@@ -1782,9 +1782,9 @@ diff -ru binutils-orig/gas/config/tc-tms9900.h binutils-2.19.1/gas/config/tc-tms
 +#define TC_IMPLICIT_LCOMM_ALIGNMENT(SIZE, P2VAR) (P2VAR) = 0
 +
 +#endif
-diff -ru binutils-orig/gas/configure.tgt binutils-2.19.1/gas/configure.tgt
---- binutils-orig/gas/configure.tgt	2023-11-09 21:04:18.754191922 +0000
-+++ binutils-2.19.1/gas/configure.tgt	2023-11-09 21:20:24.430948436 +0000
+diff -ru binutils-2.19.1-orig/gas/configure.tgt binutils-2.19.1/gas/configure.tgt
+--- binutils-2.19.1-orig/gas/configure.tgt	2023-12-03 08:29:52.799081387 +0000
++++ binutils-2.19.1/gas/configure.tgt	2023-12-03 08:40:20.410765780 +0000
 @@ -81,6 +81,7 @@
    strongarm*be)		cpu_type=arm endian=big ;;
    strongarm*b)		cpu_type=arm endian=big ;;
@@ -1802,9 +1802,9 @@ diff -ru binutils-orig/gas/configure.tgt binutils-2.19.1/gas/configure.tgt
    v850-*-*)				fmt=elf ;;
    v850e-*-*)				fmt=elf ;;
    v850ea-*-*)				fmt=elf ;;
-diff -ru binutils-orig/gas/dwarf2dbg.h binutils-2.19.1/gas/dwarf2dbg.h
---- binutils-orig/gas/dwarf2dbg.h	2023-11-09 21:04:18.754191922 +0000
-+++ binutils-2.19.1/gas/dwarf2dbg.h	2023-11-09 21:20:32.258921954 +0000
+diff -ru binutils-2.19.1-orig/gas/dwarf2dbg.h binutils-2.19.1/gas/dwarf2dbg.h
+--- binutils-2.19.1-orig/gas/dwarf2dbg.h	2023-12-03 08:29:52.799081387 +0000
++++ binutils-2.19.1/gas/dwarf2dbg.h	2023-12-03 08:40:34.782038890 +0000
 @@ -81,12 +81,12 @@
  
  /* True when we've seen a .loc directive recently.  Used to avoid
@@ -1820,9 +1820,9 @@ diff -ru binutils-orig/gas/dwarf2dbg.h binutils-2.19.1/gas/dwarf2dbg.h
  
  extern void dwarf2_finish (void);
  
-diff -ru binutils-orig/gprof/hist.c binutils-2.19.1/gprof/hist.c
---- binutils-orig/gprof/hist.c	2023-11-09 21:04:18.754191922 +0000
-+++ binutils-2.19.1/gprof/hist.c	2023-11-09 21:20:32.258921954 +0000
+diff -ru binutils-2.19.1-orig/gprof/hist.c binutils-2.19.1/gprof/hist.c
+--- binutils-2.19.1-orig/gprof/hist.c	2023-12-03 08:29:52.799081387 +0000
++++ binutils-2.19.1/gprof/hist.c	2023-12-03 08:40:41.137715161 +0000
 @@ -77,6 +77,9 @@
    { 'a', 1e+18 }				/* ato */
  };
@@ -1833,9 +1833,9 @@ diff -ru binutils-orig/gprof/hist.c binutils-2.19.1/gprof/hist.c
  /* Reads just the header part of histogram record into
     *RECORD from IFP.  FILENAME is the name of IFP and
     is provided for formatting error messages only.  
-diff -ru binutils-orig/gprof/hist.h binutils-2.19.1/gprof/hist.h
---- binutils-orig/gprof/hist.h	2023-11-09 21:04:18.754191922 +0000
-+++ binutils-2.19.1/gprof/hist.h	2023-11-09 21:20:32.258921954 +0000
+diff -ru binutils-2.19.1-orig/gprof/hist.h binutils-2.19.1/gprof/hist.h
+--- binutils-2.19.1-orig/gprof/hist.h	2023-12-03 08:29:52.799081387 +0000
++++ binutils-2.19.1/gprof/hist.h	2023-12-03 08:40:51.209199432 +0000
 @@ -30,8 +30,8 @@
    int *sample;           /* Histogram samples (shorts in the file!).  */
  } histogram;
@@ -1847,9 +1847,9 @@ diff -ru binutils-orig/gprof/hist.h binutils-2.19.1/gprof/hist.h
  
  /* Scale factor converting samples to pc values:
     each sample covers HIST_SCALE bytes.  */
-diff -ru binutils-orig/include/dis-asm.h binutils-2.19.1/include/dis-asm.h
---- binutils-orig/include/dis-asm.h	2023-11-09 21:04:18.754191922 +0000
-+++ binutils-2.19.1/include/dis-asm.h	2023-11-09 21:20:24.430948436 +0000
+diff -ru binutils-2.19.1-orig/include/dis-asm.h binutils-2.19.1/include/dis-asm.h
+--- binutils-2.19.1-orig/include/dis-asm.h	2023-12-03 08:29:52.799081387 +0000
++++ binutils-2.19.1/include/dis-asm.h	2023-12-03 08:40:56.948904066 +0000
 @@ -275,6 +275,7 @@
  extern int print_insn_tic4x		(bfd_vma, disassemble_info *);
  extern int print_insn_tic54x		(bfd_vma, disassemble_info *);
@@ -1858,9 +1858,9 @@ diff -ru binutils-orig/include/dis-asm.h binutils-2.19.1/include/dis-asm.h
  extern int print_insn_v850		(bfd_vma, disassemble_info *);
  extern int print_insn_vax		(bfd_vma, disassemble_info *);
  extern int print_insn_w65		(bfd_vma, disassemble_info *);
-diff -ru binutils-orig/include/elf/common.h binutils-2.19.1/include/elf/common.h
---- binutils-orig/include/elf/common.h	2023-11-09 21:04:18.754191922 +0000
-+++ binutils-2.19.1/include/elf/common.h	2023-11-09 21:20:24.430948436 +0000
+diff -ru binutils-2.19.1-orig/include/elf/common.h binutils-2.19.1/include/elf/common.h
+--- binutils-2.19.1-orig/include/elf/common.h	2023-12-03 08:29:52.799081387 +0000
++++ binutils-2.19.1/include/elf/common.h	2023-12-03 08:41:03.624559242 +0000
 @@ -334,6 +334,7 @@
  
  #define EM_CYGNUS_MEP		0xF00D  /* Toshiba MeP */
@@ -1869,9 +1869,9 @@ diff -ru binutils-orig/include/elf/common.h binutils-2.19.1/include/elf/common.h
  /* See the above comment before you add a new EM_* value here.  */
  
  /* Values for e_version.  */
-diff -ru binutils-orig/include/elf/tms9900.h binutils-2.19.1/include/elf/tms9900.h
---- binutils-orig/include/elf/tms9900.h	2023-11-09 21:11:39.772718480 +0000
-+++ binutils-2.19.1/include/elf/tms9900.h	2023-11-09 21:20:24.430948436 +0000
+diff -ru binutils-2.19.1-orig/include/elf/tms9900.h binutils-2.19.1/include/elf/tms9900.h
+--- binutils-2.19.1-orig/include/elf/tms9900.h	2023-12-03 08:29:52.799081387 +0000
++++ binutils-2.19.1/include/elf/tms9900.h	2023-12-03 08:16:48.282692346 +0000
 @@ -0,0 +1,32 @@
 +/* ix86 ELF support for BFD.
 +   Copyright 1998, 1999, 2000, 2002, 2004, 2005, 2006
@@ -1905,9 +1905,9 @@ diff -ru binutils-orig/include/elf/tms9900.h binutils-2.19.1/include/elf/tms9900
 +END_RELOC_NUMBERS (R_TMS9900_max)
 +
 +#endif
-diff -ru binutils-orig/ld/configure.tgt binutils-2.19.1/ld/configure.tgt
---- binutils-orig/ld/configure.tgt	2023-11-09 21:04:18.754191922 +0000
-+++ binutils-2.19.1/ld/configure.tgt	2023-11-09 21:20:24.430948436 +0000
+diff -ru binutils-2.19.1-orig/ld/configure.tgt binutils-2.19.1/ld/configure.tgt
+--- binutils-2.19.1-orig/ld/configure.tgt	2023-12-03 08:29:52.799081387 +0000
++++ binutils-2.19.1/ld/configure.tgt	2023-12-03 08:41:20.127701059 +0000
 @@ -607,6 +607,8 @@
  tic54x-*-* | c54x*-*-*)	targ_emul=tic54xcoff ;;
  tic80-*-*)		targ_emul=tic80coff
@@ -1917,9 +1917,9 @@ diff -ru binutils-orig/ld/configure.tgt binutils-2.19.1/ld/configure.tgt
  v850-*-*)		targ_emul=v850 ;;
  v850e-*-*)		targ_emul=v850 ;;
  v850ea-*-*)		targ_emul=v850
-diff -ru binutils-orig/ld/emulparams/tms9900.sh binutils-2.19.1/ld/emulparams/tms9900.sh
---- binutils-orig/ld/emulparams/tms9900.sh	2023-11-09 21:11:39.784718440 +0000
-+++ binutils-2.19.1/ld/emulparams/tms9900.sh	2023-11-09 21:20:24.430948436 +0000
+diff -ru binutils-2.19.1-orig/ld/emulparams/tms9900.sh binutils-2.19.1/ld/emulparams/tms9900.sh
+--- binutils-2.19.1-orig/ld/emulparams/tms9900.sh	2023-12-03 08:29:52.799081387 +0000
++++ binutils-2.19.1/ld/emulparams/tms9900.sh	2023-12-03 08:16:48.286693044 +0000
 @@ -0,0 +1,6 @@
 +SCRIPT_NAME=elf
 +OUTPUT_FORMAT="elf32-tms9900"
@@ -1927,9 +1927,9 @@ diff -ru binutils-orig/ld/emulparams/tms9900.sh binutils-2.19.1/ld/emulparams/tm
 +TEXT_START_ADDR=0xA000
 +TARGET_PAGE_SIZE=512
 +ARCH=tms9900
-diff -ru binutils-orig/ld/Makefile.in binutils-2.19.1/ld/Makefile.in
---- binutils-orig/ld/Makefile.in	2023-11-09 21:04:18.754191922 +0000
-+++ binutils-2.19.1/ld/Makefile.in	2023-11-09 21:20:24.430948436 +0000
+diff -ru binutils-2.19.1-orig/ld/Makefile.in binutils-2.19.1/ld/Makefile.in
+--- binutils-2.19.1-orig/ld/Makefile.in	2023-12-03 08:29:52.799081387 +0000
++++ binutils-2.19.1/ld/Makefile.in	2023-12-03 08:41:13.084068315 +0000
 @@ -640,6 +640,7 @@
  	etic4xcoff.o \
  	etic54xcoff.o \
@@ -1948,9 +1948,9 @@ diff -ru binutils-orig/ld/Makefile.in binutils-2.19.1/ld/Makefile.in
  evanilla.c: $(srcdir)/emulparams/vanilla.sh \
    $(srcdir)/emultempl/vanilla.em $(srcdir)/scripttempl/vanilla.sc ${GEN_DEPENDS}
  	${GENSCRIPTS} vanilla "$(tdir_vanilla)"
-diff -ru binutils-orig/ld/scripttempl/tms9900.sc binutils-2.19.1/ld/scripttempl/tms9900.sc
---- binutils-orig/ld/scripttempl/tms9900.sc	2023-11-09 21:11:39.792718413 +0000
-+++ binutils-2.19.1/ld/scripttempl/tms9900.sc	2023-11-09 21:20:24.434948422 +0000
+diff -ru binutils-2.19.1-orig/ld/scripttempl/tms9900.sc binutils-2.19.1/ld/scripttempl/tms9900.sc
+--- binutils-2.19.1-orig/ld/scripttempl/tms9900.sc	2023-12-03 08:29:52.799081387 +0000
++++ binutils-2.19.1/ld/scripttempl/tms9900.sc	2023-12-03 08:16:48.286693044 +0000
 @@ -0,0 +1,35 @@
 +if [ x${LD_FLAG} = x ]
 +then
@@ -1987,9 +1987,9 @@ diff -ru binutils-orig/ld/scripttempl/tms9900.sc binutils-2.19.1/ld/scripttempl/
 +	}
 +}
 +EOF
-diff -ru binutils-orig/opcodes/configure binutils-2.19.1/opcodes/configure
---- binutils-orig/opcodes/configure	2023-11-09 21:04:18.754191922 +0000
-+++ binutils-2.19.1/opcodes/configure	2023-11-09 21:20:24.434948422 +0000
+diff -ru binutils-2.19.1-orig/opcodes/configure binutils-2.19.1/opcodes/configure
+--- binutils-2.19.1-orig/opcodes/configure	2023-12-03 08:29:52.803081578 +0000
++++ binutils-2.19.1/opcodes/configure	2023-12-03 08:42:13.124895056 +0000
 @@ -11885,6 +11885,7 @@
          bfd_tic4x_arch)         ta="$ta tic4x-dis.lo" ;;
  	bfd_tic54x_arch)	ta="$ta tic54x-dis.lo tic54x-opc.lo" ;;
@@ -1998,9 +1998,9 @@ diff -ru binutils-orig/opcodes/configure binutils-2.19.1/opcodes/configure
  	bfd_v850_arch)		ta="$ta v850-opc.lo v850-dis.lo" ;;
  	bfd_v850e_arch)		ta="$ta v850-opc.lo v850-dis.lo" ;;
  	bfd_v850ea_arch)	ta="$ta v850-opc.lo v850-dis.lo" ;;
-diff -ru binutils-orig/opcodes/disassemble.c binutils-2.19.1/opcodes/disassemble.c
---- binutils-orig/opcodes/disassemble.c	2023-11-09 21:04:18.754191922 +0000
-+++ binutils-2.19.1/opcodes/disassemble.c	2023-11-09 21:20:24.434948422 +0000
+diff -ru binutils-2.19.1-orig/opcodes/disassemble.c binutils-2.19.1/opcodes/disassemble.c
+--- binutils-2.19.1-orig/opcodes/disassemble.c	2023-12-03 08:29:52.803081578 +0000
++++ binutils-2.19.1/opcodes/disassemble.c	2023-12-03 08:41:30.123177477 +0000
 @@ -77,6 +77,7 @@
  #define ARCH_tic4x
  #define ARCH_tic54x
@@ -2021,9 +2021,9 @@ diff -ru binutils-orig/opcodes/disassemble.c binutils-2.19.1/opcodes/disassemble
  #ifdef ARCH_v850
      case bfd_arch_v850:
        disassemble = print_insn_v850;
-diff -ru binutils-orig/opcodes/Makefile.in binutils-2.19.1/opcodes/Makefile.in
---- binutils-orig/opcodes/Makefile.in	2023-11-09 21:04:18.754191922 +0000
-+++ binutils-2.19.1/opcodes/Makefile.in	2023-11-09 21:20:24.434948422 +0000
+diff -ru binutils-2.19.1-orig/opcodes/Makefile.in binutils-2.19.1/opcodes/Makefile.in
+--- binutils-2.19.1-orig/opcodes/Makefile.in	2023-12-03 08:29:52.803081578 +0000
++++ binutils-2.19.1/opcodes/Makefile.in	2023-12-03 08:42:07.365203411 +0000
 @@ -420,7 +420,8 @@
  	tic54x-opc.c \
  	tic80-dis.c \
@@ -2043,9 +2043,9 @@ diff -ru binutils-orig/opcodes/Makefile.in binutils-2.19.1/opcodes/Makefile.in
  v850-dis.lo: v850-dis.c sysdep.h config.h $(INCDIR)/ansidecl.h \
    $(INCDIR)/opcode/v850.h $(INCDIR)/dis-asm.h $(BFD_H) \
    $(INCDIR)/symcat.h opintl.h
-diff -ru binutils-orig/opcodes/tms9900-dis.c binutils-2.19.1/opcodes/tms9900-dis.c
---- binutils-orig/opcodes/tms9900-dis.c	2023-11-09 21:11:39.796718399 +0000
-+++ binutils-2.19.1/opcodes/tms9900-dis.c	2023-11-09 21:20:24.438948408 +0000
+diff -ru binutils-2.19.1-orig/opcodes/tms9900-dis.c binutils-2.19.1/opcodes/tms9900-dis.c
+--- binutils-2.19.1-orig/opcodes/tms9900-dis.c	2023-12-03 08:29:52.803081578 +0000
++++ binutils-2.19.1/opcodes/tms9900-dis.c	2023-12-03 08:16:48.286693044 +0000
 @@ -0,0 +1,387 @@
 +/* Print TMS9900 instructions
 +   Copyright 2009 Eric Welser

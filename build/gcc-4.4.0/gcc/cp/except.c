@@ -926,6 +926,7 @@ is_admissible_throw_operand (tree expr)
    Standard C library shall report an error by throwing an
    exception, unless it calls a program-supplied function that
    throws an exception.  */
+
 #include "cfns.h"
 
 int

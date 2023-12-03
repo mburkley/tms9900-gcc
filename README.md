@@ -64,8 +64,8 @@ Create a new branch with full buildable sources:
 Once you have finished your changes, commit the changed files (not the entire
 source tree) and recreate the patch files from within the build directory:
 
- * diff -ru gcc-orig gcc-4.4.0 | grep -v "Only in gcc-4.4.0" > ../gcc-4.4.0-tms9900-1.20.patch
- * diff -ru binutils-orig binutils-2.19.1 | grep -v "Only in binutils-2.19.1" > ../binutils-2.19.1-tms9900-1.9.patch
+ * diff -ru gcc-4.4.0-orig gcc-4.4.0 | grep -v "Only in gcc-4.4.0" > ../gcc-4.4.0-tms9900-1.22.patch
+ * diff -ru binutils-2.19.1-orig binutils-2.19.1 | grep -v "Only in binutils-2.19.1" > ../binutils-2.19.1-tms9900-1.10.patch
 
 Add the two new patches to git, push the branch and create a PR 
 
