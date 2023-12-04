@@ -555,8 +555,6 @@ sparc64-*-netbsd*)
 spu-*-elf*)
 	;;
 tms9900-*-*)
-	# Make SI mode functions for TMS9900
-	tmake_file=${cpu_type}/t-tms9900
 	;;
 v850e1-*-*)
 	;;

@@ -177,7 +177,7 @@ extern short *reg_renumber;	/* def in local_alloc.c */
    machine mode that should actually be used.  All integer machine modes of
    this size or smaller can be used for structures and unions with the
    appropriate sizes.  */
-#define MAX_FIXED_MODE_SIZE	64
+#define MAX_FIXED_MODE_SIZE	32
 
 /* target machine storage layout */
 
@@ -195,8 +195,10 @@ extern short *reg_renumber;	/* def in local_alloc.c */
 
 /* A C expression for the size in bits of the type `float' on the
    target machine. If you don't define this, the default is one word.
-   Don't use default: a word is only 16.  */
-#define FLOAT_TYPE_SIZE         32
+   Don't use default: a word is only 16.
+   MGB let's see if we can make floats and doubles the same size
+   MGB doesn't work - gcc assumes sizeof float == sizeof SI ? */
+#define FLOAT_TYPE_SIZE         64
 
 /* A C expression for the size in bits of the type double on the target
    machine. If you don't define this, the default is two words.
@@ -204,6 +206,11 @@ extern short *reg_renumber;	/* def in local_alloc.c */
 #define DOUBLE_TYPE_SIZE        64
 
 #define LONG_DOUBLE_TYPE_SIZE   64
+
+/*  We don't have "floats" as in 32-bit floating point values (SFmode) but we do
+ *  have "doubles" as in 64-bit (DFmode). */
+#define LIBGCC2_HAS_SF_MODE 0
+#define LIBGCC2_HAS_DF_MODE 1
 
 /* Define this as 1 if `char' should by default be signed; else as 0.  */
 #define DEFAULT_SIGNED_CHAR	1
@@ -310,8 +317,7 @@ extern short *reg_renumber;	/* def in local_alloc.c */
    ((GET_MODE_SIZE (MODE) + HARD_REG_SIZE - 1) / HARD_REG_SIZE)
 
 /* Value is 1 if hard register REGNO (or starting with REGNO) can hold a value of machine-mode MODE
- *
- *  MGB TODO could include 64-bit as well */
+ */
 #define HARD_REGNO_MODE_OK(REGNO, MODE) \
    (!(MODE == SImode && REGNO==HARD_R15_REGNUM))
   

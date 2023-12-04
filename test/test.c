@@ -21,6 +21,7 @@ static void t_double_init (void)
 {
     double x = 1.2;
     x *= 3.7;
+    printf ("# res=%f\n", x);
 
     test_execute (__func__, x>4.3&&x<4.5);
 }
@@ -121,6 +122,7 @@ static void t_s_char_mpy()
     dprintf("# res=%d\n", (int)z);
     test_execute (__func__, z==-63);
 }
+
 static void t_s_char_ext_short()
 {
     char x = -7;
@@ -194,6 +196,31 @@ static void t_us_long_tr_char()
     dprintf("# res=%d\n", (int)y);
     test_execute (__func__, y==249);
 }
+=======
+
+void test_s_short_add()
+{
+    short x = -42;
+    short y = 32743;
+    short z;
+
+    z = x + y;
+    // printf("# res=%d\n", (int)z);
+    test_execute (__func__, z==32701);
+}
+
+void test_us_short_add()
+{
+    unsigned short x = 32760;
+    unsigned short y = 42;
+    unsigned short z;
+
+    z = x + y;
+    printf("# res=%d\n", (int)z);
+    test_execute (__func__, z==32802);
+}
+
+>>>>>>> ad47fc6 (floats stash)
 #endif
 
 static void t_s_char_or()

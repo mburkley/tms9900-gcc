@@ -90,6 +90,62 @@ tms9900_ok_for_sibcall (tree decl, tree exp)
 
 struct gcc_target targetm = TARGET_INITIALIZER;
 
+/* Set global variables as needed for the options enabled.  */
+
+static void
+tms9900_encode_real (const struct real_format *fmt, long *buf,
+		    const REAL_VALUE_TYPE *r)
+{
+  unsigned long image, sig, exp;
+  unsigned long sign = r->sign;
+  bool denormal = (r->sig[SIGSZ-1] & SIG_MSB) == 0;
+
+  image = sign << 31;
+  sig = (r->sig[SIGSZ-1] >> (HOST_BITS_PER_LONG - 24)) & 0x7fffff;
+}
+
+static void
+tms9900_decode_read (const struct real_format *fmt, REAL_VALUE_TYPE *r,
+		    const long *buf)
+{
+  unsigned long image = buf[0] & 0xffffffff;
+  bool sign = (image >> 31) & 1;
+  int exp = (image >> 23) & 0xff;
+
+  memset (r, 0, sizeof (*r));
+  image <<= HOST_BITS_PER_LONG - 24;
+  image &= ~SIG_MSB;
+}
+
+const struct real_format tms9900_real_format =
+  {
+    tms9900_encode_real,
+    tms9900_decode_real,
+    2,
+    24,
+    24,
+    -125,
+    128,
+    31,
+    31,
+    false,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    false
+  };
+
+
+void override_options (void)
+{
+  /* We use TI99 floating point, not IEEE floating point.  */
+  if (TARGET_G_FLOAT)
+    REAL_MODE_FORMAT (DFmode) = &tms9900_real_format;
+}
+
 /* Non-volatile registers to be saved across function calls */
 static int nvolregs[]={
    HARD_LR_REGNUM,

@@ -2315,6 +2315,7 @@ spu-*-elf*)
 	cxx_target_objs="${cxx_target_objs} spu-c.o"
 	;;
 tms9900-*-*)
+	tmake_file=tms9900/t-tms9900
 	;;
 v850e1-*-*)
 	target_cpu_default="TARGET_CPU_v850e1"

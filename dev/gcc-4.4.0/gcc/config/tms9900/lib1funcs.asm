@@ -818,3 +818,5 @@ __umodsi3:
   b    *r11
 #endif
 
+#include "libsi.asm"
+
