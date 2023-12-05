@@ -31,7 +31,6 @@ check_result ()
 
 # Base all following work on latest patch versions
 BINUTILS_PATCH=`latest binutils-*.patch`
-MDEF_BINUTILS_PATCH=`latest multidef-binutils-*.patch`
 GCC_PATCH=`latest gcc-*.patch`
 
 # Extract tool versions from patch name
