@@ -53,6 +53,7 @@ along with GCC; see the file COPYING3.  If not see
 
 /* Define this to put insn debugs into output files */
 #undef TMS9900_DEBUG
+// #define TMS9900_DEBUG 1
 
 static bool tms9900_pass_by_reference (CUMULATIVE_ARGS *,
                                        enum machine_mode, const_tree, bool);
@@ -1178,7 +1179,7 @@ struct rtl_opt_pass pass_tms9900_postinc =
 
 extern void tms9900_inline_debug (const char *fmt,...)
 {
-#ifndef TMS900_DEBUG
+#ifndef TMS9900_DEBUG
     return;
 #endif
 
@@ -1193,7 +1194,7 @@ extern void tms9900_inline_debug (const char *fmt,...)
 
 extern void tms9900_debug_operands (const char *name, rtx ops[], int count)
 {
-#ifndef TMS900_DEBUG
+#ifndef TMS9900_DEBUG
     return;
 #endif
 

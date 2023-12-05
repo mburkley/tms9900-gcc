@@ -42,5 +42,5 @@ $(FNAME).elf: $(OBJECT_LIST)
 
 
 %.o: %.c
-#	$(CC) -c $< -std=c99 --save-temp -I$(LIBTI99) -o $@
-	$(CC) -c $< -std=c99 -O2 --save-temp -I$(LIBTI99) -o $@
+	$(CC) -c $< -std=c99 --save-temp -I$(LIBTI99) -o $@
+#	$(CC) -c $< -std=c99 -O2 --save-temp -I$(LIBTI99) -o $@
