@@ -10,7 +10,7 @@
 
 // Disabled for now until float funcs are implemented in libgcc
 
-void test_double_init (void)
+static void test_double_init (void)
 {
     double x = 1.2;
     x *= 3.7;
@@ -20,7 +20,7 @@ void test_double_init (void)
 #endif
 
 #if 1
-void test_mul_short_long (void)
+static void test_mul_short_long (void)
 {
     int x =6;
     int y =7;
@@ -40,7 +40,7 @@ static int stack_func_arg (int a, int b, int c, int d, ...)
     return (w==65 && x==66 && y==67 && z==68);
 }
 
-void test_stack_func_arg (void)
+static void test_stack_func_arg (void)
 {
     int a = 65;
     int b = 66;
@@ -62,7 +62,7 @@ void test_stack_func_arg (void)
 }
 #endif
 
-void test_us_byte_divmod()
+static void test_us_byte_divmod()
 {
     unsigned char x = -7; // should be interpreted as 249
     unsigned char y = 5;
@@ -78,7 +78,7 @@ void test_us_byte_divmod()
 }
 
 #if 1
-void test_s_byte_divmod()
+static void test_s_byte_divmod()
 {
     char x = 13;
     char y = -5;
@@ -93,7 +93,7 @@ void test_s_byte_divmod()
     test_execute (__func__, z==3);
 }
 
-void test_us_byte_mpy()
+static void test_us_byte_mpy()
 {
     unsigned char x = 7;
     unsigned char y = -9; //  should interpret as 247
@@ -104,7 +104,7 @@ void test_us_byte_mpy()
     test_execute (__func__, z==193);
 }
 
-void test_s_byte_mpy()
+static void test_s_byte_mpy()
 {
     char x = 7;
     char y = -9;
@@ -114,7 +114,130 @@ void test_s_byte_mpy()
     // printf("# res=%d\n", (int)z);
     test_execute (__func__, z==-63);
 }
+static void test_us_byte_add()
+{
+    unsigned char x = 7;
+    unsigned char y = -9; //  should interpret as 247
+    unsigned char z;
+
+    z= x + y;
+    // printf("# res=%d\n", (int)z);
+    test_execute (__func__, z==254);
+}
+
+static void test_s_byte_add()
+{
+    char x = 7;
+    char y = -9;
+    char z;
+
+    z= x + y;
+    // printf("# res=%d\n", (int)z);
+    test_execute (__func__, z==-2);
+}
+static void test_s_byte_extend_short()
+{
+    char x = -7;
+    short y = x;
+
+    // printf("# res=%d\n", (int)z);
+    test_execute (__func__, y==-7);
+}
+
+static void test_us_byte_extend_short()
+{
+    unsigned char x = -7;
+    unsigned short y = x;
+
+    // printf("# res=%d\n", (int)y);
+    test_execute (__func__, y==249);
+}
+
+static void test_s_byte_extend_long()
+{
+    char x = -7;
+    long y = x;
+
+    // printf("# res=%d\n", (int)y);
+    test_execute (__func__, y==-7);
+}
+
+static void test_us_byte_extend_long()
+{
+    unsigned char x = -7;
+    unsigned long y = x;
+
+    // printf("# res=%d\n", (int)y);
+    test_execute (__func__, y==249);
+}
+
+static void test_s_short_trunc_byte()
+{
+    short x = -7;
+    char y = x;
+
+    // printf("# res=%d\n", (int)z);
+    test_execute (__func__, y==-7);
+}
+
+static void test_us_short_trunc_byte()
+{
+    unsigned short x = -7;
+    unsigned char y = x;
+
+    // printf("# res=%d\n", (int)y);
+    test_execute (__func__, y==249);
+}
+
+static void test_s_long_trunc_byte()
+{
+    /*  For some bizarre reason, movhi expanded from movsi with a negative
+     *  initialiser causes a compiler abort???? */
+    // fails: long x = -7;
+    // fails long x = 65529;
+    // fails: long x = 32768;
+    long x = 32767;
+    char y = x;
+
+    // printf("# res=%d\n", (int)y);
+    test_execute (__func__, y==-1);
+}
+
+static void test_us_long_trunc_byte()
+{
+    // unsigned long x = -7;
+    // unsigned long x = 65529;
+    unsigned long x = 32767;
+    unsigned char y = x;
+
+    // printf("# res=%d\n", (int)y);
+    test_execute (__func__, y==255);
+}
 #endif
+
+typedef void (*FUNCPTR) (void);
+
+FUNCPTR tests[] = 
+{
+    test_mul_short_long,
+    test_stack_func_arg,
+    test_us_byte_divmod,
+    test_s_byte_divmod,
+    test_us_byte_mpy,
+    test_s_byte_mpy,
+    test_us_byte_add,
+    test_s_byte_add,
+    test_s_byte_extend_short,
+    test_us_byte_extend_short,
+    test_s_byte_extend_long,
+    test_us_byte_extend_long,
+    test_s_short_trunc_byte,
+    test_us_short_trunc_byte,
+    test_s_long_trunc_byte,
+    test_us_long_trunc_byte
+};
+
+#define TEST_COUNT (sizeof (tests) / sizeof (FUNCPTR))
 
 int main(void)
 {
@@ -123,15 +246,16 @@ int main(void)
     charset();
 #endif
 
-    printf ("1..10\n");
+    printf ("1..%d\n", TEST_COUNT);
 
-    test_mul_short_long ();
-    test_stack_func_arg ();
-    test_us_byte_divmod();
-    test_s_byte_divmod();
-    test_us_byte_mpy();
-    test_s_byte_mpy();
+#if 0
+    void test_double_init (void);
+#endif
 
+    int i;
+    for (i = 0; i < TEST_COUNT; i++)
+        tests[i]();
+        
     test_report ();
 
 #ifdef __tms9900__

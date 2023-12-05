@@ -1,4 +1,5 @@
 *.bz2
 *.gz
 build
+dev
 gccdump.*
