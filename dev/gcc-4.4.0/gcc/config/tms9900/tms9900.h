@@ -109,6 +109,8 @@ extern short *reg_renumber;	/* def in local_alloc.c */
 # define TARGET_DEFAULT		0
 #endif
 
+#define OVERRIDE_OPTIONS override_options ()
+
 /* Define this macro as a C expression for the initializer of an
    array of string to tell the driver program which options are
    defaults for this target and thus do not need to be handled

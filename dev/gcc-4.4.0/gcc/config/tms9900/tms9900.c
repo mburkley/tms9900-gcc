@@ -96,18 +96,35 @@ static void
 tms9900_encode_real (const struct real_format *fmt, long *buf,
 		    const REAL_VALUE_TYPE *r)
 {
+  printf("%s val uexp=%u expb=%d sigsz=%d sig[n]=",
+         __func__, r->uexp, EXP_BITS, SIGSZ);
+
+  unsigned char *c = (unsigned char*) r->sig;
+  int i;
+
+  for (i = 0; i < SIGSZ * sizeof(long); i++)
+      printf (" %02X", c[i]);
+
+  printf("\n");
+  char s[256];
+  decimal128ToString(r->sig, s);
+  printf("str=%s\n", s);
+
+  #if 0
   unsigned long image, sig, exp;
   unsigned long sign = r->sign;
   bool denormal = (r->sig[SIGSZ-1] & SIG_MSB) == 0;
 
   image = sign << 31;
   sig = (r->sig[SIGSZ-1] >> (HOST_BITS_PER_LONG - 24)) & 0x7fffff;
+  #endif
 }
 
 static void
-tms9900_decode_read (const struct real_format *fmt, REAL_VALUE_TYPE *r,
+tms9900_decode_real (const struct real_format *fmt, REAL_VALUE_TYPE *r,
 		    const long *buf)
 {
+  #if 0
   unsigned long image = buf[0] & 0xffffffff;
   bool sign = (image >> 31) & 1;
   int exp = (image >> 23) & 0xff;
@@ -115,34 +132,34 @@ tms9900_decode_read (const struct real_format *fmt, REAL_VALUE_TYPE *r,
   memset (r, 0, sizeof (*r));
   image <<= HOST_BITS_PER_LONG - 24;
   image &= ~SIG_MSB;
+  #endif
 }
 
 const struct real_format tms9900_real_format =
   {
     tms9900_encode_real,
     tms9900_decode_real,
-    2,
-    24,
-    24,
-    -125,
-    128,
-    31,
-    31,
-    false,
-    true,
-    true,
-    true,
-    true,
-    true,
-    true,
-    false
+    10,         // base 10
+    14,         // 14 digits
+    14,         // 14 digits
+    -63,        // lowest exp
+    64,         // highest exp
+    63,
+    63,
+    false,      // Don't round toward 0
+    false,      // Don't have sign dependent rounding
+    false,      // Don't have NAN
+    false,      // Don't have INF
+    false,      // Don't have denorm whatever that is
+    true,       // Do have signed zero
+    false,      // Don't have qnan
+    false       // Don't have that last thing
   };
 
 
 void override_options (void)
 {
   /* We use TI99 floating point, not IEEE floating point.  */
-  if (TARGET_G_FLOAT)
     REAL_MODE_FORMAT (DFmode) = &tms9900_real_format;
 }
 

@@ -21,6 +21,12 @@ static void t_double_init (void)
 {
     double x = 1.2;
     x *= 3.7;
+    double a = 533;
+    #if 0
+    double a = 1234567;
+    double b=87654321E-20;
+    double c=12E99;
+    #endif
     printf ("# res=%f\n", x);
 
     test_execute (__func__, x>4.3&&x<4.5);
@@ -196,9 +202,8 @@ static void t_us_long_tr_char()
     dprintf("# res=%d\n", (int)y);
     test_execute (__func__, y==249);
 }
-=======
 
-void test_s_short_add()
+static void test_s_short_add()
 {
     short x = -42;
     short y = 32743;
@@ -209,7 +214,7 @@ void test_s_short_add()
     test_execute (__func__, z==32701);
 }
 
-void test_us_short_add()
+static void test_us_short_add()
 {
     unsigned short x = 32760;
     unsigned short y = 42;
@@ -220,7 +225,6 @@ void test_us_short_add()
     test_execute (__func__, z==32802);
 }
 
->>>>>>> ad47fc6 (floats stash)
 #endif
 
 static void t_s_char_or()

@@ -23,6 +23,19 @@ OBJECT_LIST=\
 
 all: $(FNAME).bin
 
+#  Build on host.  Used to verify tests
+host-test: test.c
+	gcc -o host-test test.c tap.c
+
+#  Test real number conversions on host
+DECNUMDIR=../dev/gcc-4.4.0/libdecnumber/
+LIBGCCDIR=../dev/gcc-4.4.0/libgcc
+DECNUMLIBDIR=../dev/gcc-4.4.0/build/libdecnumber
+tireal: tireal.c
+	gcc -o tireal -I $(DECNUMDIR) -I $(LIBGCCDIR) tireal.c\
+        -L $(DECNUMLIBDIR) \
+        -ldecnumber
+
 $(FNAME).bin: $(FNAME).elf
 	$(ELF2CART) $(FNAME).elf $(FNAME).bin
 

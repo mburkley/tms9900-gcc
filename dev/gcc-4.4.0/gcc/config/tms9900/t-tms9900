@@ -1,0 +1,25 @@
+LIB1ASMSRC    = tms9900/lib1funcs.asm
+LIB1ASMFUNCS  = _divsi3 _udivsi3 _modsi3 _umodsi3
+
+# Exclude funcs from libgcc2.c that we implement using calls to TI99/4A console
+# ROM
+
+LIB2FUNCS_EXCLUDE = __adddf3 __subdf3 __muldf3 __divdf3 __eqdf2 \
+ __gedf2 __gtdf2 __ledf2 __ltdf2
+
+# Exclude 64-bit functions we don't need
+LIB2FUNCS_EXCLUDE += _muldi3 _negdi2  _cmpdi2 _ucmpdi2 _lshrdi3 _ashldi3 \
+_ashrdi3 _udivdi3 _divdi3 _umoddi3 _moddi3 _addvDI3 _subvDI3
+
+LIB2FUNCS_EXTRA = $(srcdir)/config/tms9900/double.c\
+ $(srcdir)/config/tms9900/libsi.asm
+
+# Assemble startup files.  TODO Do we need these?
+$(T)crti.o: $(srcdir)/config/tms9900/crti.asm $(GCC_PASSES)
+	$(GCC_FOR_TARGET) $(GCC_CFLAGS) $(MULTILIB_CFLAGS) $(INCLUDES) \
+	-c -o $(T)crti.o -x assembler-with-cpp $(srcdir)/config/tms9900/crti.asm
+
+$(T)crtn.o: $(srcdir)/config/tms9900/crtn.asm $(GCC_PASSES)
+	$(GCC_FOR_TARGET) $(GCC_CFLAGS) $(MULTILIB_CFLAGS) $(INCLUDES) \
+	-c -o $(T)crtn.o -x assembler-with-cpp $(srcdir)/config/tms9900/crtn.asm
+
