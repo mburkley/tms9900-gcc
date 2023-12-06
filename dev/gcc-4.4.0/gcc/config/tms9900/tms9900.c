@@ -288,6 +288,11 @@ void print_operand_address (FILE *file,
 /* Should we save this register? */ 
 int tms9900_should_save_reg(int regno)
 {
+   // printf("should I save %d ? ever_live=%d used=%d leaf=%d\n",
+   //        regno, df_regs_ever_live_p(regno),
+   //        call_used_regs[regno],
+   //        current_function_is_leaf);
+          
    return(
       /* Save non-volatile registers or r11 if used */
       (df_regs_ever_live_p(regno) &&
@@ -554,11 +559,20 @@ void tms9900_output_ascii(FILE* stream, const char* ptr, int len)
 {
    int i;
    int in_text = 0;
+   int count = 0;
    for (i = 0; i < len; i++)
    {
       int c = *ptr++;
       if (ISPRINT(c))
       {
+         /* End TEXT statement */
+         if (count==64)
+         {
+            fprintf (stream, "'\n");
+            in_text = 0;
+            count = 0;
+         }
+
          /* Start TEXT statement */
          if(in_text == 0)
          {
@@ -566,6 +580,7 @@ void tms9900_output_ascii(FILE* stream, const char* ptr, int len)
             in_text = 1;
          }
          putc (c, stream);
+         count++;
          if(c == '\'') putc (c, stream);
       }
       else
@@ -581,6 +596,10 @@ void tms9900_output_ascii(FILE* stream, const char* ptr, int len)
          fprintf (stream, "\tbyte %d\n", (unsigned char)c);
       }
    }
+
+   /*  If we ran out of input before we had closed the text, close it now */
+   if(in_text == 1)
+      fprintf (stream, "'\n");
 }
 
 
@@ -591,6 +610,7 @@ void tms9900_expand_prologue (void)
    int regcount = 0;
    int idx = 0;
    int frame_size = get_frame_size();
+   int dst_reg = HARD_SP_REGNUM;
 
    /* Find non-volatile registers which need to be saved */
    while(nvolregs[idx] != 0)
@@ -628,9 +648,15 @@ void tms9900_expand_prologue (void)
       ai sp, -frame         4      14+8+8   = 30
       */
 
-      /* Emit "mov sp, r0" */
-      emit_insn(gen_movhi(gen_rtx_REG(HImode, HARD_R0_REGNUM),
-                          stack_pointer_rtx));
+      /* If saving more than 1 reg, then copy sp to r0 and use r0 as the dest
+       * with auto-inc */
+      if (regcount>1)
+      {
+        /* Emit "mov sp, r0" */
+        emit_insn(gen_movhi(gen_rtx_REG(HImode, HARD_R0_REGNUM),
+                            stack_pointer_rtx));
+        dst_reg = HARD_R0_REGNUM;
+      }
 
       idx = 0;
       while(nvolregs[idx] != 0)
@@ -638,11 +664,12 @@ void tms9900_expand_prologue (void)
          if(saveregs[idx]!=0)
          {
             int regno = nvolregs[idx];
-            if(nvolregs[idx + 1] == 0)
+            /*  Don't postinc if last reg */
+            if(regcount==1)
             {
                /* Emit "mov Rx, *R0" */
                emit_insn(gen_movhi(
-                  gen_rtx_MEM(HImode, gen_rtx_REG(HImode, HARD_R0_REGNUM)),
+                  gen_rtx_MEM(HImode, gen_rtx_REG(HImode, dst_reg)),
                   gen_rtx_REG(HImode, regno)));
             }
             else
@@ -651,9 +678,10 @@ void tms9900_expand_prologue (void)
                emit_insn(gen_movhi(
                   gen_rtx_MEM(HImode, 
                               gen_rtx_POST_INC(HImode, 
-                                 gen_rtx_REG(HImode, HARD_R0_REGNUM))),
+                                 gen_rtx_REG(HImode, dst_reg))),
                   gen_rtx_REG(HImode, regno)));
             }
+            regcount--;
          }
          idx++;
       }
@@ -714,7 +742,7 @@ void tms9900_expand_epilogue (bool is_sibcall)
       saveregs[idx] = 0;
       if(tms9900_should_save_reg(regno))
       {
-         /* Mark this register to be saved */
+         /* Mark this register to be restored */
          saveregs[idx] = 1;
          regcount++;
       }

@@ -17,10 +17,6 @@ to create modified sources for gcc and binutils.
 The branches in the repo are:
 
  * [main]: The latest scripts and patch files
- * [gcc-4.4.0]: Unmodified source code files for gcc-4.4.0 and binutils-2.19.1.
-This branch is a reference for developers to more easily create new patch
-files.  It contains only the files that are modified by the patches.
- * [patched-files]: branch containing patched versions of source files
 
 User download and install
 -------------------------
@@ -38,28 +34,13 @@ installed.
 
 Compiler developers
 -------------------
-For users that want to add new features or bug fixes, the following steps apply.
-The steps to create new patch files are a bit manual for now.
+For users that want to add new features or bug fixes, modify files and build in
+the dev directory not the build directory.
 
 If you want to create a change request for the compiler or the binutils, create
 a new branch based on main and apply the patches using install.  
 This will allow you to more
 easily track changes against the latest source code.
-You will also
-need a copy of the unmodified gcc/binutils source code to generate the patch.
-
-Get a copy of the relevant unmodified sources:
-
- * cd tms9900-gcc
- * git checkout gcc-4.4.0
- * mv build/gcc-4.4.0 build/gcc-orig
- * mv build/binutils-2.19.1 build/binutils-orig
-
-Create a new branch with full buildable sources:
-
- * git checkout -b my-branch
- * git rebase main
- * ./install.sh
 
 Once you have finished your changes, commit the changed files (not the entire
 source tree) and recreate the patch files from within the build directory:
