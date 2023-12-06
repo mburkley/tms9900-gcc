@@ -131,7 +131,7 @@ md_section_align (segT seg ATTRIBUTE_UNUSED, valueT size)
 long
 md_pcrel_from (fixS * fixp)
 {
-  return fixp->fx_where +
+  return fixp->fx_where+
     fixp->fx_frag->fr_address + 1;
 }
 
@@ -573,6 +573,12 @@ tms9900_data (int size)
               {
                 if(p[0] == '\'' && p[1] == '\'') p++;
                 *out++ = *p++;
+
+                if (out-q>=sizeof(q))
+                {
+                  as_warn ("String constant too long, truncating");
+                  break;
+                }
               }
             if(p[0] == '\'') p++;
           }
