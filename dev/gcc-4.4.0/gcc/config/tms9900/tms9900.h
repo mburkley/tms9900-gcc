@@ -669,7 +669,8 @@ typedef struct tms9900_args
 
 /* 8- and 16-bit values are returned in R1, 32-bit values are
    passed in R1+R2, The high word is in R1. */
-#define FUNCTION_VALUE(VALTYPE, FUNC) tms9900_function_value(VALTYPE)
+#define FUNCTION_VALUE(VALTYPE, FUNC) \
+     gen_rtx_REG (TYPE_MODE (VALTYPE), HARD_R1_REGNUM)
 
 /* 8- and 16-bit values are returned in R1, 32-bit values are
    passed in R1+R2, The high word is in R1. */

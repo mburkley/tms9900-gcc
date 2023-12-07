@@ -11,7 +11,8 @@ LIB2FUNCS_EXCLUDE = __adddf3 __subdf3 __muldf3 __divdf3 __eqdf2 \
 LIB2FUNCS_EXCLUDE += _muldi3 _negdi2  _cmpdi2 _ucmpdi2 _lshrdi3 _ashldi3 \
 _ashrdi3 _udivdi3 _divdi3 _umoddi3 _moddi3 _addvDI3 _subvDI3
 
-LIB2FUNCS_EXTRA = $(srcdir)/config/tms9900/double.c\
+LIB2FUNCS_EXTRA = \
+ $(srcdir)/config/tms9900/double.c\
  $(srcdir)/config/tms9900/libsi.asm
 
 # Assemble startup files.  TODO Do we need these?

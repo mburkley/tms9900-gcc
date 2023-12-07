@@ -55,8 +55,8 @@ along with GCC; see the file COPYING3.  If not see
 #include "decNumber.h"
 
 /* Define this to put insn debugs into output files */
-#undef TMS9900_DEBUG
-// #define TMS9900_DEBUG 1
+// #undef TMS9900_DEBUG
+#define TMS9900_DEBUG 1
 
 static bool tms9900_pass_by_reference (CUMULATIVE_ARGS *,
                                        enum machine_mode, const_tree, bool);
@@ -95,6 +95,9 @@ struct gcc_target targetm = TARGET_INITIALIZER;
 
 /* Set global variables as needed for the options enabled.  */
 
+#include "ftoa.c"
+#include "atof.c"
+
 static void
 tms9900_encode_real (const struct real_format *fmt, long *buf,
 		    const REAL_VALUE_TYPE *r)
@@ -106,156 +109,19 @@ tms9900_encode_real (const struct real_format *fmt, long *buf,
   // int i;
 
   char a[256];
+  unsigned char d[8];
   decimal128ToString((const decimal128*)r->sig, a);
   printf("str=%s\n", a);
 
-/* atof.c
-   This method converts an ascii representation of a float to a float.
-   change log:
-   06/23/2023 mrvan initial version
-*/
-
-// #include <stdlib.h>
-// #include <ctype.h>
-// #include <string_ext.h>
-
-// converts an ascii representation of a float to a float
-
-   // The TI-99/4A uses RADIX-100 for doubles. RADIX is also known as base. So the doubles are
-   // stored in base 100. Doubles are stored as 8 bytes, where the number is in scientific notation,
-   // but again as radix 100:
-   // - The first byte is the exponent (a radix 100 exponent, not base 10 exponent).
-   // - Subsequent bytes store the mantissa. The decimal point is after the first mantissa digit.
-   // - Negative numbers are stored with the exponent and first digit negated.
-   // - Zero has an exponent and first digit set to 0 and 0, respectively.
-   // - Exponents are offset by 0x40.
-   // - Note that there are excellent explanations online, but even those have some incorrect info.
-   // - https://www.unige.ch/medecine/nouspikel/ti99/reals.htm
-   // - For instance, one example gets the matissa correct but the author inadvertantly used base
-   // - 10 for the exponent, rather than base 100.
-
-   char *s = a;
-   unsigned char d[8];                // return value
-   // unsigned char *d = (unsigned char *)buf;
-   char * pd = (char *) d; // pointer to the return value
-
-   // staging values for final double value
-   int exp     = 0;                                            // base 100 exponent
-   int neg_pos = 1;                                            // pos = 1, neg = -1
-   int v[14]   = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // represented as base 10 later to be compbined as base 100
-   int pos     = 0;                                            // write pos in v[]
-   int dp      = 0;                                            // decimal point position relative to v[]
-
-   int b10_exp_neg_pos = 1;
-   int b10_exp = 0;
-   int b10_exp_have_digit = 0;
-
-   int n;
-   int have_pos_digit = 0;
-   int i;
-
-   // skip whitespace
-   // s = skip_whitespace (s);
-
-   // capture the negative sign if present
-   if (*s == '-') {
-      neg_pos = -1;
-      s++;
-   }
-
-   // run through the digits before any decimal point
-   while ( (*s) && (*s >= '0' && *s <= '9') && (pos < 14) ) {
-      n = *s;
-      n -= 48;
-      if (n >= 1) have_pos_digit = 1;
-      if (have_pos_digit) {
-         v[pos] = n;
-         pos++;
-      }
-      s++;
-   }
-
-   // capture the decimal point position, even if implicit due to lack of one
-   if (*s == '.') {
-      s++;
-   }
-   dp = pos;
-
-   // run through the fractional digits before any exponent designation
-   while ( (*s) && (*s >= '0' && *s <= '9') && (pos < 14) ) {
-      n = *s;
-      n = n - '0';
-      if (n >= 1) have_pos_digit = 1;
-      if (have_pos_digit) {
-         v[pos] = n;
-         pos++;
-      } else {
-         dp--;
-      }
-      s++;
-   }
-
-   // handle specified exponent
-   if ( (*s == 'e') || (*s == 'E') ) {
-      s++;
-      if (*s == '-') {
-         b10_exp_neg_pos = -1;
-         s++;
-      }
-      while ( (*s) && (*s >= '0' && *s <= '9') ) {
-         if (b10_exp_have_digit) {
-            b10_exp *= 10;
-         }
-         n = *s;
-         b10_exp += n - '0';
-         b10_exp_have_digit = 1;
-         s++;
-      }
-      dp += b10_exp * b10_exp_neg_pos;
-   }
-
-   // process the collected value if at least one positive digit was found, otherwise the value is zero
-   if (have_pos_digit) {
-      // calculate the exponent, which is base 100
-      exp = 0x3F + dp / 2;
-      if ( (dp > 0) && (dp % 2) ) exp++;
-
-      // shift the base 10 digits right by one if not exp aligned for base 100
-      if (dp % 2) {
-         for (i = 13; i > 0; i--) {
-            v[i] = v[i - 1];
-         }
-         v[0] = 0;
-      }
-   }
-
-   // finally, convert the collected and processed value into a double
-
-   // generate the exponent, write and advance. Note that this is a base 100 exponent
-   if (neg_pos == -1) exp++;
-   n = exp * neg_pos;
-   *pd = n;
-   pd++;
-
-   // generate the first mantissa digit, that might need to be negated, write and advance
-   n = (v[0] * 10 + v[1]) * neg_pos; // base 100 generated by combining the v[0] and v[1] values
-   *pd = n;
-   pd++;
-
-   // process and write the remaining base 100 digits, combining the adjacent base 10 digits
-   for (i = 2; i < 14; i += 2) {
-      n = v[i] * 10 + v[i + 1];
-      *pd = n;
-      pd++;
-   }
+  tireal_atof (a, d);
 
   // Convert 8-bytes to 3-longs ????
-
   buf[0] = (d[0] << 24) | (d[1] << 16) | (d[2] << 8) | d[3];
   buf[1] = (d[4] << 24) | (d[5] << 16) | (d[6] << 8) | d[7];
   buf[2] = 0;
 
   unsigned char *x=(unsigned char*)buf;
+  int i;
   for (i = 0; i < SIGSZ*8 ; i++)
       printf (" %02X", x[i]);
 
@@ -269,55 +135,24 @@ tms9900_decode_real (const struct real_format *fmt, REAL_VALUE_TYPE *r,
 		    const long *buf)
 {
     char s[32];
-    char *p = s;
-    unsigned char *bytes=(unsigned char*)buf;
-    short first = bytes[0] << 8 | bytes[1];
-    int exp;
-    int i;
+    unsigned char d[8];
+
+    /*  Assuming reverse mapping of longs to bytes that we did in encode */
+  d[0] = (buf[0] >> 24) & 0xff;
+  d[1] = (buf[0] >> 16) & 0xff;
+  d[2] = (buf[0] >> 8) & 0xff;
+  d[3] = buf[0] & 0xff;
+  d[4] = (buf[1] >> 24) & 0xff;
+  d[5] = (buf[1] >> 16) & 0xff;
+  d[6] = (buf[1] >> 8) & 0xff;
+  d[7] = buf[1] & 0xff;
+
+    tireal_ftoa (d, s);
     
-  for (i = 0; i < 8; i++)
-      printf (" %02X", bytes[i]);
+  // for (i = 0; i < 24; i++)
+      // printf (" %02X", bytes[i]);
 
-      printf ("\n");
-    if (first < 0)
-    {
-        *p++='-';
-        first =- first;
-    }
-
-    exp = first >> 8;
-    first &= 0xff;
-
-    printf("exp=%d first=%d\n", exp, first);
-    if (first>9) *p++=(first/10) + '0';
-    *p++=(first%10)+'0';
-    *p++='.';
-    for (i = 2; i < 8; i++)
-    {
-        *p++=(bytes[i]/10)+'0';
-        *p++=(bytes[i]%10)+'0';
-    }
-
-    exp -= 0x40;
-
-    if (exp != 0)
-    {
-        *p++='E';
-
-        if (exp<0)
-        {
-            *p++='-';
-            exp=-exp;
-        }
-
-        exp*=2;
-        if (exp>9)
-        {
-            *p++=(exp/10)+'0';
-            exp/=10;
-        }
-        *p++=exp+'0';
-    }
+      // printf ("\n");
 
   printf ("%s encoding %s\n", __func__, s);
   #if 0
@@ -812,16 +647,6 @@ void notice_update_cc_on_set(rtx exp, rtx insn ATTRIBUTE_UNUSED)
     CC_STATUS_INIT;
   }		        
 }
-
-
-/* Determine where the return value from a function will lie */
-rtx tms9900_function_value (const_tree valtype) /*, 
-                            const_tree func ATTRIBUTE_UNUSED, 
-                            bool outgoing ATTRIBUTE_UNUSED) */
-{
-  return gen_rtx_REG (TYPE_MODE (valtype), HARD_R1_REGNUM);
-}
-
 
 /* A C statement to output to the stdio stream STREAM an assembler
    instruction to assemble a string constant containing the LEN bytes
