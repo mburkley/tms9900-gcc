@@ -1,4 +1,4 @@
-#include <math_private.h>
+#include "math_private.h"
 
 // returns a value less than zero if a is strictly less than b, 0 if equal, 1 if a is strictly greater than b
 int d_compare (double a, double b) { // , int lt_response, int gt_response, int eq_response) {

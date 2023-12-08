@@ -1,11 +1,13 @@
-GAS=tms9900-as
-LD=tms9900-ld
-CC=tms9900-gcc
+GAS=/home/mark/tms9900-gcc/tms9900-gcc/bin/tms9900-as
+LD=/home/mark/tms9900-gcc/tms9900-gcc/bin/tms9900-ld
+CC=/home/mark/tms9900-gcc/tms9900-gcc/bin/tms9900-gcc
 LIBTI99?=/home/mark/ti99/libti99
-
+LIBGCC=/home/mark/tms9900-gcc/tms9900-gcc/lib/gcc/tms9900/4.4.0/libgcc.a
+# LIBGCC=libgcc.a
 ELF2CART=elf2cart
 
-FNAME=test
+#FNAME=test
+FNAME=float
 
 LDFLAGS=\
   --section-start .text=6000 --section-start .data=2080
@@ -40,7 +42,8 @@ $(FNAME).bin: $(FNAME).elf
 	$(ELF2CART) $(FNAME).elf $(FNAME).bin
 
 $(FNAME).elf: $(OBJECT_LIST)
-	$(LD) $(OBJECT_LIST) $(LDFLAGS) -L$(LIBTI99) -lti99 -o $(FNAME).elf -Map=mapfile
+	$(LD) $(OBJECT_LIST) $(LDFLAGS) -L$(LIBTI99) -lti99 -o $(FNAME).elf \
+	-Map=mapfile $(LIBGCC)
 
 .phony clean:
 	rm -f *.o

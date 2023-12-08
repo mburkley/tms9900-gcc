@@ -355,7 +355,9 @@ decimal_do_compare (const REAL_VALUE_TYPE *a, const REAL_VALUE_TYPE *b,
 
 /* Helper to round_for_format, handling decimal float types.  */
 
+#ifdef TMS9900
 extern const struct real_format tms9900_real_format;
+#endif
 
 void
 decimal_round_for_format (const struct real_format *fmt, REAL_VALUE_TYPE *r)
@@ -394,11 +396,13 @@ decimal_round_for_format (const struct real_format *fmt, REAL_VALUE_TYPE *r)
       decimal64FromNumber (&d64, &dn, &set);
       decimal64ToNumber (&d64, &dn);
     }
+#ifdef TMS9900
   else if (fmt == &tms9900_real_format)
     {
       printf("%s TIfmt\n", __func__);
       return;
     }
+#endif
     gcc_unreachable ();
 
   decimal_from_decnumber (r, &dn, &set);

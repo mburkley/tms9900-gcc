@@ -52,5 +52,6 @@ void tireal_ftoa (unsigned char *d, char *p)
         }
         *p++=exp+'0';
     }
+    *p=0;
 }
 

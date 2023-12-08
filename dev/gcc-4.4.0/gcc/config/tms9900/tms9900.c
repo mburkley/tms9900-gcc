@@ -699,7 +699,6 @@ void tms9900_output_ascii(FILE* stream, const char* ptr, int len)
       fprintf (stream, "'\n");
 }
 
-
 void tms9900_expand_prologue (void)
 {
    /* Registers to save in this frame */

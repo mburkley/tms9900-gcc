@@ -3,7 +3,7 @@
    06/23/2023 initial version
 */
 
-#include <math_private.h>
+#include "math_private.h"
 
 int d_adj_neg_pos (double *d) {
    char *p = (char *) d;

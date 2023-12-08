@@ -74,9 +74,9 @@ along with GCC; see the file COPYING3.  If not see
   while (0)
 
 /* As an embedded target, we have no libc.  */
-#ifndef inhibit_libc
-#  define inhibit_libc
-#endif
+//#ifndef inhibit_libc
+//#  define inhibit_libc
+//#endif
 
 /* Forward type declaration for prototypes definitions.
    rtx_ptr is equivalent to rtx. Can't use the same name.  */
@@ -878,7 +878,7 @@ typedef struct tms9900_args
    you should define this macro to express the relative cost
 
    For the TMS9900, memory access is four times slower than registers */
-#define MEMORY_MOVE_COST(MODE,CLASS,IN)	16
+#define MEMORY_MOVE_COST(MODE,CLASS,IN)	4
 
 /* A C expression for the cost of a branch instruction.  A value of 1
    is the default; other values are interpreted relative to that.

@@ -4,7 +4,7 @@
    08/14/2023 mrvan removed methods not associated with the FAC and ARG to separate files
 */
 
-#include <math_private.h>
+#include "math_private.h"
 
 #define FAC 0x834A
 #define ARG 0x835C;
@@ -41,7 +41,7 @@ double __adddf3 (double a, double b) {
   __asm__(
     "lwpi >83E0\n\t"
     "bl @>0D80\n\t"
-    "lwpi >8300\n\t"
+    "lwpi >83A0\n\t"
   );
 
   return *FADD_SUM;
@@ -59,7 +59,7 @@ double __subdf3 (double a, double b) {
   __asm__(
     "lwpi >83E0\n\t"
     "bl @>0D7C\n\t"
-    "lwpi >8300\n\t"
+    "lwpi >83A0\n\t"
   );
 
   return *FSUB_DIFFERENCE;
@@ -77,7 +77,7 @@ double __muldf3 (double a, double b) {
   __asm__(
     "lwpi >83E0\n\t"
     "bl @>0E88\n\t"
-    "lwpi >8300\n\t"
+    "lwpi >83A0\n\t"
   );
 
   return *FMUL_PRODUCT;
@@ -95,7 +95,7 @@ double __divdf3 (double a, double b) {
   __asm__(
     "lwpi >83E0\n\t"
     "bl @>0FF4\n\t"
-    "lwpi >8300\n\t"
+    "lwpi >83A0\n\t"
   );
 
   return *FDIV_QUOTIENT;
