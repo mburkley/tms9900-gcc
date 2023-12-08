@@ -6,21 +6,27 @@ LIBGCC=/home/mark/tms9900-gcc/tms9900-gcc/lib/gcc/tms9900/4.4.0/libgcc.a
 # LIBGCC=libgcc.a
 ELF2CART=elf2cart
 
-#FNAME=test
-FNAME=float
+FNAME=test
+
+# select one test file here.  Tests are broken up so as to fit into an 8K bin file
+# to make a cartridge bin
+# TODO make these targets
+
+# TEST_SRC=test_char_short
+# TEST_SRC=test_long
+TEST_SRC=test_float
+# TEST_SRC=test_misc
+# TEST_SRC=test_one
 
 LDFLAGS=\
   --section-start .text=6000 --section-start .data=2080
-#  --section-start .text=6000 --section-start .data=8320
 
-# CRT0 = crt0.o
 CRT0 = $(LIBTI99)/crt0_ea5.o
-
 
 OBJECT_LIST=\
   header.o\
   $(CRT0)\
-  $(FNAME).o \
+  $(TEST_SRC).o \
   tap.o
 
 all: $(FNAME).bin
@@ -28,15 +34,6 @@ all: $(FNAME).bin
 #  Build on host.  Used to verify tests
 host-test: test.c
 	gcc -o host-test test.c tap.c
-
-#  Test real number conversions on host
-DECNUMDIR=../dev/gcc-4.4.0/libdecnumber/
-LIBGCCDIR=../dev/gcc-4.4.0/libgcc
-DECNUMLIBDIR=../dev/gcc-4.4.0/build/libdecnumber
-tireal: tireal.c
-	gcc -o tireal -I $(DECNUMDIR) -I $(LIBGCCDIR) tireal.c\
-        -L $(DECNUMLIBDIR) \
-        -ldecnumber
 
 $(FNAME).bin: $(FNAME).elf
 	$(ELF2CART) $(FNAME).elf $(FNAME).bin
@@ -57,6 +54,7 @@ $(FNAME).elf: $(OBJECT_LIST)
 %.o: %.asm
 	$(GAS) $< -o $@
 
+# test with and without -O2
 
 %.o: %.c
 	$(CC) -c $< -std=c99 --save-temp -I$(LIBTI99) -o $@

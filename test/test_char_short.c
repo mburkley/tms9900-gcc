@@ -1,80 +1,4 @@
-#ifdef __tms9900__
-#include <vdp.h>
-#else
-#include <stdio.h>
-#include <string.h>
-#endif
-
 #include "tap.h"
-
-#ifndef _DEBUG
-#define dprintf(...)
-#else
-#define dprintf printf
-#endif
-
-#if 0
-
-// Disabled for now until float funcs are implemented in libgcc
-
-static void t_double_init (void)
-{
-    double x = 1.2;
-    x *= 3.7;
-    double a = 533;
-    #if 0
-    double a = 1234567;
-    double b=87654321E-20;
-    double c=12E99;
-    #endif
-    printf ("# res=%f\n", x);
-
-    test_execute (__func__, x>4.3&&x<4.5);
-}
-#endif
-
-#if 1
-static void t_mul_short_long (void)
-{
-    int x =6;
-    int y =7;
-    long z;
-    z = x*y;
-
-    test_execute (__func__, z==42);
-}
-
-static int stack_func_arg (int a, int b, int c, int d, ...)
-{
-    int w = a;
-    int x = b;
-    int y = c;
-    int z = d;
-
-    return (w==65 && x==66 && y==67 && z==68);
-}
-
-static void t_stack_func_arg (void)
-{
-    int a = 65;
-    int b = 66;
-    int c = 67;
-    int d = 68;
-    int e = 69;
-    int f = 70;
-    int g = 71;
-    int h = 72;
-
-    int res = stack_func_arg (a, b, c, d, e, f, g, h);
-    test_execute (__func__, res != 0);
-
-    res = stack_func_arg (a, b, c, d);
-    test_execute (__func__, res != 0);
-
-    res = stack_func_arg (a, b, c, d, e, f, g, h, 0, 0);
-    test_execute (__func__, res != 0);
-}
-#endif
 
 static void t_us_char_divmod()
 {
@@ -274,35 +198,6 @@ static void t_us_short_or()
     dprintf("# z=%x a=%x b=%x\n", z, a, b);
     test_execute (__func__, z==0x7f69 && a==x && b==0xffff);
 }
-static void t_s_long_or()
-{
-    // Disabled until libgcc is working
-    #if 0
-    long x = 0x4321;
-    long y = 0x3c48;
-    long z = x | y;
-    long a = x | 0;
-    long b = x | -1;
-
-    dprintf("# z=%x a=%x b=%x\n", z, a, b);
-    test_execute (__func__, z==0x7f69 && a==x && b==-1);
-    #endif
-}
-
-static void t_us_long_or()
-{
-    // Disabled until libgcc is working
-    #if 0
-    unsigned long x = 0x4321;
-    unsigned long y = 0x3c48;
-    unsigned long z = x | y;
-    unsigned long a = x | 0;
-    unsigned long b = x | 0xff;
-
-    test_execute (__func__, z==0x7f69 && a==x && b==0xff);
-    #endif
-}
-
 static void t_s_char_and()
 {
     char x = 0x57;
@@ -348,119 +243,6 @@ static void t_us_short_and()
 
     test_execute (__func__, z==0x4621 && a==0 && b==x);
 }
-static void t_s_long_and()
-{
-    // Disabled until libgcc is wandking
-    #if 0
-    long x = 0x4321;
-    long y = 0x3c48;
-    long z = x & y;
-    long a = x & 0;
-    long b = x & -1;
-
-    dprintf("# z=%x a=%x b=%x\n", z, a, b);
-    test_execute (__func__, z==0x7f69 && a==0 && b==x);
-    #endif
-}
-
-static void t_us_long_and()
-{
-    // Disabled until libgcc is working
-    #if 0
-    unsigned long x = 0x4321;
-    unsigned long y = 0x3c48;
-    unsigned long z = x & y;
-    unsigned long a = x & 0;
-    unsigned long b = x & 0xffff;
-
-    test_execute (__func__, z==0x7f69 && a==0 && b==x);
-    #endif
-}
-
-
-static void t_long_char_str ()
-{
-    /*  The limitation of 1024 chars in a single string is an assembler limit,
-     *  not a compiler limit.  The size is hardcoded in
-     *  gas/config/tc-tms9900:566.
-     *
-     *  Limiting the string to below 1024 for now as increasing the buffer size
-     *  in gas didn't work.  Possibly need to tweak the frags or something as
-     *  well.
-     *
-     *  There was also an issue in tms9900.c where it wasn't breaking up large
-     *  text blocks.  Fixing this makes the issue with gas a non issue.
-     *
-     *  This test is disabled by default as wasting 2k of memory when trying to
-     *  run in a cartridge limits the other testing we can do.
-     */
-#if 0
-    const char s[] =
-    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-
-    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-
-    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-
-    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-
-    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-
-    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-
-    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-
-    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-    "hello";
-    int l = strlen(s);
-    printf("# len=%d\n", l);
-    test_execute (__func__, l==69);
-#endif
-}
 
 static void t_s_char_sra ()
 {
@@ -501,7 +283,7 @@ static void t_us_char_sla ()
 static void t_s_short_sra ()
 {
     // temporarily disabled to fit into cart
-    #if 0
+    #if 1
     short x = 0x8040;
     x >>= 1;
     dprintf("# x=%X\n", x);
@@ -570,7 +352,7 @@ static void t_s_short_add ()
 static void t_us_short_add ()
 {
     // temporarily disabled to fit into cart
-    #if 0
+    #if 1
     unsigned short x = 0x4934;
     unsigned short y = 0x2723;
     y += x;
@@ -591,7 +373,7 @@ static void t_s_char_sub ()
 static void t_us_char_sub ()
 {
     // temporarily disabled to fit into cart
-    #if 0
+    #if 1
     unsigned char x = 0x49;
     unsigned char y = 0x27;
     y -= x;
@@ -618,12 +400,28 @@ static void t_us_short_sub ()
     test_execute (__func__, y==0xddef);
 }
 
-typedef void (*FUNCPTR) (void);
-
-FUNCPTR tests[] = 
+void t_cmp_s_char()
 {
-    t_mul_short_long,
-    t_stack_func_arg,
+    char x=3;
+    char y=4;
+    char lt=(x<y);
+    char gt=(x>y);
+    char eq=(x==y);
+    test_execute (__func__, lt&&!eq&&!gt);
+}
+
+void t_cmp_s_short()
+{
+    int x=3;
+    int y=4;
+    int lt=(x<y);
+    int gt=(x>y);
+    int eq=(x==y);
+    test_execute (__func__, lt&&!eq&&!gt);
+}
+
+TESTFUNC tests[] = 
+{
     t_us_char_divmod,
     t_s_char_divmod,
     t_us_char_mpy,
@@ -640,15 +438,10 @@ FUNCPTR tests[] =
     t_us_char_or,
     t_s_short_or,
     t_us_short_or,
-    t_s_long_or,
-    t_us_long_or,
     t_s_char_and,
     t_us_char_and,
     t_s_short_and,
     t_us_short_and,
-    t_s_long_and,
-    t_us_long_and,
-    t_long_char_str,
     t_s_char_sra,
     t_us_char_srl,
     t_s_char_sla,
@@ -664,32 +457,20 @@ FUNCPTR tests[] =
     t_s_char_sub,
     t_us_char_sub,
     t_s_short_sub,
-    t_us_short_sub
+    t_us_short_sub,
+    t_cmp_s_char,
+    t_cmp_s_short
 };
 
-#define TEST_COUNT (sizeof (tests) / sizeof (FUNCPTR))
+#define TEST_COUNT (sizeof (tests) / sizeof (TESTFUNC))
 
 int main(void)
 {
-#ifdef __tms9900__
-    set_graphics(0);
-    charset();
-#endif
-
-    printf ("1..%d\n", (int) TEST_COUNT);
+    test_run (tests, TEST_COUNT);
 
 #if 0
     void test_double_init (void);
 #endif
 
-    int i;
-    for (i = 0; i < TEST_COUNT; i++)
-        tests[i]();
-        
-    test_report ();
-
-#ifdef __tms9900__
-    while(1);
-#endif
     return 0;
 }

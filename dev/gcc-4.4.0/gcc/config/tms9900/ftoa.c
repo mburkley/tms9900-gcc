@@ -22,7 +22,6 @@ void tireal_ftoa (unsigned char *d, char *p)
     exp = first >> 8;
     first &= 0xff;
 
-    printf("exp=%d first=%d\n", exp, first);
     if (first>9) *p++=(first/10) + '0';
     *p++=(first%10)+'0';
     *p++='.';
