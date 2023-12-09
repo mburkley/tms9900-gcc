@@ -1,27 +1,41 @@
-GAS=/home/mark/tms9900-gcc/tms9900-gcc/bin/tms9900-as
-LD=/home/mark/tms9900-gcc/tms9900-gcc/bin/tms9900-ld
-CC=/home/mark/tms9900-gcc/tms9900-gcc/bin/tms9900-gcc
-LIBTI99?=/home/mark/ti99/libti99
-LIBGCC=/home/mark/tms9900-gcc/tms9900-gcc/lib/gcc/tms9900/4.4.0/libgcc.a
+GCCDIR=/home/mark/tms9900-gcc/reltest/bin/
+
+GAS=$(GCCDIR)tms9900-as
+LD=$(GCCDIR)tms9900-ld
+CC=$(GCCDIR)tms9900-gcc
+LIBTI99DIR?=/home/mark/ti99/libti99
+LIBGCC=$(GCCDIR)../lib/gcc/tms9900/4.4.0/libgcc.a
+LIBGCC=/home/mark/tms9900-gcc/dev/gcc-4.4.0/build/gcc/libgcc.a
 # LIBGCC=libgcc.a
 ELF2CART=elf2cart
 
 FNAME=test
 
-# select one test file here.  Tests are broken up so as to fit into an 8K bin file
+# Uncomment one test file here.  Tests are split up so as to fit into an 8K bin file
 # to make a cartridge bin
 # TODO make these targets
 
 # TEST_SRC=test_char_short
-TEST_SRC=test_long
-# TEST_SRC=test_float
+# TEST_SRC=test_long
+TEST_SRC=test_float
 # TEST_SRC=test_misc
 # TEST_SRC=test_one
 
 LDFLAGS=\
   --section-start .text=6000 --section-start .data=2080
 
-CRT0 = $(LIBTI99)/crt0_ea5.o
+CFLAGS=-std=c99 --save-temp -I$(LIBTI99DIR)
+
+# test with and without -O2
+CFLAGS+=-O2
+
+# Uncomment to turn on unit test debug output
+# CFLAGS+=-D_DEBUG=1
+
+
+CRT0 = $(LIBTI99DIR)/crt0_ea5.o
+
+LIBTI99=-lti99
 
 OBJECT_LIST=\
   header.o\
@@ -39,7 +53,7 @@ $(FNAME).bin: $(FNAME).elf
 	$(ELF2CART) $(FNAME).elf $(FNAME).bin
 
 $(FNAME).elf: $(OBJECT_LIST)
-	$(LD) $(OBJECT_LIST) $(LDFLAGS) -L$(LIBTI99) -lti99 -o $(FNAME).elf \
+	$(LD) $(OBJECT_LIST) $(LDFLAGS) -L$(LIBTI99DIR) $(LIBTI99) -o $(FNAME).elf \
 	-Map=mapfile $(LIBGCC)
 
 .phony clean:
@@ -54,8 +68,5 @@ $(FNAME).elf: $(OBJECT_LIST)
 %.o: %.asm
 	$(GAS) $< -o $@
 
-# test with and without -O2
-
 %.o: %.c
-	$(CC) -c $< -std=c99 --save-temp -I$(LIBTI99) -o $@
-#	$(CC) -c $< -std=c99 -O2 --save-temp -I$(LIBTI99) -o $@
+	$(CC) -c $< $(CFLAGS) -o $@

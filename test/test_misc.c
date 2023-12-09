@@ -1,34 +1,44 @@
 #include "tap.h"
+#include <stdarg.h>
 
-static int stack_func_arg (int a, int b, int c, int d, ...)
+/*  Take a variable number of params, verify they are in ascending order, sum
+ *  them together and verify the expected sum.  Use this function to ensure
+ *  parameter ordering is correct even when the number of parameters is too many
+ *  to be passed in registers and must be passed by stack.
+ */
+static void stack_func_arg (int count, int expect_sum, ...)
 {
-    int w = a;
-    int x = b;
-    int y = c;
-    int z = d;
+    int i;
+    va_list ap;
+    int sum = 0;
+    int ascending = 1;
+    int param;
+    int last = 0;
+    va_start(ap, expect_sum);
 
-    return (w==65 && x==66 && y==67 && z==68);
+    for (i = 0; i < count; i++)
+    {
+        param = va_arg(ap, int);
+        ascending = ascending && (param >= last);
+        last = param;
+        sum += param;
+    }
+
+    dprintf ("# sum=%d ascend=%d\n", sum, ascending);
+    va_end(ap);
+
+    test_execute (__func__, (sum == expect_sum) && ascending);
 }
 
-static void t_stack_func_arg (void)
+static void t_stack_func_arg_small (void)
 {
-    int a = 65;
-    int b = 66;
-    int c = 67;
-    int d = 68;
-    int e = 69;
-    int f = 70;
-    int g = 71;
-    int h = 72;
+    stack_func_arg (4, 42, 1, 10, 15, 16);
+}
 
-    int res = stack_func_arg (a, b, c, d, e, f, g, h);
-    test_execute (__func__, res != 0);
-
-    res = stack_func_arg (a, b, c, d);
-    test_execute (__func__, res != 0);
-
-    res = stack_func_arg (a, b, c, d, e, f, g, h, 0, 0);
-    test_execute (__func__, res != 0);
+static void t_stack_func_arg_large (void)
+{
+    // Use Fibonacci, why not
+    stack_func_arg (15, 986, 0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377);
 }
 
 static void t_for_break(void)
@@ -39,8 +49,68 @@ static void t_for_break(void)
         if (i==2)
             break;
 
-    printf("# i=%d\n", i);
+    dprintf("# i=%d\n", i);
     test_execute (__func__, i==2);
+}
+
+void test_array (const int k)
+{
+   int v[k];
+   int i;
+   int pass = 1;
+
+   for (i = 0; i < k; i++)
+   {
+      v[i] = i;
+   }
+
+   dprintf ("# size int[5] == %d\n", (int) sizeof (v));
+   pass = pass && (sizeof(v)==10);
+   for (i = 0; i < k; i++)
+   {
+      dprintf ("# %d\n", v[i]);
+      pass = pass && (v[i]==i);
+   }
+   test_execute (__func__, pass);
+}
+
+void t_var_byte_array()
+{
+   test_array (5);
+}
+
+void t_byte_array()
+{
+    int w;
+    char x[1];
+    int y;
+    char z[3];
+    int a;
+    int pass=1;
+    char s[6]="hello";
+
+    x[0]=0x55;
+    z[0]=0x11;
+    z[1]=0x22;
+    z[2]=0x33;
+    w=42;
+    y=84;
+    a=21;
+
+    dprintf("# z[] = { %X, %X, %X }\n",
+            (int)z[0], (int)z[1], (int)z[2]);
+    dprintf("# x[0]=%X w=%d y=%d a=%d\n",
+           (int)x[0], w, y, a);
+
+    pass = pass && (x[0]==0x55);
+    pass = pass && (z[0]==0x11);
+    pass = pass && (z[1]==0x22);
+    pass = pass && (z[2]==0x33);
+    pass = pass && (w==42);
+    pass = pass && (y==84);
+    pass = pass && (a==21);
+
+    test_execute (__func__, pass);
 }
 
 static void t_long_char_str ()
@@ -129,9 +199,12 @@ static void t_long_char_str ()
 
 TESTFUNC tests[] = 
 {
-    t_stack_func_arg,
+    t_stack_func_arg_small,
+    t_stack_func_arg_large,
     t_long_char_str,
-    t_for_break
+    t_for_break,
+    t_var_byte_array,
+    t_byte_array
 };
 
 #define TEST_COUNT (sizeof (tests) / sizeof (TESTFUNC))

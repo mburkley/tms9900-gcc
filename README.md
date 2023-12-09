@@ -14,9 +14,7 @@ tms9900 support.  This differences are much smaller.
 Patch files are archived in the main branch which are used by an install script
 to create modified sources for gcc and binutils.
 
-The branches in the repo are:
-
- * [main]: The latest scripts and patch files
+The branch "main" in the repo contains The latest scripts and patch files
 
 User download and install
 -------------------------

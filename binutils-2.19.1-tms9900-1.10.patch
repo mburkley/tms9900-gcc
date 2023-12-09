@@ -382,7 +382,7 @@ diff -ru binutils-2.19.1-orig/config.sub binutils-2.19.1/config.sub
  	| x86 | xc16x | xscale | xscalee[bl] | xstormy16 | xtensa \
 diff -ru binutils-2.19.1-orig/gas/config/tc-tms9900.c binutils-2.19.1/gas/config/tc-tms9900.c
 --- binutils-2.19.1-orig/gas/config/tc-tms9900.c	2023-12-06 21:24:00.914365559 +0000
-+++ binutils-2.19.1/gas/config/tc-tms9900.c	2023-12-06 21:24:00.922365531 +0000
++++ binutils-2.19.1/gas/config/tc-tms9900.c	2023-12-06 21:55:28.821203512 +0000
 @@ -0,0 +1,1282 @@
 +/* tc-tms9900.c -- Assemble code for the Texas Instruments TMS9900
 +   Copyright 2009 Eric Welser
