@@ -1,24 +1,21 @@
 #include "tap.h"
 
-static int func2()
+void t_int32_sla_var()
 {
-    return -1;
-}
+    int32_t x = 0x11224488;
+    int32_t y;
 
-static int func()
-{
-    return func2() < 0;
-}
-
-static void t_sign_ret()
-{
-    printf("# ret=%d\n", func());
-    test_execute (__func__, func () != 0);
+    int z=4;
+    y = x<<z;
+    unsigned short lo=y;
+    unsigned short hi=y>>16;
+    printf("# y=>%04X >%04X\n",hi,lo);
+    test_execute (__func__, y== 0x12244880);
 }
 
 TESTFUNC tests[] = 
 {
-    t_sign_ret
+    t_int32_sla_var
 };
 
 int main (void)

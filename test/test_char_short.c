@@ -250,10 +250,15 @@ static void t_s_char_sra ()
     x >>= 1;
     dprintf("# x=%X\n", x);
     test_execute (__func__, (unsigned char)x==0xc0);
-    x = 0x40;
-    x>>=1;
+}
+
+static void t_s_char_sra_var ()
+{
+    char x = 0x80;
+    int y=1;
+    x >>= y;
     dprintf("# x=%X\n", x);
-    test_execute (__func__, x==0x20);
+    test_execute (__func__, (unsigned char)x==0xc0);
 }
 
 static void t_us_char_srl ()
@@ -272,6 +277,15 @@ static void t_s_char_sla ()
     test_execute (__func__, x==0x02);
 }
 
+static void t_s_char_sla_var ()
+{
+    char x = 0x81;
+    int y = 1;
+    x <<= y;
+    dprintf("# x=%X\n", x);
+    test_execute (__func__, x==0x02);
+}
+
 static void t_us_char_sla ()
 {
     unsigned char x = 0x81;
@@ -282,17 +296,19 @@ static void t_us_char_sla ()
 
 static void t_s_short_sra ()
 {
-    // temporarily disabled to fit into cart
-    #if 1
     short x = 0x8040;
     x >>= 1;
     dprintf("# x=%X\n", x);
     test_execute (__func__, (unsigned short)x==0xc020);
-    x = 0x4020;
-    x>>=1;
+}
+
+static void t_s_short_sra_var ()
+{
+    short x = 0x8040;
+    int y =1;
+    x >>= y;
     dprintf("# x=%X\n", x);
-    test_execute (__func__, x==0x2010);
-    #endif
+    test_execute (__func__, (unsigned short)x==0xc020);
 }
 
 static void t_us_short_srl ()
@@ -307,6 +323,15 @@ static void t_s_short_sla ()
 {
     short x = 0x8124;
     x <<= 1;
+    dprintf("# x=%X\n", x);
+    test_execute (__func__, x==0x0248);
+}
+
+static void t_s_short_sla_var ()
+{
+    short x = 0x8124;
+    int y = 1;
+    x <<= y;
     dprintf("# x=%X\n", x);
     test_execute (__func__, x==0x0248);
 }
@@ -443,12 +468,16 @@ TESTFUNC tests[] =
     t_s_short_and,
     t_us_short_and,
     t_s_char_sra,
+    t_s_char_sra_var,
     t_us_char_srl,
     t_s_char_sla,
+    t_s_char_sla_var,
     t_us_char_sla,
     t_s_short_sra,
+    t_s_short_sra_var,
     t_us_short_srl,
     t_s_short_sla,
+    t_s_short_sla_var,
     t_us_short_sla,
     t_s_char_add,
     t_us_char_add,

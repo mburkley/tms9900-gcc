@@ -77,7 +77,7 @@ static void t_int32_sla_lt16()
     test_execute (__func__, y== 0x91a091a0);
 }
 
-static void t_int32_sla_var()
+void t_int32_sla_var()
 {
     int32_t x = 0x12341234;
     int32_t y;
