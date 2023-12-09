@@ -3,6 +3,10 @@
 /*
  *  MGB Work in progress.  Library to perform 32-bit arithmetic and shift
  *  operations.  Moved here from tms9900.md
+ *
+ *  Compiling tests for long arithmetic and shift never emits calls to these
+ *  functions.  It seems the compiler emits similar code to below so why would
+ *  we bother including these?
  */
 
 
