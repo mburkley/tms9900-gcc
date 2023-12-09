@@ -1,6 +1,6 @@
 /* d_adj_neg_pos.c
    This method performs absolute value on the incoming double and indicates whether it was positive or negative.
-   06/23/2023 initial version
+   06/23/2023 mrvan initial version
 */
 
 #include "math_private.h"

@@ -55,8 +55,8 @@ along with GCC; see the file COPYING3.  If not see
 #include "decNumber.h"
 
 /* Define this to put insn debugs into output files */
-// #undef TMS9900_DEBUG
-#define TMS9900_DEBUG 1
+#undef TMS9900_DEBUG
+// #define TMS9900_DEBUG 1
 
 static bool tms9900_pass_by_reference (CUMULATIVE_ARGS *,
                                        enum machine_mode, const_tree, bool);
@@ -102,16 +102,9 @@ static void
 tms9900_encode_real (const struct real_format *fmt, long *buf,
 		    const REAL_VALUE_TYPE *r)
 {
-  printf("%s val uexp=%u expb=%d sigsz=%d sig[n]=",
-         __func__, r->uexp, EXP_BITS, SIGSZ);
-
-  // unsigned char *c = (unsigned char*) r->sig;
-  // int i;
-
   char a[256];
   unsigned char d[8];
   decimal128ToString((const decimal128*)r->sig, a);
-  printf("str=%s\n", a);
 
   tireal_atof (a, d);
 
@@ -119,13 +112,6 @@ tms9900_encode_real (const struct real_format *fmt, long *buf,
   buf[0] = (d[0] << 24) | (d[1] << 16) | (d[2] << 8) | d[3];
   buf[1] = (d[4] << 24) | (d[5] << 16) | (d[6] << 8) | d[7];
   buf[2] = 0;
-
-  unsigned char *x=(unsigned char*)buf;
-  int i;
-  for (i = 0; i < SIGSZ*8 ; i++)
-      printf (" %02X", x[i]);
-
-  printf("\n");
 }
 
 /*  Decode a TI real to REAL_VALUE_TYPE by first converting it to a string.  The
@@ -134,10 +120,10 @@ static void
 tms9900_decode_real (const struct real_format *fmt, REAL_VALUE_TYPE *r,
 		    const long *buf)
 {
-    char s[32];
-    unsigned char d[8];
+  char s[32];
+  unsigned char d[8];
 
-    /*  Assuming reverse mapping of longs to bytes that we did in encode */
+  /*  Assuming reverse mapping of longs to bytes that we did in encode */
   d[0] = (buf[0] >> 24) & 0xff;
   d[1] = (buf[0] >> 16) & 0xff;
   d[2] = (buf[0] >> 8) & 0xff;
@@ -147,26 +133,9 @@ tms9900_decode_real (const struct real_format *fmt, REAL_VALUE_TYPE *r,
   d[6] = (buf[1] >> 8) & 0xff;
   d[7] = buf[1] & 0xff;
 
-    tireal_ftoa (d, s);
+  tireal_ftoa (d, s);
     
-  // for (i = 0; i < 24; i++)
-      // printf (" %02X", bytes[i]);
-
-      // printf ("\n");
-
-  printf ("%s encoding %s\n", __func__, s);
-  #if 0
-  decNumber dn;
-  decContext set;
-  decContextDefault (&set, DEC_INIT_DECIMAL128);
-
-  // decimal128FromString((const decimal128*) r->sig, a);
-
-  decNumberFromString (&dn, s, &set);
-  decimal_from_decnumber (r, &dn, &set);
-  #endif
-    decimal_real_from_string (r, s);
-
+  decimal_real_from_string (r, s);
 }
 
 const struct real_format tms9900_real_format =

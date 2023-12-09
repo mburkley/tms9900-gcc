@@ -88,6 +88,17 @@ void t_int32_sla_var()
     test_execute (__func__, y== 0x23412340);
 }
 
+void t_int32_sla_var_zero()
+{
+    int32_t x = 0x12341234;
+    int32_t y;
+
+    int z=0;
+    y = x<<z;
+    dprintf("# y=%lx\n",y);
+    test_execute (__func__, y== 0x12341234);
+}
+
 static void t_int32_sla_gt16()
 {
     int32_t x = 0x12341234;
@@ -201,6 +212,7 @@ TESTFUNC tests[] =
     t_uint32_and,
     t_int32_sla_lt16,
     t_int32_sla_var,
+    t_int32_sla_var_zero,
     t_int32_sla_gt16,
     t_int32_sla_16,
     t_int32_srl_lt16,

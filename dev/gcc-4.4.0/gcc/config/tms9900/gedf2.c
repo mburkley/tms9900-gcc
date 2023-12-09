@@ -1,3 +1,6 @@
+/* 06/23/2023 mrvan initial version
+*/
+
 #include "math_private.h"
 
 // returns a value greater than or equal to zero if a is greater than or equal to b

@@ -399,7 +399,6 @@ decimal_round_for_format (const struct real_format *fmt, REAL_VALUE_TYPE *r)
 #ifdef TMS9900
   else if (fmt == &tms9900_real_format)
     {
-      printf("%s TIfmt\n", __func__);
       return;
     }
 #endif

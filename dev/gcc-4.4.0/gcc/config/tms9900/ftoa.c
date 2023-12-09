@@ -1,4 +1,3 @@
-
 /* ftoa.c
    This method converts a TI float to an ascii representation of a float.  It
    doesn't create very pretty output, but that doesn't matter, it's only for internal

@@ -22,8 +22,7 @@ LIB2FUNCS_EXTRA = \
  $(srcdir)/config/tms9900/gedf2.c \
  $(srcdir)/config/tms9900/gtdf2.c \
  $(srcdir)/config/tms9900/ledf2.c \
- $(srcdir)/config/tms9900/ltdf2.c \
- $(srcdir)/config/tms9900/libsi.asm
+ $(srcdir)/config/tms9900/ltdf2.c
 
 # Tell make where to find headers for above
 LIBGCC2_INCLUDES += -I$(srcdir)/config/tms9900
