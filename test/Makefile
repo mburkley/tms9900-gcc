@@ -1,13 +1,12 @@
-# GCCDIR=/home/mark/tms9900-gcc/reltest/bin/
-GCCDIR=/home/mark/tms9900-gcc/tms9900-gcc/bin/
+INSTALLDIR=/home/mark/tms9900-gcc/tms9900-gcc/
+LIBTI99DIR?=/home/mark/ti99/libti99
+
+GCCDIR=$(INSTALLDIR)bin/
 
 GAS=$(GCCDIR)tms9900-as
 LD=$(GCCDIR)tms9900-ld
 CC=$(GCCDIR)tms9900-gcc
-LIBTI99DIR?=/home/mark/ti99/libti99
 LIBGCC=$(GCCDIR)../lib/gcc/tms9900/4.4.0/libgcc.a
-LIBGCC=/home/mark/tms9900-gcc/dev/gcc-4.4.0/build/gcc/libgcc.a
-# LIBGCC=libgcc.a
 ELF2CART=elf2cart
 
 FNAME=test
@@ -16,9 +15,9 @@ FNAME=test
 # to make a cartridge bin
 # TODO make these targets
 
-# TEST_SRC=test_char_short
+TEST_SRC=test_char_short
 # TEST_SRC=test_long
-TEST_SRC=test_float
+# TEST_SRC=test_float
 # TEST_SRC=test_misc
 # TEST_SRC=test_one
 
@@ -27,12 +26,14 @@ LDFLAGS=\
 
 CFLAGS=-std=c99 --save-temp -I$(LIBTI99DIR)
 
-# test with and without -O2
-CFLAGS+=-O2
+#  test with and without -O2.
+#
+#  NOTE some tests are useless with -O2 as the compiler optimises away any
+#  arithmetic or comparisons with constants.
+# CFLAGS+=-O2
 
 # Uncomment to turn on unit test debug output
 # CFLAGS+=-D_DEBUG=1
-
 
 CRT0 = $(LIBTI99DIR)/crt0_ea5.o
 

@@ -277,16 +277,13 @@ extern short *reg_renumber;	/* def in local_alloc.c */
 #define FIRST_PSEUDO_REGISTER	(16)
 
 /* 1 for registers that have pervasive standard uses and are not available
-   for the register allocator.
-
-   MGB TODO move BP, AP to R12/R13 so that we can have 1-10 as general regs
-*/
+ * for the register allocator.  */
 #define FIXED_REGISTERS \
-  {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0}
-/* SC 1  2  3  4  5  6  7  AP BP SP LR CB LW LP LS*/
+  {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0}
+/* SC 1  2  3  4  5  6  7  8  9  10 LR CB AP BP SP*/
 
 /* 0 for registers which must be preserved across function call boundaries */
-/* MGB TODO seems excessive to always preserve R13,R14,R15 as these will only
+/* It seems excessive to always preserve R13,R14,R15 as these will only
  * have values to be saved if we were invokved by a BLWP which is never emitted
  * by this backend.  If someone is writing an ISR / DSR which is invoked by a
  * BLWP then we can ask them to save R13/R14/R15 themselves.
