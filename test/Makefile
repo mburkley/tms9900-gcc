@@ -1,4 +1,4 @@
-INSTALLDIR=/home/mark/tms9900-gcc/tms9900-gcc/
+INSTALLDIR=/opt/tms9900-gcc/
 LIBTI99DIR?=/home/mark/ti99/libti99
 
 GCCDIR=$(INSTALLDIR)bin/
