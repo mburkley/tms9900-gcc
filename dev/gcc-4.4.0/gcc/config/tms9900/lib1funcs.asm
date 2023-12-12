@@ -1,3 +1,8 @@
+/*
+ *  MGB 32-bit arithmetic functions never seem to be used.  The compiler emits
+ *  sequences of 16-bit ops to perform 32-bit ops
+ */
+
 /******************************************************************************
 *                               __clzM2
 *******************************************************************************
@@ -817,4 +822,5 @@ __umodsi3:
   mov  @-2(r10), r11
   b    *r11
 #endif
+
 

@@ -74,9 +74,9 @@ along with GCC; see the file COPYING3.  If not see
   while (0)
 
 /* As an embedded target, we have no libc.  */
-#ifndef inhibit_libc
-#  define inhibit_libc
-#endif
+//#ifndef inhibit_libc
+//#  define inhibit_libc
+//#endif
 
 /* Forward type declaration for prototypes definitions.
    rtx_ptr is equivalent to rtx. Can't use the same name.  */
@@ -108,6 +108,8 @@ extern short *reg_renumber;	/* def in local_alloc.c */
 #ifndef TARGET_DEFAULT
 # define TARGET_DEFAULT		0
 #endif
+
+#define OVERRIDE_OPTIONS override_options ()
 
 /* Define this macro as a C expression for the initializer of an
    array of string to tell the driver program which options are
@@ -177,7 +179,7 @@ extern short *reg_renumber;	/* def in local_alloc.c */
    machine mode that should actually be used.  All integer machine modes of
    this size or smaller can be used for structures and unions with the
    appropriate sizes.  */
-#define MAX_FIXED_MODE_SIZE	64
+#define MAX_FIXED_MODE_SIZE	32
 
 /* target machine storage layout */
 
@@ -195,8 +197,10 @@ extern short *reg_renumber;	/* def in local_alloc.c */
 
 /* A C expression for the size in bits of the type `float' on the
    target machine. If you don't define this, the default is one word.
-   Don't use default: a word is only 16.  */
-#define FLOAT_TYPE_SIZE         32
+   Don't use default: a word is only 16.
+   MGB let's see if we can make floats and doubles the same size
+   MGB doesn't work - gcc assumes sizeof float == sizeof SI ? */
+#define FLOAT_TYPE_SIZE         64
 
 /* A C expression for the size in bits of the type double on the target
    machine. If you don't define this, the default is two words.
@@ -204,6 +208,11 @@ extern short *reg_renumber;	/* def in local_alloc.c */
 #define DOUBLE_TYPE_SIZE        64
 
 #define LONG_DOUBLE_TYPE_SIZE   64
+
+/*  We don't have "floats" as in 32-bit floating point values (SFmode) but we do
+ *  have "doubles" as in 64-bit (DFmode). */
+#define LIBGCC2_HAS_SF_MODE 0
+#define LIBGCC2_HAS_DF_MODE 1
 
 /* Define this as 1 if `char' should by default be signed; else as 0.  */
 #define DEFAULT_SIGNED_CHAR	1
@@ -244,22 +253,16 @@ extern short *reg_renumber;	/* def in local_alloc.c */
 
 /* Shift count register */
 #define HARD_SC_REGNUM		HARD_R0_REGNUM
-/* Arg pointer */
-#define HARD_AP_REGNUM		HARD_R8_REGNUM
-/* Base pointer */
-#define HARD_BP_REGNUM		HARD_R9_REGNUM
-/* Stack pointer */
-#define HARD_SP_REGNUM		HARD_R10_REGNUM
 /* Old PC after BL instruction */
 #define HARD_LR_REGNUM		HARD_R11_REGNUM
 /* CRU base address */
 #define HARD_CB_REGNUM		HARD_R12_REGNUM
-/* Old workspace after BLWP instruction */
-#define HARD_LW_REGNUM		HARD_R13_REGNUM
-/* Old PC after BLWP instruction */
-#define HARD_LP_REGNUM		HARD_R14_REGNUM
-/* Old status register after BLWP instruction */
-#define HARD_LS_REGNUM		HARD_R15_REGNUM
+/* Arg pointer */
+#define HARD_AP_REGNUM		HARD_R13_REGNUM
+/* Base pointer */
+#define HARD_BP_REGNUM		HARD_R14_REGNUM
+/* Stack pointer */
+#define HARD_SP_REGNUM		HARD_R15_REGNUM
 
 /* How to refer to registers in assembler output.  This sequence is indexed
    by compiler's hard-register-number (see above). */
@@ -274,23 +277,20 @@ extern short *reg_renumber;	/* def in local_alloc.c */
 #define FIRST_PSEUDO_REGISTER	(16)
 
 /* 1 for registers that have pervasive standard uses and are not available
-   for the register allocator.
-
-   MGB TODO move BP, AP to R12/R13 so that we can have 1-10 as general regs
-*/
+ * for the register allocator.  */
 #define FIXED_REGISTERS \
-  {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0}
-/* SC 1  2  3  4  5  6  7  AP BP SP LR CB LW LP LS*/
+  {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0}
+/* SC 1  2  3  4  5  6  7  8  9  10 LR CB AP BP SP*/
 
 /* 0 for registers which must be preserved across function call boundaries */
-/* MGB TODO seems excessive to always preserve R13,R14,R15 as these will only
+/* It seems excessive to always preserve R13,R14,R15 as these will only
  * have values to be saved if we were invokved by a BLWP which is never emitted
  * by this backend.  If someone is writing an ISR / DSR which is invoked by a
  * BLWP then we can ask them to save R13/R14/R15 themselves.
  */
 #define CALL_USED_REGISTERS \
-  {1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 0}
-/* SC 1  2  3  4  5  6  7  AP BP SP LR CB LW LP LS*/
+  {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
+/* SC 1  2  3  4  5  6  7  8  9  10 LR CB AP BP SP*/
 
 /* Define this macro to change register usage conditional on target flags. */
 #define CONDITIONAL_REGISTER_USAGE 
@@ -300,8 +300,8 @@ extern short *reg_renumber;	/* def in local_alloc.c */
 #define REG_ALLOC_ORDER	\
    {HARD_R1_REGNUM, HARD_R2_REGNUM, HARD_R3_REGNUM, HARD_R4_REGNUM,\
     HARD_R5_REGNUM, HARD_R6_REGNUM, HARD_R7_REGNUM, HARD_R8_REGNUM,\
-    HARD_CB_REGNUM, HARD_SC_REGNUM, HARD_LW_REGNUM, HARD_LP_REGNUM,\
-    HARD_LS_REGNUM, HARD_R9_REGNUM, HARD_LR_REGNUM, HARD_SP_REGNUM}
+    HARD_R9_REGNUM, HARD_R10_REGNUM, HARD_R12_REGNUM, HARD_SC_REGNUM,\
+    HARD_AP_REGNUM, HARD_BP_REGNUM, HARD_LR_REGNUM, HARD_SP_REGNUM}
 
 /* A C expression for the number of consecutive hard registers,
    starting at register number REGNO, required to hold a value of
@@ -310,8 +310,7 @@ extern short *reg_renumber;	/* def in local_alloc.c */
    ((GET_MODE_SIZE (MODE) + HARD_REG_SIZE - 1) / HARD_REG_SIZE)
 
 /* Value is 1 if hard register REGNO (or starting with REGNO) can hold a value of machine-mode MODE
- *
- *  MGB TODO could include 64-bit as well */
+ */
 #define HARD_REGNO_MODE_OK(REGNO, MODE) \
    (!(MODE == SImode && REGNO==HARD_R15_REGNUM))
   
@@ -383,14 +382,14 @@ enum reg_class
    R5      0x00000020
    R6      0x00000040
    R7      0x00000080
-   AP      0x00000100
-   BP      0x00000200
-   SP      0x00000400
+   R8      0x00000100
+   R9      0x00000200
+   R10     0x00000400
    LR      0x00000800
    CB      0x00001000
-   LW      0x00002000
-   LP      0x00004000
-   LS      0x00008000
+   AP      0x00002000
+   BP      0x00004000
+   SP      0x00008000
 --------------------------------------------------------------*/
 
 #define REG_CLASS_CONTENTS \
@@ -514,13 +513,13 @@ enum reg_class
 #define STACK_POINTER_REGNUM		HARD_SP_REGNUM
 
 /* Base register for access to local variables of the function.  */
-#define FRAME_POINTER_REGNUM		HARD_R9_REGNUM
+#define FRAME_POINTER_REGNUM		HARD_BP_REGNUM
 
 /* Base register for access to arguments of the function.  */
-#define ARG_POINTER_REGNUM		HARD_R8_REGNUM
+#define ARG_POINTER_REGNUM		HARD_AP_REGNUM
 
 /* Register in which static-chain is passed to a function.  */
-#define STATIC_CHAIN_REGNUM	        HARD_R7_REGNUM
+#define STATIC_CHAIN_REGNUM	        HARD_R12_REGNUM
 
 /* Definitions for register eliminations.
 
@@ -580,8 +579,8 @@ enum reg_class
 /* Passing Arguments in Registers.  */
 
 
-/* The number of argument registers we can use (R1..R6) */
-#define TMS9900_ARG_REGS (HARD_R7_REGNUM - HARD_R1_REGNUM)
+/* The number of argument registers we can use (R1..R10) */
+#define TMS9900_ARG_REGS (HARD_R11_REGNUM - HARD_R1_REGNUM)
 
 /* Define a data type for recording info about an argument list
    during the scan of that argument list.  This data type should
@@ -657,11 +656,12 @@ typedef struct tms9900_args
 
 /* 1 if N is a possible register number for function argument passing. */
 #define FUNCTION_ARG_REGNO_P(N)	\
-     (((N) >= HARD_R1_REGNUM) && ((N) <= HARD_R6_REGNUM))
+     (((N) >= HARD_R1_REGNUM) && ((N) <= HARD_R10_REGNUM))
 
 /* 8- and 16-bit values are returned in R1, 32-bit values are
    passed in R1+R2, The high word is in R1. */
-#define FUNCTION_VALUE(VALTYPE, FUNC) tms9900_function_value(VALTYPE)
+#define FUNCTION_VALUE(VALTYPE, FUNC) \
+     gen_rtx_REG (TYPE_MODE (VALTYPE), HARD_R1_REGNUM)
 
 /* 8- and 16-bit values are returned in R1, 32-bit values are
    passed in R1+R2, The high word is in R1. */
@@ -869,7 +869,7 @@ typedef struct tms9900_args
    you should define this macro to express the relative cost
 
    For the TMS9900, memory access is four times slower than registers */
-#define MEMORY_MOVE_COST(MODE,CLASS,IN)	16
+#define MEMORY_MOVE_COST(MODE,CLASS,IN)	4
 
 /* A C expression for the cost of a branch instruction.  A value of 1
    is the default; other values are interpreted relative to that.

@@ -140,7 +140,9 @@ if [ ! -f .gcc_built ] ; then
    check_result "=== Failed to configure GCC ==="
    make all-gcc
    check_result "=== Failed to build GCC ==="
-   make install install-target-libgcc
+   make all-target-libgcc
+   check_result "=== Failed to build libgcc ==="
+   make install-gcc install-target-libgcc
    # Make install has an expected failure:
    #  /bin/bash: line 3: cd: tms9900/libssp: No such file or directory
    # We do not build libssp, so that's OK

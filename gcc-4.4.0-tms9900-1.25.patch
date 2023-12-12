@@ -1,6 +1,6 @@
 diff -ru gcc-4.4.0-orig/config.sub gcc-4.4.0/config.sub
 --- gcc-4.4.0-orig/config.sub	2023-12-06 21:24:00.926365516 +0000
-+++ gcc-4.4.0/config.sub	2023-12-06 21:24:00.934365487 +0000
++++ gcc-4.4.0/config.sub	2023-12-11 08:49:58.822910247 +0000
 @@ -285,7 +285,7 @@
  	| sparc | sparc64 | sparc64b | sparc64v | sparc86x | sparclet | sparclite \
  	| sparcv8 | sparcv9 | sparcv9b | sparcv9v \
@@ -10,6 +10,58 @@ diff -ru gcc-4.4.0-orig/config.sub gcc-4.4.0/config.sub
  	| v850 | v850e \
  	| we32k \
  	| x86 | xc16x | xscale | xscalee[bl] | xstormy16 | xtensa \
+@@ -371,7 +371,7 @@
+ 	| sparcv8-* | sparcv9-* | sparcv9b-* | sparcv9v-* | strongarm-* | sv1-* | sx?-* \
+ 	| tahoe-* | thumb-* \
+ 	| tic30-* | tic4x-* | tic54x-* | tic55x-* | tic6x-* | tic80-* | tile-* \
+-	| tron-* \
++	| tron-* | tms9900-* \
+ 	| v850-* | v850e-* | vax-* \
+ 	| we32k-* \
+ 	| x86-* | x86_64-* | xc16x-* | xps100-* | xscale-* | xscalee[bl]-* \
+@@ -1181,6 +1181,9 @@
+ 	pdp11)
+ 		basic_machine=pdp11-dec
+ 		;;
++	tms9900)
++		basic_machine=tms9900-ti
++		;;
+ 	we32k)
+ 		basic_machine=we32k-att
+ 		;;
+@@ -1456,6 +1459,9 @@
+ 	pdp11-*)
+ 		os=-none
+ 		;;
++	tms9900-*)
++		os=-none
++		;;
+ 	*-dec | vax-*)
+ 		os=-ultrix4.2
+ 		;;
+diff -ru gcc-4.4.0-orig/gcc/c-cppbuiltin.c gcc-4.4.0/gcc/c-cppbuiltin.c
+--- gcc-4.4.0-orig/gcc/c-cppbuiltin.c	2023-12-09 11:24:53.953049596 +0000
++++ gcc-4.4.0/gcc/c-cppbuiltin.c	2023-12-11 08:49:58.822910247 +0000
+@@ -104,12 +104,19 @@
+   int decimal_dig;
+ 
+   fmt = REAL_MODE_FORMAT (TYPE_MODE (type));
++
++#ifndef TMS9900
+   gcc_assert (fmt->b != 10);
++#endif
+ 
+   /* The radix of the exponent representation.  */
+   if (type == float_type_node)
+     builtin_define_with_int_value ("__FLT_RADIX__", fmt->b);
++#ifdef TMS9900
++  log10_b = 1;
++#else
+   log10_b = log10_2;
++#endif
+ 
+   /* The number of radix digits, p, in the floating-point significand.  */
+   sprintf (name, "__%s_MANT_DIG__", name_prefix);
 diff -ru gcc-4.4.0-orig/gcc/combine.c gcc-4.4.0/gcc/combine.c
 --- gcc-4.4.0-orig/gcc/combine.c	2023-12-06 21:24:00.930365503 +0000
 +++ gcc-4.4.0/gcc/combine.c	2023-12-06 21:24:00.934365487 +0000
@@ -30,10 +82,457 @@ diff -ru gcc-4.4.0-orig/gcc/combine.c gcc-4.4.0/gcc/combine.c
  
        if (WORDS_BIG_ENDIAN)
  	offset = MAX (isize, UNITS_PER_WORD) - MAX (osize, UNITS_PER_WORD);
+diff -ru gcc-4.4.0-orig/gcc/config/tms9900/atof.c gcc-4.4.0/gcc/config/tms9900/atof.c
+--- gcc-4.4.0-orig/gcc/config/tms9900/atof.c	2023-12-11 08:49:58.822910247 +0000
++++ gcc-4.4.0/gcc/config/tms9900/atof.c	2023-12-11 08:49:58.822910247 +0000
+@@ -0,0 +1,142 @@
++/* atof.c
++   This method converts an ascii representation of a float to a float.
++   change log:
++   06/23/2023 mrvan initial version
++*/
++
++// #include <stdlib.h>
++// #include <ctype.h>
++// #include <string_ext.h>
++#define isdigit(s) ((s>='0')&&(s<='9'))
++
++// converts an ascii representation of a float to a float
++void tireal_atof (const char *a, unsigned char *result) {
++
++   // The TI-99/4A uses RADIX-100 for doubles. RADIX is also known as base. So the doubles are 
++   // stored in base 100. Doubles are stored as 8 bytes, where the number is in scientific notation,
++   // but again as radix 100:
++   // - The first byte is the exponent (a radix 100 exponent, not base 10 exponent).
++   // - Subsequent bytes store the mantissa. The decimal point is after the first mantissa digit.
++   // - Negative numbers are stored with the exponent and first digit negated.
++   // - Zero has an exponent and first digit set to 0 and 0, respectively.
++   // - Exponents are offset by 0x40.
++   // - Note that there are excellent explanations online, but even those have some incorrect info.
++   // - https://www.unige.ch/medecine/nouspikel/ti99/reals.htm
++   // - For instance, one example gets the matissa correct but the author inadvertantly used base
++   // - 10 for the exponent, rather than base 100.
++
++   char *s = (char *) a;
++   char * pd = (char *) result; // pointer to the return value
++
++   // staging values for final double value
++   int exp     = 0;                                            // base 100 exponent
++   int neg_pos = 1;                                            // pos = 1, neg = -1
++   int v[14]   = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // represented as base 10 later to be compbined as base 100
++   int pos     = 0;                                            // write pos in v[]
++   int dp      = 0;                                            // decimal point position relative to v[]
++
++   int b10_exp_neg_pos = 1;
++   int b10_exp = 0;
++   int b10_exp_have_digit = 0;
++
++   int n;
++   int have_pos_digit = 0;
++   int i;
++
++   // skip whitespace
++   // s = skip_whitespace (s);
++
++   // capture the negative sign if present
++   if (*s == '-') {
++      neg_pos = -1;
++      s++;
++   }
++
++   // run through the digits before any decimal point
++   while ( (*s) && (isdigit (*s)) && (pos < 14) ) {
++      n = *s;
++      n -= 48;
++      if (n >= 1) have_pos_digit = 1;
++      if (have_pos_digit) {
++         v[pos] = n;
++         pos++;
++      } 
++      s++;
++   }
++
++   // capture the decimal point position, even if implicit due to lack of one
++   if (*s == '.') {
++      s++;
++   }
++   dp = pos;
++
++   // run through the fractional digits before any exponent designation
++   while ( (*s) && (isdigit (*s)) && (pos < 14) ) {
++      n = *s;
++      n = n - '0'; 
++      if (n >= 1) have_pos_digit = 1;
++      if (have_pos_digit) {
++         v[pos] = n;
++         pos++;
++      } else {
++         dp--;
++      }
++      s++;
++   }
++
++   // handle specified exponent
++   if ( (*s == 'e') || (*s == 'E') ) {
++      s++;
++      if (*s == '-') {
++         b10_exp_neg_pos = -1;
++         s++;
++      }
++      while ( (*s) && (isdigit (*s)) ) {
++         if (b10_exp_have_digit) {
++            b10_exp *= 10;
++         }
++         n = *s;
++         b10_exp += n - '0';
++         b10_exp_have_digit = 1;
++         s++;
++      }
++      dp += b10_exp * b10_exp_neg_pos;
++   }
++   
++   // process the collected value if at least one positive digit was found, otherwise the value is zero
++   if (have_pos_digit) {
++      // calculate the exponent, which is base 100
++      exp = 0x3F + dp / 2;
++      if ( (dp > 0) && (dp % 2) ) exp++;
++   
++      // shift the base 10 digits right by one if not exp aligned for base 100
++      if (dp % 2) {
++         for (i = 13; i > 0; i--) {
++            v[i] = v[i - 1];
++         }
++         v[0] = 0;
++      }
++   }
++
++   // finally, convert the collected and processed value into a double
++
++   // generate the exponent, write and advance. Note that this is a base 100 exponent
++   if (neg_pos == -1) exp++;
++   n = exp * neg_pos;
++   *pd = n;
++   pd++;
++
++   // generate the first mantissa digit, that might need to be negated, write and advance
++   n = (v[0] * 10 + v[1]) * neg_pos; // base 100 generated by combining the v[0] and v[1] values
++   *pd = n;
++   pd++;
++   
++   // process and write the remaining base 100 digits, combining the adjacent base 10 digits
++   for (i = 2; i < 14; i += 2) {
++      n = v[i] * 10 + v[i + 1];
++      *pd = n;
++      pd++;
++   }
++
++   // return d;
++}
+diff -ru gcc-4.4.0-orig/gcc/config/tms9900/d_adj_neg_pos.c gcc-4.4.0/gcc/config/tms9900/d_adj_neg_pos.c
+--- gcc-4.4.0-orig/gcc/config/tms9900/d_adj_neg_pos.c	2023-12-11 08:49:58.822910247 +0000
++++ gcc-4.4.0/gcc/config/tms9900/d_adj_neg_pos.c	2023-12-11 08:49:58.822910247 +0000
+@@ -0,0 +1,18 @@
++/* d_adj_neg_pos.c
++   This method performs absolute value on the incoming double and indicates whether it was positive or negative.
++   06/23/2023 mrvan initial version
++*/
++
++#include "math_private.h"
++
++int d_adj_neg_pos (double *d) {
++   char *p = (char *) d;
++   int np = 1;
++   if (*p < 0) {
++      *p = -(*p) - 1;
++      np = -1;
++      p++;
++      *p = -(*p);
++   }
++   return np;
++}
+diff -ru gcc-4.4.0-orig/gcc/config/tms9900/d_compare.c gcc-4.4.0/gcc/config/tms9900/d_compare.c
+--- gcc-4.4.0-orig/gcc/config/tms9900/d_compare.c	2023-12-11 08:49:58.822910247 +0000
++++ gcc-4.4.0/gcc/config/tms9900/d_compare.c	2023-12-11 08:49:58.822910247 +0000
+@@ -0,0 +1,47 @@
++/* 06/23/2023 mrvan initial version
++*/
++#include "math_private.h"
++
++// returns a value less than zero if a is strictly less than b, 0 if equal, 1 if a is strictly greater than b
++int d_compare (double a, double b) { // , int lt_response, int gt_response, int eq_response) {
++   int npa = 1;
++   int npb = 1;           
++   char *pa, *pb;
++   int r;
++   int i;
++
++   npa = d_adj_neg_pos (&a);
++   npb = d_adj_neg_pos (&b);
++   
++   if (npa < npb) {
++      // r = lt_response;
++      r = -1;
++   } else if (npa > npb) {
++      // r = gt_response;
++      r = 1;
++   } else {
++      pa = (char *) &a;
++      pb = (char *) &b;
++      // r = eq_response;
++      r = 0;
++      for (i = 0; i < 8; i++) {
++         // first test if they are unequal and if so determine how so, otherwise move on.
++         // one comparison if equal, 1-2 if not.
++         if (!(*pa == *pb)) {
++            if (*pa < *pb) {
++               // r = lt_response;
++               r = -1;
++               break;
++            } else if (*pa > *pb) {
++               // r = gt_response;
++               r = 1;
++               break;
++            }
++         }
++         pa++;
++         pb++;
++      }
++   }
++
++   return r;
++}
+diff -ru gcc-4.4.0-orig/gcc/config/tms9900/double.c gcc-4.4.0/gcc/config/tms9900/double.c
+--- gcc-4.4.0-orig/gcc/config/tms9900/double.c	2023-12-11 08:49:58.822910247 +0000
++++ gcc-4.4.0/gcc/config/tms9900/double.c	2023-12-11 08:49:58.826910278 +0000
+@@ -0,0 +1,102 @@
++/* double.c
++   This file includes double math functions that the GCC compiler requires.
++   06/23/2023 mrvan initial version
++   08/14/2023 mrvan removed methods not associated with the FAC and ARG to separate files
++*/
++
++#include "math_private.h"
++
++#define FAC 0x834A
++#define ARG 0x835C;
++
++double *FADD_AUGEND       = (double *)FAC;
++double *FADD_ADDEND       = (double *)ARG;
++double *FADD_SUM          = (double *)FAC;
++
++double *FSUB_MINUEND      = (double *)ARG;
++double *FSUB_SUBTRAHEND   = (double *)FAC;
++double *FSUB_DIFFERENCE   = (double *)FAC;
++
++double *FMUL_MULTIPLICAND = (double *)ARG;
++double *FMUL_MULTIPLIER   = (double *)FAC;
++double *FMUL_PRODUCT      = (double *)FAC;
++
++double *FDIV_DIVIDEND     = (double *)FAC;
++double *FDIV_DIVISOR      = (double *)ARG;
++double *FDIV_QUOTIENT     = (double *)FAC;
++
++char *EXP                 = (char *)0x8376;
++unsigned char *SIGN       = (unsigned char *)0x8375; // >00 = positive, >FF = negative
++unsigned char *OVFL       = (unsigned char *)0x8354; // >01 if overflow
++
++// double addition -- method normally included in GCC lib
++double __adddf3 (double a, double b) {
++
++   // use the ti99's ROM method
++
++   // adds a and b
++   *FADD_AUGEND = a;
++   *FADD_ADDEND = b;
++
++  __asm__(
++    "lwpi >83E0\n\t"
++    "bl @>0D80\n\t"
++    "lwpi >83A0\n\t"
++  );
++
++  return *FADD_SUM;
++}
++
++// double subtraction -- method normally included in GCC lib
++double __subdf3 (double a, double b) {
++
++   // use the ti99's ROM method
++
++   // subtract b from a
++   *FSUB_MINUEND    = a;
++   *FSUB_SUBTRAHEND = b;
++
++  __asm__(
++    "lwpi >83E0\n\t"
++    "bl @>0D7C\n\t"
++    "lwpi >83A0\n\t"
++  );
++
++  return *FSUB_DIFFERENCE;
++}
++
++// double multiplication -- method normally included in GCC lib
++double __muldf3 (double a, double b) {
++
++   // use the ti99's ROM method
++
++   // multiply a and b
++   *FMUL_MULTIPLICAND = a;
++   *FMUL_MULTIPLIER   = b;
++
++  __asm__(
++    "lwpi >83E0\n\t"
++    "bl @>0E88\n\t"
++    "lwpi >83A0\n\t"
++  );
++
++  return *FMUL_PRODUCT;
++}
++
++// double division -- method normally included in GCC lib
++double __divdf3 (double a, double b) {
++
++   // use the ti99's ROM method
++
++   // divide b by a
++   *FDIV_DIVIDEND = b;
++   *FDIV_DIVISOR  = a;
++
++  __asm__(
++    "lwpi >83E0\n\t"
++    "bl @>0FF4\n\t"
++    "lwpi >83A0\n\t"
++  );
++
++  return *FDIV_QUOTIENT;
++}
+diff -ru gcc-4.4.0-orig/gcc/config/tms9900/eqdf2.c gcc-4.4.0/gcc/config/tms9900/eqdf2.c
+--- gcc-4.4.0-orig/gcc/config/tms9900/eqdf2.c	2023-12-11 08:49:58.822910247 +0000
++++ gcc-4.4.0/gcc/config/tms9900/eqdf2.c	2023-12-09 11:15:23.961658672 +0000
+@@ -0,0 +1,15 @@
++/* 06/23/2023 mrvan initial version
++*/
++// returns 0 if two double values are equal
++int __eqdf2 (double a, double b) {
++   char *ap = (char *) &a;
++   char *bp = (char *) &b;
++   int cmp = 0;
++   int i;
++   for (i = 0; i < 8; i++) {
++      cmp |= *ap != *bp;
++      ap++;
++      bp++;
++   }
++   return cmp;
++}
+diff -ru gcc-4.4.0-orig/gcc/config/tms9900/ftoa.c gcc-4.4.0/gcc/config/tms9900/ftoa.c
+--- gcc-4.4.0-orig/gcc/config/tms9900/ftoa.c	2023-12-11 08:49:58.822910247 +0000
++++ gcc-4.4.0/gcc/config/tms9900/ftoa.c	2023-12-11 08:49:58.826910278 +0000
+@@ -0,0 +1,55 @@
++/* ftoa.c
++   This method converts a TI float to an ascii representation of a float.  It
++   doesn't create very pretty output, but that doesn't matter, it's only for internal
++   use.
++
++   change log:
++   7-DEC-2023 MGB initial version
++*/
++
++void tireal_ftoa (unsigned char *d, char *p)
++{
++    short first = d[0] << 8 | d[1];
++    int exp;
++    int i;
++    if (first < 0)
++    {
++        *p++='-';
++        first =- first;
++    }
++
++    exp = first >> 8;
++    first &= 0xff;
++
++    if (first>9) *p++=(first/10) + '0';
++    *p++=(first%10)+'0';
++    *p++='.';
++    for (i = 2; i < 8; i++)
++    {
++        *p++=(d[i]/10)+'0';
++        *p++=(d[i]%10)+'0';
++    }
++
++    exp -= 0x40;
++    exp*=2;
++
++    if (exp != 0)
++    {
++        *p++='E';
++
++        if (exp<0)
++        {
++            *p++='-';
++            exp=-exp;
++        }
++
++        if (exp>9)
++        {
++            *p++=(exp/10)+'0';
++            exp/=10;
++        }
++        *p++=exp+'0';
++    }
++    *p=0;
++}
++
+diff -ru gcc-4.4.0-orig/gcc/config/tms9900/gedf2.c gcc-4.4.0/gcc/config/tms9900/gedf2.c
+--- gcc-4.4.0-orig/gcc/config/tms9900/gedf2.c	2023-12-11 08:49:58.822910247 +0000
++++ gcc-4.4.0/gcc/config/tms9900/gedf2.c	2023-12-11 08:49:58.826910278 +0000
+@@ -0,0 +1,9 @@
++/* 06/23/2023 mrvan initial version
++*/
++
++#include "math_private.h"
++
++// returns a value greater than or equal to zero if a is greater than or equal to b
++int __gedf2 (double a, double b) {
++   return d_compare (a, b); 
++}
+diff -ru gcc-4.4.0-orig/gcc/config/tms9900/gtdf2.c gcc-4.4.0/gcc/config/tms9900/gtdf2.c
+--- gcc-4.4.0-orig/gcc/config/tms9900/gtdf2.c	2023-12-11 08:49:58.822910247 +0000
++++ gcc-4.4.0/gcc/config/tms9900/gtdf2.c	2023-12-09 11:16:04.565816750 +0000
+@@ -0,0 +1,9 @@
++/* 06/23/2023 mrvan initial version
++*/
++
++#include "math_private.h"
++
++// returns a value greater than zero a is strictly greater than b
++int __gtdf2 (double a, double b) {
++   return d_compare (a, b);
++} 
+diff -ru gcc-4.4.0-orig/gcc/config/tms9900/ledf2.c gcc-4.4.0/gcc/config/tms9900/ledf2.c
+--- gcc-4.4.0-orig/gcc/config/tms9900/ledf2.c	2023-12-11 08:49:58.822910247 +0000
++++ gcc-4.4.0/gcc/config/tms9900/ledf2.c	2023-12-11 08:49:58.826910278 +0000
+@@ -0,0 +1,9 @@
++/* 06/23/2023 mrvan initial version
++*/
++
++#include "math_private.h"
++
++// returns a value less than or equal to zero if a is less than or equal to b
++int __ledf2 (double a, double b) {
++   return d_compare (a, b); 
++}  
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/lib1funcs.asm gcc-4.4.0/gcc/config/tms9900/lib1funcs.asm
 --- gcc-4.4.0-orig/gcc/config/tms9900/lib1funcs.asm	2023-12-06 21:24:00.930365503 +0000
-+++ gcc-4.4.0/gcc/config/tms9900/lib1funcs.asm	2023-12-06 21:24:00.934365487 +0000
-@@ -0,0 +1,820 @@
++++ gcc-4.4.0/gcc/config/tms9900/lib1funcs.asm	2023-12-11 08:49:58.826910278 +0000
+@@ -0,0 +1,826 @@
++/*
++ *  MGB 32-bit arithmetic functions never seem to be used.  The compiler emits
++ *  sequences of 16-bit ops to perform 32-bit ops
++ */
++
 +/******************************************************************************
 +*                               __clzM2
 +*******************************************************************************
@@ -854,10 +1353,38 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/lib1funcs.asm gcc-4.4.0/gcc/config/tm
 +  b    *r11
 +#endif
 +
++
+diff -ru gcc-4.4.0-orig/gcc/config/tms9900/ltdf2.c gcc-4.4.0/gcc/config/tms9900/ltdf2.c
+--- gcc-4.4.0-orig/gcc/config/tms9900/ltdf2.c	2023-12-11 08:49:58.822910247 +0000
++++ gcc-4.4.0/gcc/config/tms9900/ltdf2.c	2023-12-11 08:49:58.826910278 +0000
+@@ -0,0 +1,9 @@
++/* 06/23/2023 mrvan initial version
++*/
++
++#include "math_private.h"
++
++// returns a value less than zero if a is strictly less than b
++int __ltdf2 (double a, double b) {
++   return d_compare (a, b); 
++}
+diff -ru gcc-4.4.0-orig/gcc/config/tms9900/math_private.h gcc-4.4.0/gcc/config/tms9900/math_private.h
+--- gcc-4.4.0-orig/gcc/config/tms9900/math_private.h	2023-12-12 08:45:59.320870541 +0000
++++ gcc-4.4.0/gcc/config/tms9900/math_private.h	2023-12-11 08:49:58.826910278 +0000
+@@ -0,0 +1,10 @@
++#ifndef MATH_PRIVATE_H
++#define MATH_PRIVATE_H
++
++// adjusts the exponent and first digit of mantissa to positive and returns -1 if the double is negative or 1 if not
++int d_adj_neg_pos (double *d);
++
++// compares two floats
++int d_compare (double a, double b);
++
++#endif
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms9900/tms9900.c
 --- gcc-4.4.0-orig/gcc/config/tms9900/tms9900.c	2023-12-06 21:24:00.930365503 +0000
-+++ gcc-4.4.0/gcc/config/tms9900/tms9900.c	2023-12-06 21:24:00.934365487 +0000
-@@ -0,0 +1,1249 @@
++++ gcc-4.4.0/gcc/config/tms9900/tms9900.c	2023-12-12 16:45:15.689106251 +0000
+@@ -0,0 +1,1267 @@
 +/* Subroutines for insn-output.c for TMS9900.
 +   Copyright (C) 1987, 1994, 1995, 1997, 1998, 1999, 2000, 2001, 2002,
 +   2004, 2005, 2006, 2007, 2008
@@ -910,6 +1437,9 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms990
 +#include "target.h"
 +#include "target-def.h"
 +#include "df.h"
++#include "dfp.h"
++#include "decimal128.h"
++#include "decNumber.h"
 +
 +/* Define this to put insn debugs into output files */
 +#undef TMS9900_DEBUG
@@ -950,15 +1480,86 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms990
 +
 +struct gcc_target targetm = TARGET_INITIALIZER;
 +
++/* Set global variables as needed for the options enabled.  */
++
++#include "ftoa.c"
++#include "atof.c"
++
++static void
++tms9900_encode_real (const struct real_format *fmt, long *buf,
++		    const REAL_VALUE_TYPE *r)
++{
++  char a[256];
++  unsigned char d[8];
++  decimal128ToString((const decimal128*)r->sig, a);
++
++  tireal_atof (a, d);
++
++  // Convert 8-bytes to 3-longs ????
++  buf[0] = (d[0] << 24) | (d[1] << 16) | (d[2] << 8) | d[3];
++  buf[1] = (d[4] << 24) | (d[5] << 16) | (d[6] << 8) | d[7];
++  buf[2] = 0;
++}
++
++/*  Decode a TI real to REAL_VALUE_TYPE by first converting it to a string.  The
++ *  r->sig member of the real value is a decimal128 struct */
++static void
++tms9900_decode_real (const struct real_format *fmt, REAL_VALUE_TYPE *r,
++		    const long *buf)
++{
++  char s[32];
++  unsigned char d[8];
++
++  /*  Assuming reverse mapping of longs to bytes that we did in encode */
++  d[0] = (buf[0] >> 24) & 0xff;
++  d[1] = (buf[0] >> 16) & 0xff;
++  d[2] = (buf[0] >> 8) & 0xff;
++  d[3] = buf[0] & 0xff;
++  d[4] = (buf[1] >> 24) & 0xff;
++  d[5] = (buf[1] >> 16) & 0xff;
++  d[6] = (buf[1] >> 8) & 0xff;
++  d[7] = buf[1] & 0xff;
++
++  tireal_ftoa (d, s);
++    
++  decimal_real_from_string (r, s);
++}
++
++const struct real_format tms9900_real_format =
++  {
++    tms9900_encode_real,
++    tms9900_decode_real,
++    10,         // base 10
++    14,         // 14 digits
++    14,         // 14 digits
++    -63,        // lowest exp
++    64,         // highest exp
++    63,
++    63,
++    false,      // Don't round toward 0
++    false,      // Don't have sign dependent rounding
++    false,      // Don't have NAN
++    false,      // Don't have INF
++    false,      // Don't have denorm whatever that is
++    true,       // Do have signed zero
++    false,      // Don't have qnan
++    false       // Don't have that last thing
++  };
++
++
++void override_options (void)
++{
++  /* We use TI99 floating point, not IEEE floating point.  */
++  if (!TARGET_NO_TI99_FLOAT)
++    REAL_MODE_FORMAT (DFmode) = &tms9900_real_format;
++}
++
 +/* Non-volatile registers to be saved across function calls */
++#define MAX_SAVED_REGS 2
++
 +static int nvolregs[]={
 +   HARD_LR_REGNUM,
-+   HARD_BP_REGNUM,
-+   HARD_LW_REGNUM,
-+   HARD_LP_REGNUM,
-+   HARD_LS_REGNUM,
-+   0};
-+
++   HARD_BP_REGNUM};
 +
 +/* If defined, a C expression which determines whether, and in which direction,
 +   to pad out an argument with extra space.  The value should be of type
@@ -1145,39 +1746,43 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms990
 +}
 +
 +
-+/* Should we save this register? */ 
++/* Should we save this register?  The only registers we care about are R11 which
++ * must be saved if we are not a leaf function and R14 if we use a frame pointer
++ * in this function. */ 
 +int tms9900_should_save_reg(int regno)
 +{
-+   // printf("should I save %d ? ever_live=%d used=%d leaf=%d\n",
-+   //        regno, df_regs_ever_live_p(regno),
-+   //        call_used_regs[regno],
-+   //        current_function_is_leaf);
++  if (regno == HARD_LR_REGNUM && !current_function_is_leaf)
++    return 1;
 +          
-+   return(
-+      /* Save non-volatile registers or r11 if used */
-+      (df_regs_ever_live_p(regno) &&
-+          (call_used_regs[regno] == 0 || regno == HARD_LR_REGNUM)) ||
-+      /* Save r11 if this is not a leaf function */
-+      (regno == HARD_LR_REGNUM && !current_function_is_leaf)
-+   );
-+}
++  if (regno == HARD_BP_REGNUM && frame_pointer_needed)
++    return 1;
 +
++  return 0;
++}
 +
 +/* Get number of bytes used to save registers in the current stack frame */
 +static int tms9900_get_saved_reg_size(void)
 +{
-+   int idx = 0;
 +   int size = 0;
-+   while(nvolregs[idx] != 0)
-+   {      
-+      int regno = nvolregs[idx];     
-+      if(tms9900_should_save_reg(regno))
-+      {
-+         size += 2;
-+      }
-+      idx++;
-+   }
-+   return(size);
++   int i;
++
++   for (i = 0; i < MAX_SAVED_REGS; i++)
++      if (tms9900_should_save_reg (nvolregs[i]))
++         size += 2; 
++
++   return size;
++}
++
++static int tms9900_get_regs_to_save (int saveregs[])
++{
++   int i;
++   int count = 0;
++
++   for (i = 0; i < MAX_SAVED_REGS; i++)
++      if (tms9900_should_save_reg (nvolregs[i]))
++         saveregs[count++] = nvolregs[i];
++
++   return count;
 +}
 +
 +static void print_arg_offset (int from)
@@ -1401,16 +2006,6 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms990
 +  }		        
 +}
 +
-+
-+/* Determine where the return value from a function will lie */
-+rtx tms9900_function_value (const_tree valtype) /*, 
-+                            const_tree func ATTRIBUTE_UNUSED, 
-+                            bool outgoing ATTRIBUTE_UNUSED) */
-+{
-+  return gen_rtx_REG (TYPE_MODE (valtype), HARD_R1_REGNUM);
-+}
-+
-+
 +/* A C statement to output to the stdio stream STREAM an assembler
 +   instruction to assemble a string constant containing the LEN bytes
 +   at PTR.  PTR will be a C expression of type `char *' and LEN a C
@@ -1462,31 +2057,13 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms990
 +      fprintf (stream, "'\n");
 +}
 +
-+
 +void tms9900_expand_prologue (void)
 +{
-+   /* Registers to save in this frame */
-+   int saveregs[5];
-+   int regcount = 0;
-+   int idx = 0;
-+   int frame_size = get_frame_size();
-+   int dst_reg = HARD_SP_REGNUM;
-+
 +   /* Find non-volatile registers which need to be saved */
-+   while(nvolregs[idx] != 0)
-+   {      
-+      int regno = nvolregs[idx];
-+      saveregs[idx] = 0;
-+      if(tms9900_should_save_reg(regno))
-+      {
-+         /* Mark this register to be saved */
-+         saveregs[idx] = 1;
-+         regcount++;
-+      }
-+      idx++;
-+   }
++   int saveregs[MAX_SAVED_REGS];
++   int regcount = tms9900_get_regs_to_save (saveregs);
 +
-+  // printf("%s saving regs=%d frame=%d ", __func__, regcount, frame_size);
++   // printf("%s saving regs=%d frame=%d ", __func__, regcount, frame_size);
 +   /* Allocate stack space for saved regs */
 +   if(regcount > 0)
 +   {
@@ -1496,56 +2073,50 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms990
 +   }
 +
 +   /* Actually save registers */
-+      /*
-+      Form 1:
-+      ai sp, -regs*2        4      14+8+8   = 30
-+      mov sp, r0            2      14+8     = 22
-+      mov r9 , *r0+         2      14+8+8+8 = 38
-+      mov r13, *r0+         2      14+8+8+8 = 38
-+      mov r14, *r0+         2      14+8+8+8 = 38
-+      mov r15, *r0+         2      14+8+8+8 = 38
-+      mov r11, *r0          2      14+8+8+8 = 34
-+      ai sp, -frame         4      14+8+8   = 30
-+      */
++   /*
++   ai sp, -regs*2        4      14+8+8   = 30
++   mov sp, r0            2      14+8     = 22
++   mov r9 , *r0+         2      14+8+8+8 = 38
++   mov r13, *r0+         2      14+8+8+8 = 38
++   mov r14, *r0+         2      14+8+8+8 = 38
++   mov r15, *r0+         2      14+8+8+8 = 38
++   mov r11, *r0          2      14+8+8+8 = 34
++   ai sp, -frame         4      14+8+8   = 30
++   */
 +
-+      /* If saving more than 1 reg, then copy sp to r0 and use r0 as the dest
-+       * with auto-inc */
-+      if (regcount>1)
++   /* If saving more than 1 reg, then copy sp to r0 and use r0 as the dest
++    * with auto-inc */
++   int dst_reg = HARD_SP_REGNUM;
++   if (regcount>1)
++   {
++     /* Emit "mov sp, r0" */
++     emit_insn(gen_movhi(gen_rtx_REG(HImode, HARD_R0_REGNUM),
++                         stack_pointer_rtx));
++     dst_reg = HARD_R0_REGNUM;
++   }
++
++   for (int i = 0; i < regcount; i++)
++   {
++      /*  Don't postinc if last reg */
++      if(i == regcount-1)
 +      {
-+        /* Emit "mov sp, r0" */
-+        emit_insn(gen_movhi(gen_rtx_REG(HImode, HARD_R0_REGNUM),
-+                            stack_pointer_rtx));
-+        dst_reg = HARD_R0_REGNUM;
++         /* Emit "mov Rx, *R0" */
++         emit_insn(gen_movhi(
++            gen_rtx_MEM(HImode, gen_rtx_REG(HImode, dst_reg)),
++            gen_rtx_REG(HImode, saveregs[i])));
 +      }
-+
-+      idx = 0;
-+      while(nvolregs[idx] != 0)
++      else
 +      {
-+         if(saveregs[idx]!=0)
-+         {
-+            int regno = nvolregs[idx];
-+            /*  Don't postinc if last reg */
-+            if(regcount==1)
-+            {
-+               /* Emit "mov Rx, *R0" */
-+               emit_insn(gen_movhi(
-+                  gen_rtx_MEM(HImode, gen_rtx_REG(HImode, dst_reg)),
-+                  gen_rtx_REG(HImode, regno)));
-+            }
-+            else
-+            {
-+               /* Emit "mov Rx, *R0+" */
-+               emit_insn(gen_movhi(
-+                  gen_rtx_MEM(HImode, 
-+                              gen_rtx_POST_INC(HImode, 
-+                                 gen_rtx_REG(HImode, dst_reg))),
-+                  gen_rtx_REG(HImode, regno)));
-+            }
-+            regcount--;
-+         }
-+         idx++;
++         /* Emit "mov Rx, *R0+" */
++         emit_insn(gen_movhi(
++            gen_rtx_MEM(HImode, 
++                        gen_rtx_POST_INC(HImode, 
++                           gen_rtx_REG(HImode, dst_reg))),
++            gen_rtx_REG(HImode, saveregs[i])));
 +      }
++   }
 +
++   int frame_size = get_frame_size();
 +   if(frame_size > 0)
 +   {
 +      // printf("%s alloc frame\n", __func__);
@@ -1569,8 +2140,6 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms990
 +void tms9900_expand_epilogue (bool is_sibcall)
 +{
 +   /*
-+   There is one only form for the epilogue.
-+
 +   ai sp, frame         4      14+8+8   = 30
 +   mov *sp+, r9         2      14+8+8+8 = 38
 +   mov *sp+, r13        2      14+8+8+8 = 38
@@ -1579,8 +2148,6 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms990
 +   mov *sp+, r11        2      14+8+8+8 = 38
 +   */
 +
-+   int saveregs[5];
-+   int restored;
 +
 +   /* Find frame size to restore */
 +   int frame_size = get_frame_size();
@@ -1594,39 +2161,18 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms990
 +   }
 +
 +   /* Find non-volatile registers which need to be restored */
-+   int idx = 0;
-+   int regcount = 0;
-+   while(nvolregs[idx] != 0)
-+   {      
-+      int regno = nvolregs[idx];
-+      saveregs[idx] = 0;
-+      if(tms9900_should_save_reg(regno))
-+      {
-+         /* Mark this register to be restored */
-+         saveregs[idx] = 1;
-+         regcount++;
-+      }
-+      idx++;
-+   }
++   int saveregs[MAX_SAVED_REGS];
++   int regcount = tms9900_get_regs_to_save (saveregs);
++   int i = 0;
 +
 +   // printf("%s restore %d regs\n", __func__, regcount);
-+   idx = 0;
-+   restored = 0;
-+   while(nvolregs[idx] != 0)
-+   {      
-+      int regno = nvolregs[idx];
-+      if(saveregs[idx] != 0)
-+      {
-+         /* Restore this register */
-+         int regno = nvolregs[idx];
-+         restored++;
-+        /* Emit "mov *SP+, Rx" */
-+        emit_insn(gen_movhi(
-+           gen_rtx_REG(HImode, regno),
-+           gen_rtx_MEM(HImode, 
-+                       gen_rtx_POST_INC(HImode, stack_pointer_rtx))));
-+      }
-+      idx++;
++   for (i = 0; i < regcount; i++)
++   {
++     /* Emit "mov *SP+, Rx" */
++     emit_insn(gen_movhi(
++        gen_rtx_REG(HImode, saveregs[i]),
++        gen_rtx_MEM(HImode, 
++                    gen_rtx_POST_INC(HImode, stack_pointer_rtx))));
 +   }
 +   
 +   if(!is_sibcall)
@@ -1648,7 +2194,6 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms990
 +  return(!strict || 
 +         (REGNO(reg) !=0 && REGNO(reg) <= HARD_R15_REGNUM));
 +}
-+
 +
 +/* Determine if the specified address is a valid operand */
 +int tms9900_go_if_legitimate_address(enum machine_mode mode ATTRIBUTE_UNUSED, rtx operand, int strict)
@@ -2109,7 +2654,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms990
 +
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.h gcc-4.4.0/gcc/config/tms9900/tms9900.h
 --- gcc-4.4.0-orig/gcc/config/tms9900/tms9900.h	2023-12-06 21:24:00.930365503 +0000
-+++ gcc-4.4.0/gcc/config/tms9900/tms9900.h	2023-12-06 21:24:00.934365487 +0000
++++ gcc-4.4.0/gcc/config/tms9900/tms9900.h	2023-12-12 16:08:14.669644660 +0000
 @@ -0,0 +1,1203 @@
 +/* Definitions of target machine for GNU compiler.
 +   Texas Instruments TMS9900
@@ -2187,9 +2732,9 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.h gcc-4.4.0/gcc/config/tms990
 +  while (0)
 +
 +/* As an embedded target, we have no libc.  */
-+#ifndef inhibit_libc
-+#  define inhibit_libc
-+#endif
++//#ifndef inhibit_libc
++//#  define inhibit_libc
++//#endif
 +
 +/* Forward type declaration for prototypes definitions.
 +   rtx_ptr is equivalent to rtx. Can't use the same name.  */
@@ -2221,6 +2766,8 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.h gcc-4.4.0/gcc/config/tms990
 +#ifndef TARGET_DEFAULT
 +# define TARGET_DEFAULT		0
 +#endif
++
++#define OVERRIDE_OPTIONS override_options ()
 +
 +/* Define this macro as a C expression for the initializer of an
 +   array of string to tell the driver program which options are
@@ -2290,7 +2837,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.h gcc-4.4.0/gcc/config/tms990
 +   machine mode that should actually be used.  All integer machine modes of
 +   this size or smaller can be used for structures and unions with the
 +   appropriate sizes.  */
-+#define MAX_FIXED_MODE_SIZE	64
++#define MAX_FIXED_MODE_SIZE	32
 +
 +/* target machine storage layout */
 +
@@ -2308,8 +2855,10 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.h gcc-4.4.0/gcc/config/tms990
 +
 +/* A C expression for the size in bits of the type `float' on the
 +   target machine. If you don't define this, the default is one word.
-+   Don't use default: a word is only 16.  */
-+#define FLOAT_TYPE_SIZE         32
++   Don't use default: a word is only 16.
++   MGB let's see if we can make floats and doubles the same size
++   MGB doesn't work - gcc assumes sizeof float == sizeof SI ? */
++#define FLOAT_TYPE_SIZE         64
 +
 +/* A C expression for the size in bits of the type double on the target
 +   machine. If you don't define this, the default is two words.
@@ -2317,6 +2866,11 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.h gcc-4.4.0/gcc/config/tms990
 +#define DOUBLE_TYPE_SIZE        64
 +
 +#define LONG_DOUBLE_TYPE_SIZE   64
++
++/*  We don't have "floats" as in 32-bit floating point values (SFmode) but we do
++ *  have "doubles" as in 64-bit (DFmode). */
++#define LIBGCC2_HAS_SF_MODE 0
++#define LIBGCC2_HAS_DF_MODE 1
 +
 +/* Define this as 1 if `char' should by default be signed; else as 0.  */
 +#define DEFAULT_SIGNED_CHAR	1
@@ -2357,22 +2911,16 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.h gcc-4.4.0/gcc/config/tms990
 +
 +/* Shift count register */
 +#define HARD_SC_REGNUM		HARD_R0_REGNUM
-+/* Arg pointer */
-+#define HARD_AP_REGNUM		HARD_R8_REGNUM
-+/* Base pointer */
-+#define HARD_BP_REGNUM		HARD_R9_REGNUM
-+/* Stack pointer */
-+#define HARD_SP_REGNUM		HARD_R10_REGNUM
 +/* Old PC after BL instruction */
 +#define HARD_LR_REGNUM		HARD_R11_REGNUM
 +/* CRU base address */
 +#define HARD_CB_REGNUM		HARD_R12_REGNUM
-+/* Old workspace after BLWP instruction */
-+#define HARD_LW_REGNUM		HARD_R13_REGNUM
-+/* Old PC after BLWP instruction */
-+#define HARD_LP_REGNUM		HARD_R14_REGNUM
-+/* Old status register after BLWP instruction */
-+#define HARD_LS_REGNUM		HARD_R15_REGNUM
++/* Arg pointer */
++#define HARD_AP_REGNUM		HARD_R13_REGNUM
++/* Base pointer */
++#define HARD_BP_REGNUM		HARD_R14_REGNUM
++/* Stack pointer */
++#define HARD_SP_REGNUM		HARD_R15_REGNUM
 +
 +/* How to refer to registers in assembler output.  This sequence is indexed
 +   by compiler's hard-register-number (see above). */
@@ -2387,23 +2935,20 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.h gcc-4.4.0/gcc/config/tms990
 +#define FIRST_PSEUDO_REGISTER	(16)
 +
 +/* 1 for registers that have pervasive standard uses and are not available
-+   for the register allocator.
-+
-+   MGB TODO move BP, AP to R12/R13 so that we can have 1-10 as general regs
-+*/
++ * for the register allocator.  */
 +#define FIXED_REGISTERS \
-+  {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0}
-+/* SC 1  2  3  4  5  6  7  AP BP SP LR CB LW LP LS*/
++  {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0}
++/* SC 1  2  3  4  5  6  7  8  9  10 LR CB AP BP SP*/
 +
 +/* 0 for registers which must be preserved across function call boundaries */
-+/* MGB TODO seems excessive to always preserve R13,R14,R15 as these will only
++/* It seems excessive to always preserve R13,R14,R15 as these will only
 + * have values to be saved if we were invokved by a BLWP which is never emitted
 + * by this backend.  If someone is writing an ISR / DSR which is invoked by a
 + * BLWP then we can ask them to save R13/R14/R15 themselves.
 + */
 +#define CALL_USED_REGISTERS \
-+  {1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 0}
-+/* SC 1  2  3  4  5  6  7  AP BP SP LR CB LW LP LS*/
++  {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
++/* SC 1  2  3  4  5  6  7  8  9  10 LR CB AP BP SP*/
 +
 +/* Define this macro to change register usage conditional on target flags. */
 +#define CONDITIONAL_REGISTER_USAGE 
@@ -2413,8 +2958,8 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.h gcc-4.4.0/gcc/config/tms990
 +#define REG_ALLOC_ORDER	\
 +   {HARD_R1_REGNUM, HARD_R2_REGNUM, HARD_R3_REGNUM, HARD_R4_REGNUM,\
 +    HARD_R5_REGNUM, HARD_R6_REGNUM, HARD_R7_REGNUM, HARD_R8_REGNUM,\
-+    HARD_CB_REGNUM, HARD_SC_REGNUM, HARD_LW_REGNUM, HARD_LP_REGNUM,\
-+    HARD_LS_REGNUM, HARD_R9_REGNUM, HARD_LR_REGNUM, HARD_SP_REGNUM}
++    HARD_R9_REGNUM, HARD_R10_REGNUM, HARD_R12_REGNUM, HARD_SC_REGNUM,\
++    HARD_AP_REGNUM, HARD_BP_REGNUM, HARD_LR_REGNUM, HARD_SP_REGNUM}
 +
 +/* A C expression for the number of consecutive hard registers,
 +   starting at register number REGNO, required to hold a value of
@@ -2423,8 +2968,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.h gcc-4.4.0/gcc/config/tms990
 +   ((GET_MODE_SIZE (MODE) + HARD_REG_SIZE - 1) / HARD_REG_SIZE)
 +
 +/* Value is 1 if hard register REGNO (or starting with REGNO) can hold a value of machine-mode MODE
-+ *
-+ *  MGB TODO could include 64-bit as well */
++ */
 +#define HARD_REGNO_MODE_OK(REGNO, MODE) \
 +   (!(MODE == SImode && REGNO==HARD_R15_REGNUM))
 +  
@@ -2496,14 +3040,14 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.h gcc-4.4.0/gcc/config/tms990
 +   R5      0x00000020
 +   R6      0x00000040
 +   R7      0x00000080
-+   AP      0x00000100
-+   BP      0x00000200
-+   SP      0x00000400
++   R8      0x00000100
++   R9      0x00000200
++   R10     0x00000400
 +   LR      0x00000800
 +   CB      0x00001000
-+   LW      0x00002000
-+   LP      0x00004000
-+   LS      0x00008000
++   AP      0x00002000
++   BP      0x00004000
++   SP      0x00008000
 +--------------------------------------------------------------*/
 +
 +#define REG_CLASS_CONTENTS \
@@ -2627,13 +3171,13 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.h gcc-4.4.0/gcc/config/tms990
 +#define STACK_POINTER_REGNUM		HARD_SP_REGNUM
 +
 +/* Base register for access to local variables of the function.  */
-+#define FRAME_POINTER_REGNUM		HARD_R9_REGNUM
++#define FRAME_POINTER_REGNUM		HARD_BP_REGNUM
 +
 +/* Base register for access to arguments of the function.  */
-+#define ARG_POINTER_REGNUM		HARD_R8_REGNUM
++#define ARG_POINTER_REGNUM		HARD_AP_REGNUM
 +
 +/* Register in which static-chain is passed to a function.  */
-+#define STATIC_CHAIN_REGNUM	        HARD_R7_REGNUM
++#define STATIC_CHAIN_REGNUM	        HARD_R12_REGNUM
 +
 +/* Definitions for register eliminations.
 +
@@ -2693,8 +3237,8 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.h gcc-4.4.0/gcc/config/tms990
 +/* Passing Arguments in Registers.  */
 +
 +
-+/* The number of argument registers we can use (R1..R6) */
-+#define TMS9900_ARG_REGS (HARD_R7_REGNUM - HARD_R1_REGNUM)
++/* The number of argument registers we can use (R1..R10) */
++#define TMS9900_ARG_REGS (HARD_R11_REGNUM - HARD_R1_REGNUM)
 +
 +/* Define a data type for recording info about an argument list
 +   during the scan of that argument list.  This data type should
@@ -2770,11 +3314,12 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.h gcc-4.4.0/gcc/config/tms990
 +
 +/* 1 if N is a possible register number for function argument passing. */
 +#define FUNCTION_ARG_REGNO_P(N)	\
-+     (((N) >= HARD_R1_REGNUM) && ((N) <= HARD_R6_REGNUM))
++     (((N) >= HARD_R1_REGNUM) && ((N) <= HARD_R10_REGNUM))
 +
 +/* 8- and 16-bit values are returned in R1, 32-bit values are
 +   passed in R1+R2, The high word is in R1. */
-+#define FUNCTION_VALUE(VALTYPE, FUNC) tms9900_function_value(VALTYPE)
++#define FUNCTION_VALUE(VALTYPE, FUNC) \
++     gen_rtx_REG (TYPE_MODE (VALTYPE), HARD_R1_REGNUM)
 +
 +/* 8- and 16-bit values are returned in R1, 32-bit values are
 +   passed in R1+R2, The high word is in R1. */
@@ -2982,7 +3527,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.h gcc-4.4.0/gcc/config/tms990
 +   you should define this macro to express the relative cost
 +
 +   For the TMS9900, memory access is four times slower than registers */
-+#define MEMORY_MOVE_COST(MODE,CLASS,IN)	16
++#define MEMORY_MOVE_COST(MODE,CLASS,IN)	4
 +
 +/* A C expression for the cost of a branch instruction.  A value of 1
 +   is the default; other values are interpreted relative to that.
@@ -3316,8 +3861,8 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.h gcc-4.4.0/gcc/config/tms990
 +
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms9900/tms9900.md
 --- gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md	2023-12-06 21:24:00.930365503 +0000
-+++ gcc-4.4.0/gcc/config/tms9900/tms9900.md	2023-12-06 21:37:49.523395658 +0000
-@@ -0,0 +1,2766 @@
++++ gcc-4.4.0/gcc/config/tms9900/tms9900.md	2023-12-11 08:49:58.826910278 +0000
+@@ -0,0 +1,2797 @@
 +;;- Machine description for the TMS9900 for GNU C compiler
 +;; Copyright (C) 1994, 1995, 1997, 1998, 1999, 2000, 2001, 2004, 2005
 +;; 2007, 2008 Free Software Foundation, Inc.
@@ -3433,6 +3978,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +  ]
 +  ""
 +  {
++    tms9900_debug_operands ("call", operands, 2);
 +    if(SIBLING_CALL_P(insn))
 +      output_asm_insn("b    %0", operands);
 +    else
@@ -3452,6 +3998,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +  ]
 +  ""
 +  {
++    tms9900_debug_operands ("call_value", operands, 3);
 +    if(SIBLING_CALL_P(insn))
 +      output_asm_insn("b    %1", operands);
 +    else
@@ -3468,6 +4015,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +  [(const_int 0)]
 +  ""
 +{
++  tms9900_debug_operands ("prologue", NULL, 0);
 +  tms9900_expand_prologue();
 +  DONE;
 +})
@@ -3479,6 +4027,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +  [(return)]
 +  ""
 +{
++  tms9900_debug_operands ("epilogue", NULL, 0);
 +  tms9900_expand_epilogue(false);
 +  DONE;
 +})
@@ -3487,6 +4036,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +  [(return)]
 +  ""
 +{
++  tms9900_debug_operands ("sibcall_epilogue", NULL, 0);
 +  tms9900_expand_epilogue(true);
 +  DONE;
 +})
@@ -3565,7 +4115,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +      output_asm_insn("ci   %0, %1",  operands);
 +    }
 +    else
-+      output_asm_insn("cb   %1, %0",  operands);
++      output_asm_insn("cb   %0, %1",  operands);
 +
 +    return("");
 +  }
@@ -3622,6 +4172,10 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +    if (which_alternative >= 4)
 +    {
 +      int val = INTVAL(operands[1]);
++
++      // TODO by emitting either a 2-byte or 4-byte opcode for the same
++      // alternative we are breaking the length attribute at the end.  This
++      // doesn't seem to matter.  Does this mean length is not even needed?
 +
 +      if (val == 0)
 +        return("clr  %0");
@@ -4310,8 +4864,12 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +
 +
 +;;-------------------------------------------------------------------
-+;; Arithmetic shift left
-+;;-------------------------------------
++;; Arithmetic shift left.
++;;
++;; NOTE : On the TMS9900 a shift count of 0 is interpreted as
++;; shift by 16, so test for 0 and jump over the shift if true.  Do the same in
++;; all other shift by register insns as well.
++;;-------------------------------------------------------------------
 +(define_insn "ashlhi3"
 +  [(set (match_operand:HI 0 "register_operand" "=r,r")
 +	(ashift:HI (match_operand:HI 1 "register_operand" "0,0")
@@ -4321,7 +4879,8 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +    tms9900_debug_operands ("ashlhi3", operands, 3);
 +    if(which_alternative == 0)
 +    {
-+      output_asm_insn("abs  r0",     operands);
++      output_asm_insn("andi r0, >f",  operands);
++      output_asm_insn("mov  r0, r0",   operands);
 +      output_asm_insn("jeq  $+4",    operands);
 +      output_asm_insn("sla  %0, 0",  operands);
 +    }
@@ -4344,7 +4903,8 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +    tms9900_debug_operands ("ashlqi3", operands, 3);
 +    if(which_alternative == 0)
 +    {
-+      output_asm_insn("abs  r0",        operands);
++      output_asm_insn("andi r0, >f",  operands);
++      output_asm_insn("mov  r0, r0",   operands);
 +      output_asm_insn("jeq  $+8",       operands);  /* If shift count is zero, do nothing */
 +      output_asm_insn("andi %0, >FF00", operands);
 +      output_asm_insn("sla  %0, 0",     operands);
@@ -4388,7 +4948,8 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +    tms9900_debug_operands ("ashrhi3", operands, 3);
 +    if(which_alternative == 0)
 +    {
-+      output_asm_insn("abs  r0",     operands);
++      output_asm_insn("andi r0, >f",  operands);
++      output_asm_insn("mov  r0, r0",   operands);
 +      output_asm_insn("jeq  $+4",    operands);
 +      output_asm_insn("sra  %0, 0",  operands);
 +    }
@@ -4411,7 +4972,8 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +    tms9900_debug_operands ("ashrqi3", operands, 3);
 +    if(which_alternative == 0)
 +    {
-+      output_asm_insn("abs  r0",        operands);
++      output_asm_insn("andi r0, >f",  operands);
++      output_asm_insn("mov  r0, r0",   operands);
 +      output_asm_insn("jeq  $+4",       operands);
 +      output_asm_insn("sra  %0, 0",     operands);
 +    }
@@ -4457,7 +5019,8 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +    tms9900_debug_operands ("lshrhi3", operands, 3);
 +    if(which_alternative == 0)
 +    {
-+      output_asm_insn("abs  r0",     operands);
++      output_asm_insn("andi r0, >f",  operands);
++      output_asm_insn("mov  r0, r0",   operands);
 +      output_asm_insn("jeq  $+4",    operands);
 +      output_asm_insn("srl  %0, 0",  operands);
 +    }
@@ -4480,7 +5043,8 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +    tms9900_debug_operands ("lshrqi3", operands, 3);
 +    if(which_alternative == 0)
 +    {
-+      output_asm_insn("abs  r0",        operands);
++      output_asm_insn("andi r0, >f",  operands);
++      output_asm_insn("mov  r0, r0",   operands);
 +      output_asm_insn("jeq  $+4",       operands);
 +      output_asm_insn("srl  %0, 0",     operands);
 +    }
@@ -4643,7 +5207,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +    }
 +    else
 +    {
-+      val = INTVAL(operands[2]) & 0xFF00;
++      val = (INTVAL(operands[2]) << 8) & 0xFF00;
 +      /* AND const value and register */
 +      if(val == 0)
 +        output_asm_insn("clr %0", operands);
@@ -4747,7 +5311,10 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +	(xor:HI (match_operand:HI 1 "register_operand" "%0,0")
 +		(match_operand:HI 2 "nonimmediate_operand" "rR>,Q")))]
 +  ""
-+  "xor  %2, %0"
++  {
++    tms9900_debug_operands ("xorhi3", operands, 3);
++    return "xor  %2, %0";
++  }
 +  [(set_attr "length" "2,4")])
 +
 +
@@ -4759,7 +5326,10 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +	(xor:QI (match_operand:QI 1 "register_operand" "%0")
 +		(match_operand:QI 2 "nonimmediate_operand" "r")))]
 +  ""
-+  "xor  %2, %0"
++  {
++    tms9900_debug_operands ("xorqi3", operands, 3);
++    return "xor  %2, %0";
++  }
 +  [(set_attr "length" "2")])
 +
 +
@@ -4770,7 +5340,10 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +  [(set (match_operand:HI 0 "nonimmediate_operand" "=rR>,Q")
 +        (not:HI (match_operand:HI 1 "nonimmediate_operand" "0,0")))]
 +  ""
-+  "inv  %0"
++  {
++    tms9900_debug_operands ("one_cmplhi2", operands, 3);
++    return "inv  %0";
++  }
 +  [(set_attr "length" "2,4")])
 +
 +
@@ -4781,7 +5354,10 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +  [(set (match_operand:QI 0 "nonimmediate_operand" "=r")
 +        (not:QI (match_operand:QI 1 "nonimmediate_operand" "0")))]
 +  ""
-+  "inv  %0"
++  {
++    tms9900_debug_operands ("one_cmplqi2", operands, 3);
++    return "inv  %0";
++  }
 +  [(set_attr "length" "2")])
 +
 +
@@ -4792,7 +5368,6 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +
 +;;-------------------------------------------------------------------
 +;; Add
-+
 +;;-------------------------------------
 +(define_insn "addhi3"
 +  [(set (match_operand:HI 0 "nonimmediate_operand" "=rR>,Q,r,rR>,Q")
@@ -4923,7 +5498,6 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +;;-------------------------------------------------------------------
 +;; Multiply
 +;;
-+
 +;;-------------------------------------
 +; Expand for signed HI = QI x QI
 +; TODO check sign of highpart of HI
@@ -6009,6 +6583,8 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +  [(set_attr "length" "4")])
 +
 +
++;; TODO will this help the case where char c = (int) x >> 8; ??
++
 +(define_insn "*movqi_for_initializer"
 +  [(set (match_operand:QI 0 "memory_operand" "=rR>,Q")
 +        (subreg:QI (ashiftrt:HI (match_operand:HI 1 "register_operand" "r,r")
@@ -6084,9 +6660,43 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +  }
 +  [(set_attr "length" "4")])
 +
+diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.opt gcc-4.4.0/gcc/config/tms9900/tms9900.opt
+--- gcc-4.4.0-orig/gcc/config/tms9900/tms9900.opt	2023-12-12 12:07:00.351073005 +0000
++++ gcc-4.4.0/gcc/config/tms9900/tms9900.opt	2023-12-12 13:44:07.050870288 +0000
+@@ -0,0 +1,30 @@
++; Options for the TMS9900 port of the compiler.
++
++; Copyright (C) 2005, 2007 Free Software Foundation, Inc.
++;
++; Copyright 2023 Mark Burkley (MGB)
++;
++; This file is part of GCC.
++;
++; GCC is free software; you can redistribute it and/or modify it under
++; the terms of the GNU General Public License as published by the Free
++; Software Foundation; either version 3, or (at your option) any later
++; version.
++;
++; GCC is distributed in the hope that it will be useful, but WITHOUT ANY
++; WARRANTY; without even the implied warranty of MERCHANTABILITY or
++; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
++; for more details.
++;
++; You should have received a copy of the GNU General Public License
++; along with GCC; see the file COPYING3.  If not see
++; <http://www.gnu.org/licenses/>.
++
++mno-ti99-float
++Target RejectNegative Report Mask(NO_TI99_FLOAT)
++Generate IEEE compatible doubles and floats
++
++mti99-float
++Target RejectNegative Report InverseMask(NO_TI99_FLOAT)
++Generate TI console ROM compatible doubles and floats
++
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900-protos.h gcc-4.4.0/gcc/config/tms9900/tms9900-protos.h
 --- gcc-4.4.0-orig/gcc/config/tms9900/tms9900-protos.h	2023-12-06 21:24:00.930365503 +0000
-+++ gcc-4.4.0/gcc/config/tms9900/tms9900-protos.h	2023-12-06 21:24:00.934365487 +0000
++++ gcc-4.4.0/gcc/config/tms9900/tms9900-protos.h	2023-12-08 10:04:22.042320676 +0000
 @@ -0,0 +1,62 @@
 +/* Definitions of target machine for GNU compiler, for the TMS9900
 +
@@ -6150,14 +6760,57 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900-protos.h gcc-4.4.0/gcc/config
 +extern void tms9900_register_convert (rtx operand, int mode, int sign);
 +extern void tms9900_inline_debug (const char *fmt,...);
 +extern void tms9900_debug_operands (const char *name, rtx ops[], int count);
+diff -ru gcc-4.4.0-orig/gcc/config/tms9900/t-tms9900 gcc-4.4.0/gcc/config/tms9900/t-tms9900
+--- gcc-4.4.0-orig/gcc/config/tms9900/t-tms9900	2023-12-12 08:31:36.609711473 +0000
++++ gcc-4.4.0/gcc/config/tms9900/t-tms9900	2023-12-11 08:49:58.826910278 +0000
+@@ -0,0 +1,38 @@
++LIB1ASMSRC    = tms9900/lib1funcs.asm
++LIB1ASMFUNCS  = _divsi3 _udivsi3 _modsi3 _umodsi3
++
++# Exclude funcs from libgcc2.c that we implement using calls to TI99/4A console
++# ROM
++
++LIB2FUNCS_EXCLUDE = __adddf3 __subdf3 __muldf3 __divdf3 __eqdf2 \
++ __gedf2 __gtdf2 __ledf2 __ltdf2
++
++# Exclude 64-bit functions we don't need (yet)
++LIB2FUNCS_EXCLUDE += _muldi3 _negdi2  _cmpdi2 _ucmpdi2 _lshrdi3 _ashldi3 \
++_ashrdi3 _udivdi3 _divdi3 _umoddi3 _moddi3 _addvDI3 _subvDI3 \
++__udivmoddi4
++
++LIB2FUNCS_EXTRA = \
++ $(srcdir)/config/tms9900/ftoa.c \
++ $(srcdir)/config/tms9900/atof.c \
++ $(srcdir)/config/tms9900/double.c\
++ $(srcdir)/config/tms9900/d_adj_neg_pos.c \
++ $(srcdir)/config/tms9900/d_compare.c \
++ $(srcdir)/config/tms9900/eqdf2.c \
++ $(srcdir)/config/tms9900/gedf2.c \
++ $(srcdir)/config/tms9900/gtdf2.c \
++ $(srcdir)/config/tms9900/ledf2.c \
++ $(srcdir)/config/tms9900/ltdf2.c
++
++# Tell make where to find headers for above
++LIBGCC2_INCLUDES += -I$(srcdir)/config/tms9900
++
++# Assemble startup files.  TODO Do we need these?
++$(T)crti.o: $(srcdir)/config/tms9900/crti.asm $(GCC_PASSES)
++	$(GCC_FOR_TARGET) $(GCC_CFLAGS) $(MULTILIB_CFLAGS) $(INCLUDES) \
++	-c -o $(T)crti.o -x assembler-with-cpp $(srcdir)/config/tms9900/crti.asm
++
++$(T)crtn.o: $(srcdir)/config/tms9900/crtn.asm $(GCC_PASSES)
++	$(GCC_FOR_TARGET) $(GCC_CFLAGS) $(MULTILIB_CFLAGS) $(INCLUDES) \
++	-c -o $(T)crtn.o -x assembler-with-cpp $(srcdir)/config/tms9900/crtn.asm
++
 diff -ru gcc-4.4.0-orig/gcc/config.gcc gcc-4.4.0/gcc/config.gcc
 --- gcc-4.4.0-orig/gcc/config.gcc	2023-12-06 21:24:00.930365503 +0000
-+++ gcc-4.4.0/gcc/config.gcc	2023-12-06 21:24:00.934365487 +0000
-@@ -2314,6 +2314,8 @@
++++ gcc-4.4.0/gcc/config.gcc	2023-12-11 08:49:58.822910247 +0000
+@@ -2314,6 +2314,9 @@
  	c_target_objs="${c_target_objs} spu-c.o"
  	cxx_target_objs="${cxx_target_objs} spu-c.o"
  	;;
 +tms9900-*-*)
++	tmake_file=tms9900/t-tms9900
 +	;;
  v850e1-*-*)
  	target_cpu_default="TARGET_CPU_v850e1"
@@ -6268,6 +6921,63 @@ diff -ru gcc-4.4.0-orig/gcc/DEV-PHASE gcc-4.4.0/gcc/DEV-PHASE
 +++ gcc-4.4.0/gcc/DEV-PHASE	2023-12-06 21:24:00.934365487 +0000
 @@ -0,0 +1 @@
 +TMS9900 patch 1.19
+diff -ru gcc-4.4.0-orig/gcc/dfp.c gcc-4.4.0/gcc/dfp.c
+--- gcc-4.4.0-orig/gcc/dfp.c	2023-12-11 08:49:58.822910247 +0000
++++ gcc-4.4.0/gcc/dfp.c	2023-12-11 08:49:58.826910278 +0000
+@@ -355,6 +355,10 @@
+ 
+ /* Helper to round_for_format, handling decimal float types.  */
+ 
++#ifdef TMS9900
++extern const struct real_format tms9900_real_format;
++#endif
++
+ void
+ decimal_round_for_format (const struct real_format *fmt, REAL_VALUE_TYPE *r)
+ {
+@@ -392,7 +396,12 @@
+       decimal64FromNumber (&d64, &dn, &set);
+       decimal64ToNumber (&d64, &dn);
+     }
+-  else
++#ifdef TMS9900
++  else if (fmt == &tms9900_real_format)
++    {
++      return;
++    }
++#endif
+     gcc_unreachable ();
+ 
+   decimal_from_decnumber (r, &dn, &set);
+diff -ru gcc-4.4.0-orig/gcc/libgcc2.c gcc-4.4.0/gcc/libgcc2.c
+--- gcc-4.4.0-orig/gcc/libgcc2.c	2023-12-11 08:49:58.822910247 +0000
++++ gcc-4.4.0/gcc/libgcc2.c	2023-12-11 08:49:58.826910278 +0000
+@@ -4,6 +4,7 @@
+    2000, 2001, 2002, 2003, 2004, 2005, 2007, 2008, 2009
+    Free Software Foundation, Inc.
+ 
++
+ This file is part of GCC.
+ 
+ GCC is free software; you can redistribute it and/or modify it under
+@@ -1049,6 +1050,9 @@
+ 	      udiv_qrnnd (q0, n1, n2, n1, d1);
+ 	      umul_ppmm (m1, m0, q0, d0);
+ 
++// TODO something in this disabled code block causes a compiler segfault
++// gdb bt says invalid hash in ../../libiberty/hashtab.c:678
++#if 0
+ 	      if (m1 > n1 || (m1 == n1 && m0 > n0))
+ 		{
+ 		  q0--;
+@@ -1065,6 +1069,7 @@
+ 		  rr.s.high = n1 >> bm;
+ 		  *rp = rr.ll;
+ 		}
++#endif
+ 	    }
+ 	}
+     }
 diff -ru gcc-4.4.0-orig/gcc/passes.c gcc-4.4.0/gcc/passes.c
 --- gcc-4.4.0-orig/gcc/passes.c	2023-12-06 21:24:00.930365503 +0000
 +++ gcc-4.4.0/gcc/passes.c	2023-12-06 21:24:00.938365474 +0000
@@ -6343,40 +7053,9 @@ diff -ru gcc-4.4.0-orig/gcc/toplev.h gcc-4.4.0/gcc/toplev.h
  #endif /* GCC_VERSION >= 3004 */
  
  /* Functions used to get and set GCC's notion of in what directory
-diff -ru gcc-4.4.0-orig/libgcc/config/tms9900/t-tms9900 gcc-4.4.0/libgcc/config/tms9900/t-tms9900
---- gcc-4.4.0-orig/libgcc/config/tms9900/t-tms9900	2023-12-06 21:24:00.930365503 +0000
-+++ gcc-4.4.0/libgcc/config/tms9900/t-tms9900	2023-12-06 21:24:00.938365474 +0000
-@@ -0,0 +1,27 @@
-+# Extra 16-bit integer functions.
-+intfuncs16 = _absvXX2 _addvXX3 _subvXX3 _mulvXX3 _negvXX2
-+hiintfuncs16 = $(subst XX,hi,$(intfuncs16))
-+siintfuncs16 = $(subst XX,si,$(intfuncs16))
-+
-+iter-items := $(hiintfuncs16)
-+iter-labels := $(siintfuncs16)
-+iter-sizes := $(patsubst %,2,$(siintfuncs16)) $(patsubst %,2,$(hiintfuncs16))
-+
-+LIB1ASMSRC = tms9900/lib1funcs.asm
-+LIB1ASMFUNCS = _clzqi2 _clzhi2 _clzsi2 _clz\
-+               _ctzqi2 _ctzhi2 _ctzsi2 _ctz\
-+               _ffsqi2 _ffshi2 _ffssi2\
-+               _parityqi2 _parityhi2 _paritysi2 _parity\
-+               _popcountqi2 _popcounthi2 _popcountsi2 _popcount\
-+               _udivmodsi3 _udivsi3 _umodsi3\
-+               _divmodsi3 _modsi3 _divsi3 _divmod_common
-+
-+
-+include $(srcdir)/empty.mk $(patsubst %,$(srcdir)/siditi-object.mk,$(iter-items))
-+libgcc-objects += $(patsubst %,%$(objext),$(hiintfuncs16))
-+
-+
-+ifeq ($(enable_shared),yes)
-+libgcc-s-objects += $(patsubst %,%_s$(objext),$(hiintfuncs16))
-+endif
-+
 diff -ru gcc-4.4.0-orig/libgcc/config.host gcc-4.4.0/libgcc/config.host
 --- gcc-4.4.0-orig/libgcc/config.host	2023-12-06 21:24:00.930365503 +0000
-+++ gcc-4.4.0/libgcc/config.host	2023-12-06 21:24:00.938365474 +0000
++++ gcc-4.4.0/libgcc/config.host	2023-12-12 12:58:30.592006407 +0000
 @@ -127,6 +127,9 @@
  sh[123456789lbe]*-*-*)
  	cpu_type=sh
@@ -6387,13 +7066,11 @@ diff -ru gcc-4.4.0-orig/libgcc/config.host gcc-4.4.0/libgcc/config.host
  esac
  
  # Common parts for widely ported systems.
-@@ -551,6 +554,10 @@
+@@ -551,6 +554,8 @@
  	;;
  spu-*-elf*)
  	;;
 +tms9900-*-*)
-+	# Make SI mode functions for TMS9900
-+	tmake_file=${cpu_type}/t-tms9900
 +	;;
  v850e1-*-*)
  	;;
