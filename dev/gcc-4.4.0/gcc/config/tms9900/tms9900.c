@@ -170,9 +170,6 @@ void override_options (void)
 static int nvolregs[]={
    HARD_LR_REGNUM,
    HARD_BP_REGNUM,
-   HARD_LW_REGNUM,
-   HARD_LP_REGNUM,
-   HARD_LS_REGNUM,
    0};
 
 
