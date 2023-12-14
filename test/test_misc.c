@@ -197,6 +197,21 @@ static void t_long_char_str ()
 #endif
 }
 
+void t_inline_clobber()
+{
+    /* Declare an inline asm that clobbers R11 */
+
+    __asm__(
+    "li r11,0x55aa\n"
+    :
+    :
+    : "r11"
+    );
+
+    test_execute (__func__, 1);
+}
+
+
 TESTFUNC tests[] = 
 {
     t_stack_func_arg_small,
@@ -204,7 +219,8 @@ TESTFUNC tests[] =
     t_long_char_str,
     t_for_break,
     t_var_byte_array,
-    t_byte_array
+    t_byte_array,
+    t_inline_clobber
 };
 
 #define TEST_COUNT (sizeof (tests) / sizeof (TESTFUNC))

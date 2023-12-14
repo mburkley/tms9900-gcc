@@ -1,5 +1,5 @@
 INSTALLDIR=/opt/tms9900-gcc/
-LIBTI99DIR?=/home/mark/ti99/libti99
+LIBTI99DIR?=../libti99
 
 GCCDIR=$(INSTALLDIR)bin/
 
@@ -12,13 +12,16 @@ ELF2CART=elf2cart
 FNAME=test
 
 # Uncomment one test file here.  Tests are split up so as to fit into an 8K bin file
-# to make a cartridge bin
+# to make a cartridge bin.  Note some tests will not fit into a cartridge
+# without optimisation.  Check the bin file is less than 8192 bytes before
+# running.
+
 # TODO make these targets
 
-TEST_SRC=test_char_short
+# TEST_SRC=test_char_short
 # TEST_SRC=test_long
 # TEST_SRC=test_float
-# TEST_SRC=test_misc
+TEST_SRC=test_misc
 # TEST_SRC=test_one
 
 LDFLAGS=\
@@ -51,8 +54,13 @@ all: $(FNAME).bin
 host-test: test.c
 	gcc -o host-test test.c tap.c
 
+# TODO add a check that bin file has not exceeded cartridge size
+#	size=$(wc -c < $(FNAME).bin)
+#        if (size > 8191) $(error
+
 $(FNAME).bin: $(FNAME).elf
 	$(ELF2CART) $(FNAME).elf $(FNAME).bin
+
 
 $(FNAME).elf: $(OBJECT_LIST)
 	$(LD) $(OBJECT_LIST) $(LDFLAGS) -L$(LIBTI99DIR) $(LIBTI99) -o $(FNAME).elf \

@@ -255,7 +255,7 @@ extern short *reg_renumber;	/* def in local_alloc.c */
 #define HARD_SC_REGNUM		HARD_R0_REGNUM
 /* Old PC after BL instruction */
 #define HARD_LR_REGNUM		HARD_R11_REGNUM
-/* CRU base address */
+/* CRU base address or static chain */
 #define HARD_CB_REGNUM		HARD_R12_REGNUM
 /* Arg pointer */
 #define HARD_AP_REGNUM		HARD_R13_REGNUM
@@ -279,17 +279,21 @@ extern short *reg_renumber;	/* def in local_alloc.c */
 /* 1 for registers that have pervasive standard uses and are not available
  * for the register allocator.  */
 #define FIXED_REGISTERS \
-  {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0}
+  {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1}
 /* SC 1  2  3  4  5  6  7  8  9  10 LR CB AP BP SP*/
 
-/* 0 for registers which must be preserved across function call boundaries */
-/* It seems excessive to always preserve R13,R14,R15 as these will only
- * have values to be saved if we were invokved by a BLWP which is never emitted
- * by this backend.  If someone is writing an ISR / DSR which is invoked by a
- * BLWP then we can ask them to save R13/R14/R15 themselves.
+/* MGB It seemed excessive to always preserve R13,R14,R15 as these will only
+ * have values to be saved if we were invoked by a BLWP which is never emitted
+ * by this backend.  I have removed them from the list.  If someone is writing
+ * an ISR / DSR which is invoked by a BLWP then we can ask them to save
+ * R13/R14/R15 themselves.
+ *
+ * It also seems counter-intuitive that LR should be identified as a call reg
+ * but gcc/reginfo.c will assert if any register is fixed and not a call reg.
  */
+/* 0 for registers which must be preserved across function call boundaries */
 #define CALL_USED_REGISTERS \
-  {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
+  {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1}
 /* SC 1  2  3  4  5  6  7  8  9  10 LR CB AP BP SP*/
 
 /* Define this macro to change register usage conditional on target flags. */
@@ -345,6 +349,7 @@ enum reg_class
   NO_REGS,
   SHIFT_REGS,     /* Register used for variable shift (SC) */
   CRU_REGS,       /* Register used for CRU access (CB) */
+  FIXED_REGS,     /* Register used for fixed purposes (LR, SP) */
   BASE_REGS,      /* Registers which may be used as a memory base */
   ALL_REGS,       /* All registers, including fakes */
   LIM_REG_CLASSES
@@ -365,6 +370,7 @@ enum reg_class
 { "NO_REGS",       \
   "SHIFT_REGS",    \
   "CRU_REGS",      \
+  "FIXED_REGS",    \
   "BASE_REGS",     \
   "ALL_REGS" }
 
@@ -396,6 +402,7 @@ enum reg_class
 /* NO_REGS       */  {{ 0x00000000 }, \
 /* SHIFT_REGS    */   { 0x00000001 }, /* SC */ \
 /* CRU_REGS      */   { 0x00001000 }, /* CB */ \
+/* FIXED_REGS    */   { 0x00008800 }, /* LR,SP */ \
 /* BASE_REGS     */   { 0x0000FFFE }, \
 /* ALL_REGS      */   { 0x0000FFFF }}
 
@@ -404,6 +411,8 @@ enum reg_class
 #define REGNO_REG_CLASS(REGNO) \
    (REGNO == HARD_SC_REGNUM  ? SHIFT_REGS : \
     REGNO == HARD_CB_REGNUM  ? CRU_REGS   : \
+    REGNO == HARD_LR_REGNUM  ? FIXED_REGS   : \
+    REGNO == HARD_SP_REGNUM  ? FIXED_REGS   : \
     REGNO <= HARD_R15_REGNUM ? ALL_REGS   : \
     NO_REGS)
 
@@ -578,7 +587,6 @@ enum reg_class
 
 /* Passing Arguments in Registers.  */
 
-
 /* The number of argument registers we can use (R1..R10) */
 #define TMS9900_ARG_REGS (HARD_R11_REGNUM - HARD_R1_REGNUM)
 
@@ -720,6 +728,13 @@ typedef struct tms9900_args
    value plus a displacement. */
 #define BASE_REG_CLASS	BASE_REGS
 
+/* From https://gcc.gnu.org/onlinedocs/gccint/Register-Classes.html
+ *
+ * "The difference between an index register and a base register is that the
+ * index register may be scaled. "
+ *
+ *  We don't allow any index regs as TMS9900 regs can't be scaled
+ */
 /* The class value for index registers. */
 #define INDEX_REG_CLASS	NO_REGS
 
@@ -868,8 +883,10 @@ typedef struct tms9900_args
    registers and memory is more expensive than between two registers,
    you should define this macro to express the relative cost
 
-   For the TMS9900, memory access is four times slower than registers */
-#define MEMORY_MOVE_COST(MODE,CLASS,IN)	4
+   For the TMS9900, memory access is four times slower than registers
+   MGB I don't think it is 4x more expensive, but lowering it to 4 caused some
+   code bloat so changing it back to 16 */
+#define MEMORY_MOVE_COST(MODE,CLASS,IN)	16
 
 /* A C expression for the cost of a branch instruction.  A value of 1
    is the default; other values are interpreted relative to that.
