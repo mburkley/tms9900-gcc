@@ -105,6 +105,8 @@ builtin_define_float_constants (const char *name_prefix,
 
   fmt = REAL_MODE_FORMAT (TYPE_MODE (type));
 
+/*  MGB don't assert if building for TMS9900.  We want to use radix-10
+ *  representations internally. */
 #ifndef TMS9900
   gcc_assert (fmt->b != 10);
 #endif
@@ -112,11 +114,16 @@ builtin_define_float_constants (const char *name_prefix,
   /* The radix of the exponent representation.  */
   if (type == float_type_node)
     builtin_define_with_int_value ("__FLT_RADIX__", fmt->b);
-#ifdef TMS9900
-  log10_b = 1;
-#else
-  log10_b = log10_2;
-#endif
+
+/*  MGB if building for TMS9900 then radix may be 10.  If it isn't, then the log
+ *  value is 1 since we want no conversion of the exponent. */
+  if (fmt->b == 10)
+  {
+    log10_b = 1;
+  }
+  else
+    log10_b = log10_2;
+  }
 
   /* The number of radix digits, p, in the floating-point significand.  */
   sprintf (name, "__%s_MANT_DIG__", name_prefix);

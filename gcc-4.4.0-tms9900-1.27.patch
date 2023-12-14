@@ -1,6 +1,6 @@
 diff -ru gcc-4.4.0-orig/config.sub gcc-4.4.0/config.sub
 --- gcc-4.4.0-orig/config.sub	2023-12-06 21:24:00.926365516 +0000
-+++ gcc-4.4.0/config.sub	2023-12-13 08:37:05.309411717 +0000
++++ gcc-4.4.0/config.sub	2023-12-14 11:29:55.397689091 +0000
 @@ -285,7 +285,7 @@
  	| sparc | sparc64 | sparc64b | sparc64v | sparc86x | sparclet | sparclite \
  	| sparcv8 | sparcv9 | sparcv9b | sparcv9v \
@@ -41,7 +41,7 @@ diff -ru gcc-4.4.0-orig/config.sub gcc-4.4.0/config.sub
  		;;
 diff -ru gcc-4.4.0-orig/gcc/c-cppbuiltin.c gcc-4.4.0/gcc/c-cppbuiltin.c
 --- gcc-4.4.0-orig/gcc/c-cppbuiltin.c	2023-12-09 11:24:53.953049596 +0000
-+++ gcc-4.4.0/gcc/c-cppbuiltin.c	2023-12-13 08:37:05.309411717 +0000
++++ gcc-4.4.0/gcc/c-cppbuiltin.c	2023-12-14 11:29:55.397689091 +0000
 @@ -104,12 +104,19 @@
    int decimal_dig;
  
@@ -83,8 +83,8 @@ diff -ru gcc-4.4.0-orig/gcc/combine.c gcc-4.4.0/gcc/combine.c
        if (WORDS_BIG_ENDIAN)
  	offset = MAX (isize, UNITS_PER_WORD) - MAX (osize, UNITS_PER_WORD);
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/atof.c gcc-4.4.0/gcc/config/tms9900/atof.c
---- gcc-4.4.0-orig/gcc/config/tms9900/atof.c	2023-12-13 08:37:05.305412245 +0000
-+++ gcc-4.4.0/gcc/config/tms9900/atof.c	2023-12-13 08:37:05.309411717 +0000
+--- gcc-4.4.0-orig/gcc/config/tms9900/atof.c	2023-12-14 11:29:55.397689091 +0000
++++ gcc-4.4.0/gcc/config/tms9900/atof.c	2023-12-14 11:29:55.401689076 +0000
 @@ -0,0 +1,142 @@
 +/* atof.c
 +   This method converts an ascii representation of a float to a float.
@@ -229,8 +229,8 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/atof.c gcc-4.4.0/gcc/config/tms9900/a
 +   // return d;
 +}
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/d_adj_neg_pos.c gcc-4.4.0/gcc/config/tms9900/d_adj_neg_pos.c
---- gcc-4.4.0-orig/gcc/config/tms9900/d_adj_neg_pos.c	2023-12-13 08:37:05.305412245 +0000
-+++ gcc-4.4.0/gcc/config/tms9900/d_adj_neg_pos.c	2023-12-13 08:37:05.309411717 +0000
+--- gcc-4.4.0-orig/gcc/config/tms9900/d_adj_neg_pos.c	2023-12-14 11:29:55.397689091 +0000
++++ gcc-4.4.0/gcc/config/tms9900/d_adj_neg_pos.c	2023-12-14 11:29:55.401689076 +0000
 @@ -0,0 +1,18 @@
 +/* d_adj_neg_pos.c
 +   This method performs absolute value on the incoming double and indicates whether it was positive or negative.
@@ -251,8 +251,8 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/d_adj_neg_pos.c gcc-4.4.0/gcc/config/
 +   return np;
 +}
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/d_compare.c gcc-4.4.0/gcc/config/tms9900/d_compare.c
---- gcc-4.4.0-orig/gcc/config/tms9900/d_compare.c	2023-12-13 08:37:05.305412245 +0000
-+++ gcc-4.4.0/gcc/config/tms9900/d_compare.c	2023-12-13 08:37:05.309411717 +0000
+--- gcc-4.4.0-orig/gcc/config/tms9900/d_compare.c	2023-12-14 11:29:55.397689091 +0000
++++ gcc-4.4.0/gcc/config/tms9900/d_compare.c	2023-12-14 11:29:55.401689076 +0000
 @@ -0,0 +1,47 @@
 +/* 06/23/2023 mrvan initial version
 +*/
@@ -302,8 +302,8 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/d_compare.c gcc-4.4.0/gcc/config/tms9
 +   return r;
 +}
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/double.c gcc-4.4.0/gcc/config/tms9900/double.c
---- gcc-4.4.0-orig/gcc/config/tms9900/double.c	2023-12-13 08:37:05.305412245 +0000
-+++ gcc-4.4.0/gcc/config/tms9900/double.c	2023-12-13 08:37:05.309411717 +0000
+--- gcc-4.4.0-orig/gcc/config/tms9900/double.c	2023-12-14 11:29:55.397689091 +0000
++++ gcc-4.4.0/gcc/config/tms9900/double.c	2023-12-14 11:29:55.401689076 +0000
 @@ -0,0 +1,102 @@
 +/* double.c
 +   This file includes double math functions that the GCC compiler requires.
@@ -408,7 +408,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/double.c gcc-4.4.0/gcc/config/tms9900
 +  return *FDIV_QUOTIENT;
 +}
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/eqdf2.c gcc-4.4.0/gcc/config/tms9900/eqdf2.c
---- gcc-4.4.0-orig/gcc/config/tms9900/eqdf2.c	2023-12-13 08:37:05.305412245 +0000
+--- gcc-4.4.0-orig/gcc/config/tms9900/eqdf2.c	2023-12-14 11:29:55.397689091 +0000
 +++ gcc-4.4.0/gcc/config/tms9900/eqdf2.c	2023-12-09 11:15:23.961658672 +0000
 @@ -0,0 +1,15 @@
 +/* 06/23/2023 mrvan initial version
@@ -427,8 +427,8 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/eqdf2.c gcc-4.4.0/gcc/config/tms9900/
 +   return cmp;
 +}
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/ftoa.c gcc-4.4.0/gcc/config/tms9900/ftoa.c
---- gcc-4.4.0-orig/gcc/config/tms9900/ftoa.c	2023-12-13 08:37:05.305412245 +0000
-+++ gcc-4.4.0/gcc/config/tms9900/ftoa.c	2023-12-13 08:37:05.309411717 +0000
+--- gcc-4.4.0-orig/gcc/config/tms9900/ftoa.c	2023-12-14 11:29:55.397689091 +0000
++++ gcc-4.4.0/gcc/config/tms9900/ftoa.c	2023-12-14 11:29:55.401689076 +0000
 @@ -0,0 +1,55 @@
 +/* ftoa.c
 +   This method converts a TI float to an ascii representation of a float.  It
@@ -486,8 +486,8 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/ftoa.c gcc-4.4.0/gcc/config/tms9900/f
 +}
 +
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/gedf2.c gcc-4.4.0/gcc/config/tms9900/gedf2.c
---- gcc-4.4.0-orig/gcc/config/tms9900/gedf2.c	2023-12-13 08:37:05.305412245 +0000
-+++ gcc-4.4.0/gcc/config/tms9900/gedf2.c	2023-12-13 08:37:05.309411717 +0000
+--- gcc-4.4.0-orig/gcc/config/tms9900/gedf2.c	2023-12-14 11:29:55.397689091 +0000
++++ gcc-4.4.0/gcc/config/tms9900/gedf2.c	2023-12-14 11:29:55.401689076 +0000
 @@ -0,0 +1,9 @@
 +/* 06/23/2023 mrvan initial version
 +*/
@@ -499,7 +499,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/gedf2.c gcc-4.4.0/gcc/config/tms9900/
 +   return d_compare (a, b); 
 +}
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/gtdf2.c gcc-4.4.0/gcc/config/tms9900/gtdf2.c
---- gcc-4.4.0-orig/gcc/config/tms9900/gtdf2.c	2023-12-13 08:37:05.305412245 +0000
+--- gcc-4.4.0-orig/gcc/config/tms9900/gtdf2.c	2023-12-14 11:29:55.397689091 +0000
 +++ gcc-4.4.0/gcc/config/tms9900/gtdf2.c	2023-12-09 11:16:04.565816750 +0000
 @@ -0,0 +1,9 @@
 +/* 06/23/2023 mrvan initial version
@@ -512,8 +512,8 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/gtdf2.c gcc-4.4.0/gcc/config/tms9900/
 +   return d_compare (a, b);
 +} 
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/ledf2.c gcc-4.4.0/gcc/config/tms9900/ledf2.c
---- gcc-4.4.0-orig/gcc/config/tms9900/ledf2.c	2023-12-13 08:37:05.305412245 +0000
-+++ gcc-4.4.0/gcc/config/tms9900/ledf2.c	2023-12-13 08:37:05.309411717 +0000
+--- gcc-4.4.0-orig/gcc/config/tms9900/ledf2.c	2023-12-14 11:29:55.397689091 +0000
++++ gcc-4.4.0/gcc/config/tms9900/ledf2.c	2023-12-14 11:29:55.401689076 +0000
 @@ -0,0 +1,9 @@
 +/* 06/23/2023 mrvan initial version
 +*/
@@ -526,7 +526,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/ledf2.c gcc-4.4.0/gcc/config/tms9900/
 +}  
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/lib1funcs.asm gcc-4.4.0/gcc/config/tms9900/lib1funcs.asm
 --- gcc-4.4.0-orig/gcc/config/tms9900/lib1funcs.asm	2023-12-06 21:24:00.930365503 +0000
-+++ gcc-4.4.0/gcc/config/tms9900/lib1funcs.asm	2023-12-13 08:37:05.309411717 +0000
++++ gcc-4.4.0/gcc/config/tms9900/lib1funcs.asm	2023-12-14 11:29:55.401689076 +0000
 @@ -0,0 +1,826 @@
 +/*
 + *  MGB 32-bit arithmetic functions never seem to be used.  The compiler emits
@@ -1355,8 +1355,8 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/lib1funcs.asm gcc-4.4.0/gcc/config/tm
 +
 +
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/ltdf2.c gcc-4.4.0/gcc/config/tms9900/ltdf2.c
---- gcc-4.4.0-orig/gcc/config/tms9900/ltdf2.c	2023-12-13 08:37:05.305412245 +0000
-+++ gcc-4.4.0/gcc/config/tms9900/ltdf2.c	2023-12-13 08:37:05.309411717 +0000
+--- gcc-4.4.0-orig/gcc/config/tms9900/ltdf2.c	2023-12-14 11:29:55.397689091 +0000
++++ gcc-4.4.0/gcc/config/tms9900/ltdf2.c	2023-12-14 11:29:55.401689076 +0000
 @@ -0,0 +1,9 @@
 +/* 06/23/2023 mrvan initial version
 +*/
@@ -1368,8 +1368,8 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/ltdf2.c gcc-4.4.0/gcc/config/tms9900/
 +   return d_compare (a, b); 
 +}
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/math_private.h gcc-4.4.0/gcc/config/tms9900/math_private.h
---- gcc-4.4.0-orig/gcc/config/tms9900/math_private.h	2023-12-13 08:37:05.305412245 +0000
-+++ gcc-4.4.0/gcc/config/tms9900/math_private.h	2023-12-13 08:37:05.309411717 +0000
+--- gcc-4.4.0-orig/gcc/config/tms9900/math_private.h	2023-12-14 11:29:55.397689091 +0000
++++ gcc-4.4.0/gcc/config/tms9900/math_private.h	2023-12-14 11:29:55.401689076 +0000
 @@ -0,0 +1,10 @@
 +#ifndef MATH_PRIVATE_H
 +#define MATH_PRIVATE_H
@@ -1383,7 +1383,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/math_private.h gcc-4.4.0/gcc/config/t
 +#endif
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms9900/tms9900.c
 --- gcc-4.4.0-orig/gcc/config/tms9900/tms9900.c	2023-12-06 21:24:00.930365503 +0000
-+++ gcc-4.4.0/gcc/config/tms9900/tms9900.c	2023-12-14 09:37:30.939313456 +0000
++++ gcc-4.4.0/gcc/config/tms9900/tms9900.c	2023-12-14 11:29:55.401689076 +0000
 @@ -0,0 +1,1326 @@
 +/* Subroutines for insn-output.c for TMS9900.
 +   Copyright (C) 1987, 1994, 1995, 1997, 1998, 1999, 2000, 2001, 2002,
@@ -2713,7 +2713,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms990
 +
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.h gcc-4.4.0/gcc/config/tms9900/tms9900.h
 --- gcc-4.4.0-orig/gcc/config/tms9900/tms9900.h	2023-12-06 21:24:00.930365503 +0000
-+++ gcc-4.4.0/gcc/config/tms9900/tms9900.h	2023-12-13 13:04:46.293701247 +0000
++++ gcc-4.4.0/gcc/config/tms9900/tms9900.h	2023-12-14 11:29:55.401689076 +0000
 @@ -0,0 +1,1220 @@
 +/* Definitions of target machine for GNU compiler.
 +   Texas Instruments TMS9900
@@ -3937,7 +3937,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.h gcc-4.4.0/gcc/config/tms990
 +
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms9900/tms9900.md
 --- gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md	2023-12-06 21:24:00.930365503 +0000
-+++ gcc-4.4.0/gcc/config/tms9900/tms9900.md	2023-12-13 08:37:05.309411717 +0000
++++ gcc-4.4.0/gcc/config/tms9900/tms9900.md	2023-12-14 11:29:55.401689076 +0000
 @@ -0,0 +1,2797 @@
 +;;- Machine description for the TMS9900 for GNU C compiler
 +;; Copyright (C) 1994, 1995, 1997, 1998, 1999, 2000, 2001, 2004, 2005
@@ -6737,8 +6737,8 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +  [(set_attr "length" "4")])
 +
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.opt gcc-4.4.0/gcc/config/tms9900/tms9900.opt
---- gcc-4.4.0-orig/gcc/config/tms9900/tms9900.opt	2023-12-13 08:37:05.305412245 +0000
-+++ gcc-4.4.0/gcc/config/tms9900/tms9900.opt	2023-12-13 08:37:05.309411717 +0000
+--- gcc-4.4.0-orig/gcc/config/tms9900/tms9900.opt	2023-12-14 11:29:55.397689091 +0000
++++ gcc-4.4.0/gcc/config/tms9900/tms9900.opt	2023-12-14 11:29:55.401689076 +0000
 @@ -0,0 +1,30 @@
 +; Options for the TMS9900 port of the compiler.
 +
@@ -6837,8 +6837,8 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900-protos.h gcc-4.4.0/gcc/config
 +extern void tms9900_inline_debug (const char *fmt,...);
 +extern void tms9900_debug_operands (const char *name, rtx ops[], int count);
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/t-tms9900 gcc-4.4.0/gcc/config/tms9900/t-tms9900
---- gcc-4.4.0-orig/gcc/config/tms9900/t-tms9900	2023-12-13 08:37:05.305412245 +0000
-+++ gcc-4.4.0/gcc/config/tms9900/t-tms9900	2023-12-13 08:37:05.309411717 +0000
+--- gcc-4.4.0-orig/gcc/config/tms9900/t-tms9900	2023-12-14 11:29:55.397689091 +0000
++++ gcc-4.4.0/gcc/config/tms9900/t-tms9900	2023-12-14 11:29:55.401689076 +0000
 @@ -0,0 +1,38 @@
 +LIB1ASMSRC    = tms9900/lib1funcs.asm
 +LIB1ASMFUNCS  = _divsi3 _udivsi3 _modsi3 _umodsi3
@@ -6880,7 +6880,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/t-tms9900 gcc-4.4.0/gcc/config/tms990
 +
 diff -ru gcc-4.4.0-orig/gcc/config.gcc gcc-4.4.0/gcc/config.gcc
 --- gcc-4.4.0-orig/gcc/config.gcc	2023-12-06 21:24:00.930365503 +0000
-+++ gcc-4.4.0/gcc/config.gcc	2023-12-13 08:37:05.309411717 +0000
++++ gcc-4.4.0/gcc/config.gcc	2023-12-14 11:29:55.397689091 +0000
 @@ -2314,6 +2314,9 @@
  	c_target_objs="${c_target_objs} spu-c.o"
  	cxx_target_objs="${cxx_target_objs} spu-c.o"
@@ -6992,14 +6992,19 @@ diff -ru gcc-4.4.0-orig/gcc/cp/cfns.h gcc-4.4.0/gcc/cp/cfns.h
      }
    return 0;
  }
+diff -ru gcc-4.4.0-orig/gcc/DATESTAMP gcc-4.4.0/gcc/DATESTAMP
+--- gcc-4.4.0-orig/gcc/DATESTAMP	2023-12-14 14:31:32.532006216 +0000
++++ gcc-4.4.0/gcc/DATESTAMP	2023-12-14 14:45:14.801532300 +0000
+@@ -0,0 +1 @@
++20231214
 diff -ru gcc-4.4.0-orig/gcc/DEV-PHASE gcc-4.4.0/gcc/DEV-PHASE
 --- gcc-4.4.0-orig/gcc/DEV-PHASE	2023-12-06 21:24:00.926365516 +0000
-+++ gcc-4.4.0/gcc/DEV-PHASE	2023-12-06 21:24:00.934365487 +0000
++++ gcc-4.4.0/gcc/DEV-PHASE	2023-12-14 14:45:14.801532300 +0000
 @@ -0,0 +1 @@
-+TMS9900 patch 1.19
++TMS9900 patch 1.27
 diff -ru gcc-4.4.0-orig/gcc/dfp.c gcc-4.4.0/gcc/dfp.c
---- gcc-4.4.0-orig/gcc/dfp.c	2023-12-13 08:37:05.305412245 +0000
-+++ gcc-4.4.0/gcc/dfp.c	2023-12-13 08:37:05.309411717 +0000
+--- gcc-4.4.0-orig/gcc/dfp.c	2023-12-14 11:29:55.397689091 +0000
++++ gcc-4.4.0/gcc/dfp.c	2023-12-14 11:29:55.401689076 +0000
 @@ -355,6 +355,10 @@
  
  /* Helper to round_for_format, handling decimal float types.  */
@@ -7026,8 +7031,8 @@ diff -ru gcc-4.4.0-orig/gcc/dfp.c gcc-4.4.0/gcc/dfp.c
  
    decimal_from_decnumber (r, &dn, &set);
 diff -ru gcc-4.4.0-orig/gcc/libgcc2.c gcc-4.4.0/gcc/libgcc2.c
---- gcc-4.4.0-orig/gcc/libgcc2.c	2023-12-13 08:37:05.305412245 +0000
-+++ gcc-4.4.0/gcc/libgcc2.c	2023-12-13 08:37:05.309411717 +0000
+--- gcc-4.4.0-orig/gcc/libgcc2.c	2023-12-14 11:29:55.397689091 +0000
++++ gcc-4.4.0/gcc/libgcc2.c	2023-12-14 11:29:55.401689076 +0000
 @@ -4,6 +4,7 @@
     2000, 2001, 2002, 2003, 2004, 2005, 2007, 2008, 2009
     Free Software Foundation, Inc.
@@ -7131,7 +7136,7 @@ diff -ru gcc-4.4.0-orig/gcc/toplev.h gcc-4.4.0/gcc/toplev.h
  /* Functions used to get and set GCC's notion of in what directory
 diff -ru gcc-4.4.0-orig/libgcc/config.host gcc-4.4.0/libgcc/config.host
 --- gcc-4.4.0-orig/libgcc/config.host	2023-12-06 21:24:00.930365503 +0000
-+++ gcc-4.4.0/libgcc/config.host	2023-12-13 08:37:05.309411717 +0000
++++ gcc-4.4.0/libgcc/config.host	2023-12-14 11:29:55.401689076 +0000
 @@ -127,6 +127,9 @@
  sh[123456789lbe]*-*-*)
  	cpu_type=sh
