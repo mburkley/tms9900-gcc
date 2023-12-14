@@ -54,9 +54,20 @@ along with GCC; see the file COPYING3.  If not see
 #include "decimal128.h"
 #include "decNumber.h"
 
-/* Define this to put insn debugs into output files */
-#undef TMS9900_DEBUG
-// #define TMS9900_DEBUG 1
+/* Define this to put insn debug info into output files.  Note this method is a
+ * bit of a hack that takes a copy of the output file pointer.  On rare
+ * occasions this pointer may go invalid before we are finished which may cause
+ * a segfault on write so if debugging segfaults make sure to test with inline
+ * debug disabled */
+#undef TMS9900_INLINE_DEBUG
+// #define TMS9900_INLINE_DEBUG 1
+
+/* Define this to 1 to output debug info to stdout as we are compiling */
+#if 0
+#define dbgprintf printf
+#else
+#define dbgprintf(...)
+#endif
 
 static bool tms9900_pass_by_reference (CUMULATIVE_ARGS *,
                                        enum machine_mode, const_tree, bool);
@@ -185,7 +196,7 @@ int tms9900_function_arg_padding (enum machine_mode mode,
 {
   if (type != 0 && AGGREGATE_TYPE_P (type))
   {
-    // printf ("%s upward\n", __func__);
+    dbgprintf ("%s upward\n", __func__);
     return upward;
   }
 
@@ -212,7 +223,7 @@ void tms9900_function_arg_advance (CUMULATIVE_ARGS *cum,
      arg_bytes = GET_MODE_SIZE (mode);
   }
   cum->nregs += ((arg_bytes + 1)/ UNITS_PER_WORD) * REGS_PER_WORD;
-  // printf("%s bytes=%d\n", __func__, arg_bytes);
+  dbgprintf("%s bytes=%d\n", __func__, arg_bytes);
   return;
 }
 
@@ -248,26 +259,33 @@ rtx tms9900_function_arg (CUMULATIVE_ARGS *cum,
 		          tree type,
                           int named)
 {
-  if (mode == VOIDmode)
-    /* Pick an arbitrary value for operand 2 of the call insn.  */
-    return const0_rtx;
+   if (mode == VOIDmode)
+   {
+     /* Pick an arbitrary value for operand 2 of the call insn.  */
+     dbgprintf ("%s void\n", __func__);
+     return const0_rtx;
+   }
   
-  if (/* Vararg argument, must live on stack */
-      !named ||
-      /* No more argument registers left */
-      cum->nregs >= TMS9900_ARG_REGS ||
-      /* Argument doesn't completely fit in arg registers */      
-      GET_MODE_SIZE(mode) + cum->nregs > TMS9900_ARG_REGS)
-    {
-    // printf ("%s alloc on stack\n", __func__);
-    return NULL_RTX;
-    }
+   /* TODO it seems named is zero for the last named parameter before an
+    * elipsis.  The value named_count in the cum structure is not used but in
+    * the arm backend, the code traverses the arg tree to count the number of
+    * named params.  Maybe its a known thing that named_count should be
+    * maintained separately
+    */
+   if (/* Vararg argument, must live on stack */
+       !named ||
+       /* Argument doesn't completely fit in arg registers */      
+       GET_MODE_SIZE(mode) + cum->nregs > TMS9900_ARG_REGS)
+   {
+      dbgprintf ("%s named=%d size=%d nr=%d max=%d : alloc on stack\n", __func__,
+              named, (int)GET_MODE_SIZE(mode), cum->nregs, TMS9900_ARG_REGS);
+      return NULL_RTX;
+   }
 
-  /* Allocate registers for argument */
-  // printf ("%s alloc in reg %d\n", __func__, cum->nregs+1);
-  return gen_rtx_REG (mode, cum->nregs + HARD_R1_REGNUM);
+   /* Allocate registers for argument */
+   dbgprintf ("%s alloc in reg %d\n", __func__, cum->nregs+1);
+   return gen_rtx_REG (mode, cum->nregs + HARD_R1_REGNUM);
 }
-
 
 /* Output all constant addresses using hex values */
 static void tms9900_output_addr_const(FILE *file, rtx addr)
@@ -358,18 +376,46 @@ void print_operand_address (FILE *file,
     }
 }
 
-
 /* Should we save this register?  The only registers we care about are R11 which
- * must be saved if we are not a leaf function and R14 if we use a frame pointer
- * in this function. */ 
+ * must be saved if we are not a leaf function or if used by an inline asm and
+ * R14 if we use a frame pointer in this function. */ 
 int tms9900_should_save_reg(int regno)
 {
-  if (regno == HARD_LR_REGNUM && !current_function_is_leaf)
-    return 1;
-          
-  if (regno == HARD_BP_REGNUM && frame_pointer_needed)
-    return 1;
+  dbgprintf("%s ever_live=%d used=%d R%d leaf=%d fp_need=%d\n",
+         __func__, df_regs_ever_live_p(regno), call_used_regs[regno],
+         regno, current_function_is_leaf,
+         frame_pointer_needed);
 
+  /*  Generic condition for register that is used and marked as must be
+   *  preserved */
+  if (df_regs_ever_live_p(regno) && (call_used_regs[regno] == 0))
+  {
+    dbgprintf ("%s save live and not used\n", __func__);
+    return 1;
+  }
+
+  /*  Special case, R11 is declared as used so save it */
+  if (df_regs_ever_live_p(regno) && regno == HARD_LR_REGNUM)
+  {
+    dbgprintf ("%s save LR, ever_live\n", __func__);
+    return 1;
+  }
+
+  /*  This function calls other functions, save R11 */
+  if (regno == HARD_LR_REGNUM && !current_function_is_leaf)
+  {
+    dbgprintf ("%s save LR, not leaf\n", __func__);
+    return 1;
+  }
+          
+  /*  Not used, but the logic here is to only save BP if we need a frame pointer */
+  if (regno == HARD_BP_REGNUM && frame_pointer_needed)
+  {
+    dbgprintf ("%s save BP\n", __func__);
+    return 1;
+  }
+
+  dbgprintf ("%s no save\n", __func__);
   return 0;
 }
 
@@ -402,10 +448,10 @@ static void print_arg_offset (int from)
 {
     switch (from)
     {
-    case ARG_POINTER_REGNUM: printf ("%d=ARG_PTR_R ", from); break;
-    case HARD_SP_REGNUM: printf ("%d=HARD_SP_R ", from); break;
-    case FRAME_POINTER_REGNUM: printf ("%d=FR_PTR_R ", from); break;
-    default: printf ("%d=dunno? ", from); break;
+    case ARG_POINTER_REGNUM: dbgprintf ("%d=ARG_PTR_R ", from); break;
+    case HARD_SP_REGNUM: dbgprintf ("%d=HARD_SP_R ", from); break;
+    case FRAME_POINTER_REGNUM: dbgprintf ("%d=FR_PTR_R ", from); break;
+    default: dbgprintf ("%d=dunno? ", from); break;
     }
 }
 
@@ -426,7 +472,7 @@ int tms9900_initial_elimination_offset (int from,
       . <- frame pointer
   */
 
-  // printf("%s savedregs=%d frame=%d ", __func__,
+  // dbgprintf("%s savedregs=%d frame=%d ", __func__,
   //     tms9900_get_saved_reg_size(), get_frame_size());
   // print_arg_offset (from);
   // print_arg_offset (to);
@@ -445,7 +491,7 @@ int tms9900_initial_elimination_offset (int from,
     ret =(tms9900_get_saved_reg_size()+
            get_frame_size ());
   }
-  // printf ("%s res=%d\n", __func__, ret);
+  // dbgprintf ("%s res=%d\n", __func__, ret);
   return ret;
 }
 
@@ -675,64 +721,82 @@ void tms9900_expand_prologue (void)
    /* Find non-volatile registers which need to be saved */
    int saveregs[MAX_SAVED_REGS];
    int regcount = tms9900_get_regs_to_save (saveregs);
+   int frame_size = get_frame_size();
 
-   // printf("%s saving regs=%d frame=%d ", __func__, regcount, frame_size);
-   /* Allocate stack space for saved regs */
-   if(regcount > 0)
+   dbgprintf("%s saving regs=%d frame=%d\n", __func__, regcount, frame_size);
+   if (regcount > 2)
    {
+      /* Allocate stack space for saved regs if more than 2 saved. */
+      /*
+      ai sp, -regs*2        4      14+8+8   = 30
+      mov sp, r0            2      14+8     = 22
+      mov r9 , *r0+         2      14+8+8+8 = 38
+      mov r13, *r0+         2      14+8+8+8 = 38
+      mov r14, *r0+         2      14+8+8+8 = 38
+      mov r15, *r0+         2      14+8+8+8 = 38
+      mov r11, *r0          2      14+8+8+8 = 34
+      ai sp, -frame         4      14+8+8   = 30
+      */
       /* Emit "ai sp, -regcount*2" */
       emit_insn(gen_addhi3(stack_pointer_rtx, stack_pointer_rtx, 
                           GEN_INT(-regcount * 2)));
-   }
 
-   /* Actually save registers */
-   /*
-   ai sp, -regs*2        4      14+8+8   = 30
-   mov sp, r0            2      14+8     = 22
-   mov r9 , *r0+         2      14+8+8+8 = 38
-   mov r13, *r0+         2      14+8+8+8 = 38
-   mov r14, *r0+         2      14+8+8+8 = 38
-   mov r15, *r0+         2      14+8+8+8 = 38
-   mov r11, *r0          2      14+8+8+8 = 34
-   ai sp, -frame         4      14+8+8   = 30
-   */
+      /* Copy sp to r0 and use r0 as the dest
+       * with auto-inc */
 
-   /* If saving more than 1 reg, then copy sp to r0 and use r0 as the dest
-    * with auto-inc */
-   int dst_reg = HARD_SP_REGNUM;
-   if (regcount>1)
-   {
-     /* Emit "mov sp, r0" */
-     emit_insn(gen_movhi(gen_rtx_REG(HImode, HARD_R0_REGNUM),
-                         stack_pointer_rtx));
-     dst_reg = HARD_R0_REGNUM;
-   }
+      /* Emit "mov sp, r0" */
+      emit_insn(gen_movhi(gen_rtx_REG(HImode, HARD_R0_REGNUM),
+                          stack_pointer_rtx));
 
-   for (int i = 0; i < regcount; i++)
-   {
-      /*  Don't postinc if last reg */
-      if(i == regcount-1)
+      for (int i = 0; i < regcount; i++)
       {
-         /* Emit "mov Rx, *R0" */
-         emit_insn(gen_movhi(
-            gen_rtx_MEM(HImode, gen_rtx_REG(HImode, dst_reg)),
-            gen_rtx_REG(HImode, saveregs[i])));
-      }
-      else
-      {
-         /* Emit "mov Rx, *R0+" */
-         emit_insn(gen_movhi(
+         /*  Don't postinc if last reg */
+         if(i == regcount-1)
+         {
+            /* Emit "mov Rx, *R0" */
+            emit_insn(gen_movhi(
+            gen_rtx_MEM(HImode, gen_rtx_REG(HImode, HARD_R0_REGNUM)),
+                        gen_rtx_REG(HImode, saveregs[i])));
+         }
+         else
+         {
+            /* Emit "mov Rx, *R0+" */
+            emit_insn(gen_movhi(
             gen_rtx_MEM(HImode, 
                         gen_rtx_POST_INC(HImode, 
-                           gen_rtx_REG(HImode, dst_reg))),
-            gen_rtx_REG(HImode, saveregs[i])));
+                            gen_rtx_REG(HImode, HARD_R0_REGNUM))),
+                        gen_rtx_REG(HImode, saveregs[i])));
+         }
+      }
+   }
+   else
+   {
+      /* Save registers and create stack frame.  Since we currently only save up to 2 regs,
+       * we use dect instead of ai for the sp.  NOTE we must store regs in
+       * reverse order if doing it this way.  */
+      /*
+      dect sp               3      10+6     = 16
+      mov r11, *sp          2      14+8+8+8 = 38
+      dect sp               3      10+6     = 16
+      mov r14, *sp          2      14+8+8+8 = 38
+      ai sp, -frame         4      14+8+8   = 30
+      */
+      for (int i = regcount-1; i >= 0; i--)
+      {
+         dbgprintf("%s save R%d\n", __func__, saveregs[i]);
+         /* Emit "dect sp" */
+         emit_insn(gen_addhi3(stack_pointer_rtx, stack_pointer_rtx, GEN_INT(-2)));
+
+         /* Emit "mov Rx, *SP" */
+         emit_insn(gen_movhi(
+                     gen_rtx_MEM(HImode, stack_pointer_rtx),
+                     gen_rtx_REG(HImode, saveregs[i])));
       }
    }
 
-   int frame_size = get_frame_size();
    if(frame_size > 0)
    {
-      // printf("%s alloc frame\n", __func__);
+      dbgprintf("%s alloc frame %d\n", __func__, frame_size);
       /* Emit "ai sp, -framesize" */
       emit_insn(gen_addhi3(stack_pointer_rtx, stack_pointer_rtx, 
                           GEN_INT(-frame_size)));
@@ -741,33 +805,29 @@ void tms9900_expand_prologue (void)
    /* Set frame pointer */
    if(frame_pointer_needed)
    {
-      // printf("%s set fp\n", __func__);
+      dbgprintf("%s set fp\n", __func__);
+      /* Emit "mov sp, bp" */
       emit_insn(gen_movhi(gen_rtx_REG(HImode, FRAME_POINTER_REGNUM),
                           stack_pointer_rtx));
    }
 
-   // printf("%s done\n", __func__);
+   dbgprintf("%s done\n", __func__);
 }
-
 
 void tms9900_expand_epilogue (bool is_sibcall)
 {
    /*
    ai sp, frame         4      14+8+8   = 30
-   mov *sp+, r9         2      14+8+8+8 = 38
-   mov *sp+, r13        2      14+8+8+8 = 38
    mov *sp+, r14        2      14+8+8+8 = 38
-   mov *sp+, r15        2      14+8+8+8 = 38
    mov *sp+, r11        2      14+8+8+8 = 38
    */
-
 
    /* Find frame size to restore */
    int frame_size = get_frame_size();
 
    if(frame_size != 0)
    {
-      // printf("%s delete frame\n", __func__);
+      dbgprintf("%s delete frame size=%d\n", __func__, frame_size);
       /* Emit "ai sp, frame_size" */
       emit_insn(gen_addhi3(stack_pointer_rtx, stack_pointer_rtx, 
                            GEN_INT(frame_size)));
@@ -778,27 +838,26 @@ void tms9900_expand_epilogue (bool is_sibcall)
    int regcount = tms9900_get_regs_to_save (saveregs);
    int i = 0;
 
-   // printf("%s restore %d regs\n", __func__, regcount);
    for (i = 0; i < regcount; i++)
    {
-     /* Emit "mov *SP+, Rx" */
-     emit_insn(gen_movhi(
-        gen_rtx_REG(HImode, saveregs[i]),
-        gen_rtx_MEM(HImode, 
-                    gen_rtx_POST_INC(HImode, stack_pointer_rtx))));
+      dbgprintf("%s restore R%d\n", __func__, saveregs[i]);
+      /* Emit "mov *SP+, Rx" */
+      emit_insn(gen_movhi(
+         gen_rtx_REG(HImode, saveregs[i]),
+         gen_rtx_MEM(HImode, 
+                     gen_rtx_POST_INC(HImode, stack_pointer_rtx))));
    }
    
    if(!is_sibcall)
    {
-      // printf("%s return\n", __func__);
+      // dbgprintf("%s return\n", __func__);
       /* Emit the return instruction "b *R11" */
       emit_insn(gen_rtx_UNSPEC(HImode, 
                                gen_rtvec (1, gen_rtx_REG(HImode, HARD_R11_REGNUM)),
                                UNSPEC_RETURN));
    }
-   // printf("%s done\n", __func__);
+   dbgprintf("%s done\n", __func__);
 }
-
 
 /* All registers may be used as a base, except R0 or 
    pseudoregs when we are in strict mod */
@@ -949,10 +1008,10 @@ tms9900_asm_integer(rtx x, unsigned int size, int aligned_p)
 static void
 tms9900_extract_subreg(rtx insn, rtx arg, rtx* parg)
 {
-  // printf("%s\n", __func__);
+  // dbgprintf("%s\n", __func__);
   if(BINARY_P(arg))
   {
-    // printf("%s recurse\n", __func__);
+    // dbgprintf("%s recurse\n", __func__);
     /* Recurse until we find a leaf expression */
     tms9900_extract_subreg(insn, XEXP(arg,0), &XEXP(arg,0));
     tms9900_extract_subreg(insn, XEXP(arg,1), &XEXP(arg,1));
@@ -962,7 +1021,7 @@ tms9900_extract_subreg(rtx insn, rtx arg, rtx* parg)
   {
     if(GET_CODE(arg) == SUBREG && GET_MODE(arg) == QImode)
     {
-      // printf ("%s creating extract\n", __func__);
+      // dbgprintf ("%s creating extract\n", __func__);
       /* Found a subreg expression we need to extract.
          Place it in a seperate instruction before this one */
       rtx temp_reg = gen_reg_rtx(QImode);
@@ -997,17 +1056,17 @@ gate_tms9900_subreg (void)
 static unsigned int
 tms9900_subreg (void)
 {
-  // printf("%s\n", __func__);
+  // dbgprintf("%s\n", __func__);
   return 0;
   basic_block bb;
   rtx insn;
 
   FOR_EACH_BB (bb)
     FOR_BB_INSNS (bb, insn)
-    // printf("%s looping\n", __func__);
+    // dbgprintf("%s looping\n", __func__);
     if (INSN_P (insn))
     {
-      // printf("%s get single_set\n", __func__);
+      // dbgprintf("%s get single_set\n", __func__);
       rtx set=single_set (insn);
       if(set !=NULL)
       {
@@ -1024,9 +1083,9 @@ tms9900_subreg (void)
       }
     }
     // else
-    //   printf("%s not INSN_P\n", __func__);
+    //   dbgprintf("%s not INSN_P\n", __func__);
 
-  // printf("%s done\n", __func__);
+  // dbgprintf("%s done\n", __func__);
   return 0;
 }
 
@@ -1225,7 +1284,7 @@ struct rtl_opt_pass pass_tms9900_postinc =
 
 extern void tms9900_inline_debug (const char *fmt,...)
 {
-#ifndef TMS9900_DEBUG
+#ifndef TMS9900_INLINE_DEBUG
     return;
 #endif
 
@@ -1240,7 +1299,7 @@ extern void tms9900_inline_debug (const char *fmt,...)
 
 extern void tms9900_debug_operands (const char *name, rtx ops[], int count)
 {
-#ifndef TMS9900_DEBUG
+#ifndef TMS9900_INLINE_DEBUG
     return;
 #endif
 
