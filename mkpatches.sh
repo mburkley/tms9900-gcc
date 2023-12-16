@@ -7,7 +7,8 @@ if [ -z $VERSION ] ; then
 fi
 
 echo `date +%Y%m%d` > dev/gcc-4.4.0/gcc/DATESTAMP
-echo "TMS9900 patch $VERSION" > dev/gcc-4.4.0/gcc/DEV-PHASE
+echo "TMS9900 patch" > dev/gcc-4.4.0/gcc/DEV-PHASE
+echo "$VERSION" > dev/gcc-4.4.0/gcc/REVISION
 
 cd dev
 diff -ru gcc-4.4.0-orig gcc-4.4.0 | grep -v "Only in gcc-4.4.0" > ../gcc-4.4.0-tms9900-$VERSION.patch

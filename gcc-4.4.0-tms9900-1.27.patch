@@ -41,12 +41,14 @@ diff -ru gcc-4.4.0-orig/config.sub gcc-4.4.0/config.sub
  		;;
 diff -ru gcc-4.4.0-orig/gcc/c-cppbuiltin.c gcc-4.4.0/gcc/c-cppbuiltin.c
 --- gcc-4.4.0-orig/gcc/c-cppbuiltin.c	2023-12-09 11:24:53.953049596 +0000
-+++ gcc-4.4.0/gcc/c-cppbuiltin.c	2023-12-14 11:29:55.397689091 +0000
-@@ -104,12 +104,19 @@
++++ gcc-4.4.0/gcc/c-cppbuiltin.c	2023-12-16 13:07:10.551915982 +0000
+@@ -104,12 +104,27 @@
    int decimal_dig;
  
    fmt = REAL_MODE_FORMAT (TYPE_MODE (type));
 +
++/*  MGB don't assert if building for TMS9900.  We want to use radix-10
++ *  representations internally. */
 +#ifndef TMS9900
    gcc_assert (fmt->b != 10);
 +#endif
@@ -54,14 +56,35 @@ diff -ru gcc-4.4.0-orig/gcc/c-cppbuiltin.c gcc-4.4.0/gcc/c-cppbuiltin.c
    /* The radix of the exponent representation.  */
    if (type == float_type_node)
      builtin_define_with_int_value ("__FLT_RADIX__", fmt->b);
-+#ifdef TMS9900
-+  log10_b = 1;
-+#else
-   log10_b = log10_2;
-+#endif
+-  log10_b = log10_2;
++
++/*  MGB if building for TMS9900 then radix may be 10.  If it isn't, then the log
++ *  value is 1 since we want no conversion of the exponent. */
++  if (fmt->b == 10)
++  {
++    log10_b = 1;
++  }
++  else
++  {
++    log10_b = log10_2;
++  }
  
    /* The number of radix digits, p, in the floating-point significand.  */
    sprintf (name, "__%s_MANT_DIG__", name_prefix);
+@@ -614,6 +629,13 @@
+ 
+   /* Misc.  */
+   builtin_define_with_value ("__VERSION__", version_string, 1);
++#ifdef TMS9900
++  char major[10];
++  char *minor = strchr(revision_string, '.');
++  sprintf (major, "%d", atoi (revision_string));
++  builtin_define_with_value ("__TMS9900_PATCH_MAJOR__", major, 0);
++  builtin_define_with_value ("__TMS9900_PATCH_MINOR__", minor+1, 0);
++#endif
+ 
+   if (flag_gnu89_inline)
+     cpp_define (pfile, "__GNUC_GNU_INLINE__");
 diff -ru gcc-4.4.0-orig/gcc/combine.c gcc-4.4.0/gcc/combine.c
 --- gcc-4.4.0-orig/gcc/combine.c	2023-12-06 21:24:00.930365503 +0000
 +++ gcc-4.4.0/gcc/combine.c	2023-12-06 21:24:00.934365487 +0000
@@ -1383,7 +1406,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/math_private.h gcc-4.4.0/gcc/config/t
 +#endif
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms9900/tms9900.c
 --- gcc-4.4.0-orig/gcc/config/tms9900/tms9900.c	2023-12-06 21:24:00.930365503 +0000
-+++ gcc-4.4.0/gcc/config/tms9900/tms9900.c	2023-12-14 11:29:55.401689076 +0000
++++ gcc-4.4.0/gcc/config/tms9900/tms9900.c	2023-12-16 10:42:17.196655816 +0000
 @@ -0,0 +1,1326 @@
 +/* Subroutines for insn-output.c for TMS9900.
 +   Copyright (C) 1987, 1994, 1995, 1997, 1998, 1999, 2000, 2001, 2002,
@@ -2713,8 +2736,8 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms990
 +
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.h gcc-4.4.0/gcc/config/tms9900/tms9900.h
 --- gcc-4.4.0-orig/gcc/config/tms9900/tms9900.h	2023-12-06 21:24:00.930365503 +0000
-+++ gcc-4.4.0/gcc/config/tms9900/tms9900.h	2023-12-14 11:29:55.401689076 +0000
-@@ -0,0 +1,1220 @@
++++ gcc-4.4.0/gcc/config/tms9900/tms9900.h	2023-12-16 12:36:48.973437656 +0000
+@@ -0,0 +1,1224 @@
 +/* Definitions of target machine for GNU compiler.
 +   Texas Instruments TMS9900
 +   Copyright (C) 2009
@@ -2787,6 +2810,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.h gcc-4.4.0/gcc/config/tms990
 +  do						\
 +    {						\
 +      builtin_define_std ("tms9900");		\
++      builtin_define_with_value ("tms9900_gcc_patch", revision_string, 0);		\
 +    }						\
 +  while (0)
 +
@@ -2970,16 +2994,16 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.h gcc-4.4.0/gcc/config/tms990
 +
 +/* Shift count register */
 +#define HARD_SC_REGNUM		HARD_R0_REGNUM
++/* Base pointer */
++#define HARD_BP_REGNUM		HARD_R9_REGNUM
++/* Stack pointer */
++#define HARD_SP_REGNUM		HARD_R10_REGNUM
 +/* Old PC after BL instruction */
 +#define HARD_LR_REGNUM		HARD_R11_REGNUM
 +/* CRU base address or static chain */
 +#define HARD_CB_REGNUM		HARD_R12_REGNUM
 +/* Arg pointer */
 +#define HARD_AP_REGNUM		HARD_R13_REGNUM
-+/* Base pointer */
-+#define HARD_BP_REGNUM		HARD_R14_REGNUM
-+/* Stack pointer */
-+#define HARD_SP_REGNUM		HARD_R15_REGNUM
 +
 +/* How to refer to registers in assembler output.  This sequence is indexed
 +   by compiler's hard-register-number (see above). */
@@ -2993,11 +3017,14 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.h gcc-4.4.0/gcc/config/tms990
 +   those that are not normally considered general registers.  */
 +#define FIRST_PSEUDO_REGISTER	(16)
 +
++/* NOTE - BP (R14) is not a fixed register and may be used as a general
++ * register by functions that do not require a stack frameo
++ */
 +/* 1 for registers that have pervasive standard uses and are not available
 + * for the register allocator.  */
 +#define FIXED_REGISTERS \
-+  {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1}
-+/* SC 1  2  3  4  5  6  7  8  9  10 LR CB AP BP SP*/
++  {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0}
++/* SC 1  2  3  4  5  6  7  8  BP SP LR CB AP 14 15*/
 +
 +/* MGB It seemed excessive to always preserve R13,R14,R15 as these will only
 + * have values to be saved if we were invoked by a BLWP which is never emitted
@@ -3010,8 +3037,8 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.h gcc-4.4.0/gcc/config/tms990
 + */
 +/* 0 for registers which must be preserved across function call boundaries */
 +#define CALL_USED_REGISTERS \
-+  {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1}
-+/* SC 1  2  3  4  5  6  7  8  9  10 LR CB AP BP SP*/
++  {1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1}
++/* SC 1  2  3  4  5  6  7  8  BP SP LR CB AP 14 15*/
 +
 +/* Define this macro to change register usage conditional on target flags. */
 +#define CONDITIONAL_REGISTER_USAGE 
@@ -3021,7 +3048,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.h gcc-4.4.0/gcc/config/tms990
 +#define REG_ALLOC_ORDER	\
 +   {HARD_R1_REGNUM, HARD_R2_REGNUM, HARD_R3_REGNUM, HARD_R4_REGNUM,\
 +    HARD_R5_REGNUM, HARD_R6_REGNUM, HARD_R7_REGNUM, HARD_R8_REGNUM,\
-+    HARD_R9_REGNUM, HARD_R10_REGNUM, HARD_R12_REGNUM, HARD_SC_REGNUM,\
++    HARD_R14_REGNUM, HARD_R15_REGNUM, HARD_R12_REGNUM, HARD_SC_REGNUM,\
 +    HARD_AP_REGNUM, HARD_BP_REGNUM, HARD_LR_REGNUM, HARD_SP_REGNUM}
 +
 +/* A C expression for the number of consecutive hard registers,
@@ -3304,8 +3331,8 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.h gcc-4.4.0/gcc/config/tms990
 +
 +/* Passing Arguments in Registers.  */
 +
-+/* The number of argument registers we can use (R1..R10) */
-+#define TMS9900_ARG_REGS (HARD_R11_REGNUM - HARD_R1_REGNUM)
++/* The number of argument registers we can use (R1..R8) */
++#define TMS9900_ARG_REGS (HARD_R9_REGNUM - HARD_R1_REGNUM)
 +
 +/* Define a data type for recording info about an argument list
 +   during the scan of that argument list.  This data type should
@@ -3381,7 +3408,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.h gcc-4.4.0/gcc/config/tms990
 +
 +/* 1 if N is a possible register number for function argument passing. */
 +#define FUNCTION_ARG_REGNO_P(N)	\
-+     (((N) >= HARD_R1_REGNUM) && ((N) <= HARD_R10_REGNUM))
++     (((N) >= HARD_R1_REGNUM) && ((N) <= HARD_R8_REGNUM))
 +
 +/* 8- and 16-bit values are returned in R1, 32-bit values are
 +   passed in R1+R2, The high word is in R1. */
@@ -6772,7 +6799,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.opt gcc-4.4.0/gcc/config/tms9
 +
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900-protos.h gcc-4.4.0/gcc/config/tms9900/tms9900-protos.h
 --- gcc-4.4.0-orig/gcc/config/tms9900/tms9900-protos.h	2023-12-06 21:24:00.930365503 +0000
-+++ gcc-4.4.0/gcc/config/tms9900/tms9900-protos.h	2023-12-08 10:04:22.042320676 +0000
++++ gcc-4.4.0/gcc/config/tms9900/tms9900-protos.h	2023-12-16 10:42:17.196655816 +0000
 @@ -0,0 +1,62 @@
 +/* Definitions of target machine for GNU compiler, for the TMS9900
 +
@@ -6993,15 +7020,16 @@ diff -ru gcc-4.4.0-orig/gcc/cp/cfns.h gcc-4.4.0/gcc/cp/cfns.h
    return 0;
  }
 diff -ru gcc-4.4.0-orig/gcc/DATESTAMP gcc-4.4.0/gcc/DATESTAMP
---- gcc-4.4.0-orig/gcc/DATESTAMP	2023-12-14 14:31:32.532006216 +0000
-+++ gcc-4.4.0/gcc/DATESTAMP	2023-12-14 14:45:14.801532300 +0000
-@@ -0,0 +1 @@
-+20231214
+--- gcc-4.4.0-orig/gcc/DATESTAMP	2023-12-16 16:46:43.912150711 +0000
++++ gcc-4.4.0/gcc/DATESTAMP	2023-12-16 16:47:23.976023713 +0000
+@@ -1 +1 @@
+-20090421
++20231216
 diff -ru gcc-4.4.0-orig/gcc/DEV-PHASE gcc-4.4.0/gcc/DEV-PHASE
 --- gcc-4.4.0-orig/gcc/DEV-PHASE	2023-12-06 21:24:00.926365516 +0000
-+++ gcc-4.4.0/gcc/DEV-PHASE	2023-12-14 14:45:14.801532300 +0000
++++ gcc-4.4.0/gcc/DEV-PHASE	2023-12-16 16:47:23.976023713 +0000
 @@ -0,0 +1 @@
-+TMS9900 patch 1.27
++TMS9900 patch
 diff -ru gcc-4.4.0-orig/gcc/dfp.c gcc-4.4.0/gcc/dfp.c
 --- gcc-4.4.0-orig/gcc/dfp.c	2023-12-14 11:29:55.397689091 +0000
 +++ gcc-4.4.0/gcc/dfp.c	2023-12-14 11:29:55.401689076 +0000
@@ -7115,6 +7143,11 @@ diff -ru gcc-4.4.0-orig/gcc/reload.c gcc-4.4.0/gcc/reload.c
  				 subreg_regno_offset (REGNO (SUBREG_REG (*loc)),
  						      GET_MODE (SUBREG_REG (*loc)),
  						      SUBREG_BYTE (*loc),
+diff -ru gcc-4.4.0-orig/gcc/REVISION gcc-4.4.0/gcc/REVISION
+--- gcc-4.4.0-orig/gcc/REVISION	2023-12-16 13:27:07.680352391 +0000
++++ gcc-4.4.0/gcc/REVISION	2023-12-16 16:47:23.976023713 +0000
+@@ -0,0 +1 @@
++1.27
 diff -ru gcc-4.4.0-orig/gcc/toplev.h gcc-4.4.0/gcc/toplev.h
 --- gcc-4.4.0-orig/gcc/toplev.h	2023-12-06 21:24:00.930365503 +0000
 +++ gcc-4.4.0/gcc/toplev.h	2023-12-06 21:24:00.938365474 +0000
@@ -7134,6 +7167,24 @@ diff -ru gcc-4.4.0-orig/gcc/toplev.h gcc-4.4.0/gcc/toplev.h
  #endif /* GCC_VERSION >= 3004 */
  
  /* Functions used to get and set GCC's notion of in what directory
+diff -ru gcc-4.4.0-orig/gcc/version.c gcc-4.4.0/gcc/version.c
+--- gcc-4.4.0-orig/gcc/version.c	2023-12-16 13:18:17.117975872 +0000
++++ gcc-4.4.0/gcc/version.c	2023-12-16 12:36:03.509566444 +0000
+@@ -15,3 +15,4 @@
+ 
+ const char version_string[] = BASEVER DATESTAMP DEVPHASE REVISION;
+ const char pkgversion_string[] = PKGVERSION;
++const char revision_string[] = REVISION;
+diff -ru gcc-4.4.0-orig/gcc/version.h gcc-4.4.0/gcc/version.h
+--- gcc-4.4.0-orig/gcc/version.h	2023-12-16 13:18:22.525959533 +0000
++++ gcc-4.4.0/gcc/version.h	2023-12-16 12:39:47.992917779 +0000
+@@ -2,5 +2,6 @@
+ #define GCC_VERSION_H
+ extern const char version_string[];
+ extern const char pkgversion_string[];
++extern const char revision_string[];
+ extern const char bug_report_url[];
+ #endif /* ! GCC_VERSION_H */
 diff -ru gcc-4.4.0-orig/libgcc/config.host gcc-4.4.0/libgcc/config.host
 --- gcc-4.4.0-orig/libgcc/config.host	2023-12-06 21:24:00.930365503 +0000
 +++ gcc-4.4.0/libgcc/config.host	2023-12-14 11:29:55.401689076 +0000

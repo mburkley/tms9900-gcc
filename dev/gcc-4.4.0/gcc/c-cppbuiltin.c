@@ -122,6 +122,7 @@ builtin_define_float_constants (const char *name_prefix,
     log10_b = 1;
   }
   else
+  {
     log10_b = log10_2;
   }
 
@@ -628,6 +629,13 @@ c_cpp_builtins (cpp_reader *pfile)
 
   /* Misc.  */
   builtin_define_with_value ("__VERSION__", version_string, 1);
+#ifdef TMS9900
+  char major[10];
+  char *minor = strchr(revision_string, '.');
+  sprintf (major, "%d", atoi (revision_string));
+  builtin_define_with_value ("__TMS9900_PATCH_MAJOR__", major, 0);
+  builtin_define_with_value ("__TMS9900_PATCH_MINOR__", minor+1, 0);
+#endif
 
   if (flag_gnu89_inline)
     cpp_define (pfile, "__GNUC_GNU_INLINE__");
