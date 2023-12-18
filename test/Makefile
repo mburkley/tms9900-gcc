@@ -1,6 +1,6 @@
 LIBTI99DIR?=../libti99
 
-GCCDIR=/home/mark/tms9900-gcc/relt/bin/
+GCCDIR=/home/mark/tms9900-gcc/tms9900-gcc/bin/
 
 GAS=$(GCCDIR)tms9900-as
 LD=$(GCCDIR)tms9900-ld

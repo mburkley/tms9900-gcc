@@ -70,7 +70,6 @@ along with GCC; see the file COPYING3.  If not see
   do						\
     {						\
       builtin_define_std ("tms9900");		\
-      builtin_define_with_value ("tms9900_gcc_patch", revision_string, 0);		\
     }						\
   while (0)
 

@@ -221,6 +221,20 @@ void t_inline_clobber()
     test_execute (__func__, 1);
 }
 
+static volatile unsigned char color;
+
+static void setbackground(int c)
+{
+  color = (color & 0xF0) | (c & 0x0F);
+}
+
+
+void t_bitwise_replace()
+{
+    color = 0xaa;
+    setbackground(0x55);
+    test_execute (__func__, color==0xa5);
+}
 
 TESTFUNC tests[] = 
 {
@@ -231,7 +245,8 @@ TESTFUNC tests[] =
     t_for_break,
     t_var_byte_array,
     t_byte_array,
-    t_inline_clobber
+    t_inline_clobber,
+    t_bitwise_replace
 };
 
 #define TEST_COUNT (sizeof (tests) / sizeof (TESTFUNC))
