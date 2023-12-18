@@ -253,16 +253,16 @@ extern short *reg_renumber;	/* def in local_alloc.c */
 
 /* Shift count register */
 #define HARD_SC_REGNUM		HARD_R0_REGNUM
+/* Base pointer */
+#define HARD_BP_REGNUM		HARD_R9_REGNUM
+/* Stack pointer */
+#define HARD_SP_REGNUM		HARD_R10_REGNUM
 /* Old PC after BL instruction */
 #define HARD_LR_REGNUM		HARD_R11_REGNUM
 /* CRU base address or static chain */
 #define HARD_CB_REGNUM		HARD_R12_REGNUM
 /* Arg pointer */
 #define HARD_AP_REGNUM		HARD_R13_REGNUM
-/* Base pointer */
-#define HARD_BP_REGNUM		HARD_R14_REGNUM
-/* Stack pointer */
-#define HARD_SP_REGNUM		HARD_R15_REGNUM
 
 /* How to refer to registers in assembler output.  This sequence is indexed
    by compiler's hard-register-number (see above). */
@@ -276,11 +276,14 @@ extern short *reg_renumber;	/* def in local_alloc.c */
    those that are not normally considered general registers.  */
 #define FIRST_PSEUDO_REGISTER	(16)
 
+/* NOTE - BP (R14) is not a fixed register and may be used as a general
+ * register by functions that do not require a stack frameo
+ */
 /* 1 for registers that have pervasive standard uses and are not available
  * for the register allocator.  */
 #define FIXED_REGISTERS \
-  {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1}
-/* SC 1  2  3  4  5  6  7  8  9  10 LR CB AP BP SP*/
+  {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0}
+/* SC 1  2  3  4  5  6  7  8  BP SP LR CB AP 14 15*/
 
 /* MGB It seemed excessive to always preserve R13,R14,R15 as these will only
  * have values to be saved if we were invoked by a BLWP which is never emitted
@@ -293,8 +296,8 @@ extern short *reg_renumber;	/* def in local_alloc.c */
  */
 /* 0 for registers which must be preserved across function call boundaries */
 #define CALL_USED_REGISTERS \
-  {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1}
-/* SC 1  2  3  4  5  6  7  8  9  10 LR CB AP BP SP*/
+  {1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1}
+/* SC 1  2  3  4  5  6  7  8  BP SP LR CB AP 14 15*/
 
 /* Define this macro to change register usage conditional on target flags. */
 #define CONDITIONAL_REGISTER_USAGE 
@@ -304,7 +307,7 @@ extern short *reg_renumber;	/* def in local_alloc.c */
 #define REG_ALLOC_ORDER	\
    {HARD_R1_REGNUM, HARD_R2_REGNUM, HARD_R3_REGNUM, HARD_R4_REGNUM,\
     HARD_R5_REGNUM, HARD_R6_REGNUM, HARD_R7_REGNUM, HARD_R8_REGNUM,\
-    HARD_R9_REGNUM, HARD_R10_REGNUM, HARD_R12_REGNUM, HARD_SC_REGNUM,\
+    HARD_R14_REGNUM, HARD_R15_REGNUM, HARD_R12_REGNUM, HARD_SC_REGNUM,\
     HARD_AP_REGNUM, HARD_BP_REGNUM, HARD_LR_REGNUM, HARD_SP_REGNUM}
 
 /* A C expression for the number of consecutive hard registers,
@@ -587,8 +590,8 @@ enum reg_class
 
 /* Passing Arguments in Registers.  */
 
-/* The number of argument registers we can use (R1..R10) */
-#define TMS9900_ARG_REGS (HARD_R11_REGNUM - HARD_R1_REGNUM)
+/* The number of argument registers we can use (R1..R8) */
+#define TMS9900_ARG_REGS (HARD_R9_REGNUM - HARD_R1_REGNUM)
 
 /* Define a data type for recording info about an argument list
    during the scan of that argument list.  This data type should
@@ -664,7 +667,7 @@ typedef struct tms9900_args
 
 /* 1 if N is a possible register number for function argument passing. */
 #define FUNCTION_ARG_REGNO_P(N)	\
-     (((N) >= HARD_R1_REGNUM) && ((N) <= HARD_R10_REGNUM))
+     (((N) >= HARD_R1_REGNUM) && ((N) <= HARD_R8_REGNUM))
 
 /* 8- and 16-bit values are returned in R1, 32-bit values are
    passed in R1+R2, The high word is in R1. */

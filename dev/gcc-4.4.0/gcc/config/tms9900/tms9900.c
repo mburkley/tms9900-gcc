@@ -1008,10 +1008,10 @@ tms9900_asm_integer(rtx x, unsigned int size, int aligned_p)
 static void
 tms9900_extract_subreg(rtx insn, rtx arg, rtx* parg)
 {
-  // dbgprintf("%s\n", __func__);
+  dbgprintf("%s\n", __func__);
   if(BINARY_P(arg))
   {
-    // dbgprintf("%s recurse\n", __func__);
+    dbgprintf("%s recurse\n", __func__);
     /* Recurse until we find a leaf expression */
     tms9900_extract_subreg(insn, XEXP(arg,0), &XEXP(arg,0));
     tms9900_extract_subreg(insn, XEXP(arg,1), &XEXP(arg,1));
@@ -1021,7 +1021,7 @@ tms9900_extract_subreg(rtx insn, rtx arg, rtx* parg)
   {
     if(GET_CODE(arg) == SUBREG && GET_MODE(arg) == QImode)
     {
-      // dbgprintf ("%s creating extract\n", __func__);
+      dbgprintf ("%s creating extract\n", __func__);
       /* Found a subreg expression we need to extract.
          Place it in a seperate instruction before this one */
       rtx temp_reg = gen_reg_rtx(QImode);
@@ -1033,6 +1033,7 @@ tms9900_extract_subreg(rtx insn, rtx arg, rtx* parg)
                 INSN_UID(insn), INSN_UID(extract));
       }
 
+      // print_inline_rtx (stdout, extract, 0);
       /* Replace expression in instruction with our new temp register */
       memcpy(parg, &temp_reg, sizeof(rtx));
       emit_insn_before(extract, insn);
@@ -1056,17 +1057,18 @@ gate_tms9900_subreg (void)
 static unsigned int
 tms9900_subreg (void)
 {
-  // dbgprintf("%s\n", __func__);
+  dbgprintf("%s disabled\n", __func__);
   return 0;
   basic_block bb;
   rtx insn;
 
   FOR_EACH_BB (bb)
     FOR_BB_INSNS (bb, insn)
-    // dbgprintf("%s looping\n", __func__);
+    {
+    dbgprintf("%s looping\n", __func__);
     if (INSN_P (insn))
     {
-      // dbgprintf("%s get single_set\n", __func__);
+      dbgprintf("%s get single_set\n", __func__);
       rtx set=single_set (insn);
       if(set !=NULL)
       {
@@ -1082,10 +1084,11 @@ tms9900_subreg (void)
         }
       }
     }
-    // else
-    //   dbgprintf("%s not INSN_P\n", __func__);
+    else
+      dbgprintf("%s not INSN_P\n", __func__);
+    }
 
-  // dbgprintf("%s done\n", __func__);
+  dbgprintf("%s done\n", __func__);
   return 0;
 }
 
@@ -1236,11 +1239,13 @@ tms9900_postinc (void)
   rtx insn;
   int i;
 
+  dbgprintf("%s\n", __func__);
   FOR_EACH_BB (bb)
   {
     memset(reg_last_insn, 0, sizeof(reg_last_insn));
     FOR_BB_INSNS (bb, insn)
     {
+  dbgprintf("%s loop\n", __func__);
       if (INSN_P (insn))
       {
         rtx set=single_set (insn);
@@ -1253,6 +1258,7 @@ tms9900_postinc (void)
       }
     }
   }
+  dbgprintf("%s done\n", __func__);
   return 0;
 }
 

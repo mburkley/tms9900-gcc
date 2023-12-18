@@ -1,6 +1,6 @@
 diff -ru gcc-4.4.0-orig/config.sub gcc-4.4.0/config.sub
---- gcc-4.4.0-orig/config.sub	2023-12-06 21:24:00.926365516 +0000
-+++ gcc-4.4.0/config.sub	2023-12-13 08:37:05.309411717 +0000
+--- gcc-4.4.0-orig/config.sub	2023-12-18 10:53:18.248077523 +0000
++++ gcc-4.4.0/config.sub	2023-12-18 10:53:18.252077480 +0000
 @@ -285,7 +285,7 @@
  	| sparc | sparc64 | sparc64b | sparc64v | sparc86x | sparclet | sparclite \
  	| sparcv8 | sparcv9 | sparcv9b | sparcv9v \
@@ -41,12 +41,14 @@ diff -ru gcc-4.4.0-orig/config.sub gcc-4.4.0/config.sub
  		;;
 diff -ru gcc-4.4.0-orig/gcc/c-cppbuiltin.c gcc-4.4.0/gcc/c-cppbuiltin.c
 --- gcc-4.4.0-orig/gcc/c-cppbuiltin.c	2023-12-09 11:24:53.953049596 +0000
-+++ gcc-4.4.0/gcc/c-cppbuiltin.c	2023-12-13 08:37:05.309411717 +0000
-@@ -104,12 +104,19 @@
++++ gcc-4.4.0/gcc/c-cppbuiltin.c	2023-12-18 12:08:59.398454974 +0000
+@@ -104,12 +104,27 @@
    int decimal_dig;
  
    fmt = REAL_MODE_FORMAT (TYPE_MODE (type));
 +
++/*  MGB don't assert if building for TMS9900.  We want to use radix-10
++ *  representations internally. */
 +#ifndef TMS9900
    gcc_assert (fmt->b != 10);
 +#endif
@@ -54,17 +56,38 @@ diff -ru gcc-4.4.0-orig/gcc/c-cppbuiltin.c gcc-4.4.0/gcc/c-cppbuiltin.c
    /* The radix of the exponent representation.  */
    if (type == float_type_node)
      builtin_define_with_int_value ("__FLT_RADIX__", fmt->b);
-+#ifdef TMS9900
-+  log10_b = 1;
-+#else
-   log10_b = log10_2;
-+#endif
+-  log10_b = log10_2;
++
++/*  MGB if building for TMS9900 then radix may be 10.  If it isn't, then the log
++ *  value is 1 since we want no conversion of the exponent. */
++  if (fmt->b == 10)
++  {
++    log10_b = 1;
++  }
++  else
++  {
++    log10_b = log10_2;
++  }
  
    /* The number of radix digits, p, in the floating-point significand.  */
    sprintf (name, "__%s_MANT_DIG__", name_prefix);
+@@ -614,6 +629,13 @@
+ 
+   /* Misc.  */
+   builtin_define_with_value ("__VERSION__", version_string, 1);
++#ifdef TMS9900
++  char major[10];
++  char *minor = strchr(revision_string, '.');
++  sprintf (major, "%d", atoi (revision_string));
++  builtin_define_with_value ("__TMS9900_PATCH_MAJOR__", major, 0);
++  builtin_define_with_value ("__TMS9900_PATCH_MINOR__", minor+1, 0);
++#endif
+ 
+   if (flag_gnu89_inline)
+     cpp_define (pfile, "__GNUC_GNU_INLINE__");
 diff -ru gcc-4.4.0-orig/gcc/combine.c gcc-4.4.0/gcc/combine.c
---- gcc-4.4.0-orig/gcc/combine.c	2023-12-06 21:24:00.930365503 +0000
-+++ gcc-4.4.0/gcc/combine.c	2023-12-06 21:24:00.934365487 +0000
+--- gcc-4.4.0-orig/gcc/combine.c	2023-12-18 10:53:18.252077480 +0000
++++ gcc-4.4.0/gcc/combine.c	2023-12-18 10:53:18.256077437 +0000
 @@ -4466,6 +4466,7 @@
  		    return gen_rtx_CLOBBER (VOIDmode, const0_rtx);
  #endif
@@ -83,8 +106,8 @@ diff -ru gcc-4.4.0-orig/gcc/combine.c gcc-4.4.0/gcc/combine.c
        if (WORDS_BIG_ENDIAN)
  	offset = MAX (isize, UNITS_PER_WORD) - MAX (osize, UNITS_PER_WORD);
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/atof.c gcc-4.4.0/gcc/config/tms9900/atof.c
---- gcc-4.4.0-orig/gcc/config/tms9900/atof.c	2023-12-13 08:37:05.305412245 +0000
-+++ gcc-4.4.0/gcc/config/tms9900/atof.c	2023-12-13 08:37:05.309411717 +0000
+--- gcc-4.4.0-orig/gcc/config/tms9900/atof.c	2023-12-18 10:53:18.252077480 +0000
++++ gcc-4.4.0/gcc/config/tms9900/atof.c	2023-12-18 10:53:18.256077437 +0000
 @@ -0,0 +1,142 @@
 +/* atof.c
 +   This method converts an ascii representation of a float to a float.
@@ -229,8 +252,8 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/atof.c gcc-4.4.0/gcc/config/tms9900/a
 +   // return d;
 +}
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/d_adj_neg_pos.c gcc-4.4.0/gcc/config/tms9900/d_adj_neg_pos.c
---- gcc-4.4.0-orig/gcc/config/tms9900/d_adj_neg_pos.c	2023-12-13 08:37:05.305412245 +0000
-+++ gcc-4.4.0/gcc/config/tms9900/d_adj_neg_pos.c	2023-12-13 08:37:05.309411717 +0000
+--- gcc-4.4.0-orig/gcc/config/tms9900/d_adj_neg_pos.c	2023-12-18 10:53:18.252077480 +0000
++++ gcc-4.4.0/gcc/config/tms9900/d_adj_neg_pos.c	2023-12-18 10:53:18.256077437 +0000
 @@ -0,0 +1,18 @@
 +/* d_adj_neg_pos.c
 +   This method performs absolute value on the incoming double and indicates whether it was positive or negative.
@@ -251,8 +274,8 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/d_adj_neg_pos.c gcc-4.4.0/gcc/config/
 +   return np;
 +}
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/d_compare.c gcc-4.4.0/gcc/config/tms9900/d_compare.c
---- gcc-4.4.0-orig/gcc/config/tms9900/d_compare.c	2023-12-13 08:37:05.305412245 +0000
-+++ gcc-4.4.0/gcc/config/tms9900/d_compare.c	2023-12-13 08:37:05.309411717 +0000
+--- gcc-4.4.0-orig/gcc/config/tms9900/d_compare.c	2023-12-18 10:53:18.252077480 +0000
++++ gcc-4.4.0/gcc/config/tms9900/d_compare.c	2023-12-18 10:53:18.256077437 +0000
 @@ -0,0 +1,47 @@
 +/* 06/23/2023 mrvan initial version
 +*/
@@ -302,8 +325,8 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/d_compare.c gcc-4.4.0/gcc/config/tms9
 +   return r;
 +}
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/double.c gcc-4.4.0/gcc/config/tms9900/double.c
---- gcc-4.4.0-orig/gcc/config/tms9900/double.c	2023-12-13 08:37:05.305412245 +0000
-+++ gcc-4.4.0/gcc/config/tms9900/double.c	2023-12-13 08:37:05.309411717 +0000
+--- gcc-4.4.0-orig/gcc/config/tms9900/double.c	2023-12-18 10:53:18.252077480 +0000
++++ gcc-4.4.0/gcc/config/tms9900/double.c	2023-12-18 10:53:18.256077437 +0000
 @@ -0,0 +1,102 @@
 +/* double.c
 +   This file includes double math functions that the GCC compiler requires.
@@ -408,7 +431,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/double.c gcc-4.4.0/gcc/config/tms9900
 +  return *FDIV_QUOTIENT;
 +}
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/eqdf2.c gcc-4.4.0/gcc/config/tms9900/eqdf2.c
---- gcc-4.4.0-orig/gcc/config/tms9900/eqdf2.c	2023-12-13 08:37:05.305412245 +0000
+--- gcc-4.4.0-orig/gcc/config/tms9900/eqdf2.c	2023-12-18 10:53:18.252077480 +0000
 +++ gcc-4.4.0/gcc/config/tms9900/eqdf2.c	2023-12-09 11:15:23.961658672 +0000
 @@ -0,0 +1,15 @@
 +/* 06/23/2023 mrvan initial version
@@ -427,8 +450,8 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/eqdf2.c gcc-4.4.0/gcc/config/tms9900/
 +   return cmp;
 +}
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/ftoa.c gcc-4.4.0/gcc/config/tms9900/ftoa.c
---- gcc-4.4.0-orig/gcc/config/tms9900/ftoa.c	2023-12-13 08:37:05.305412245 +0000
-+++ gcc-4.4.0/gcc/config/tms9900/ftoa.c	2023-12-13 08:37:05.309411717 +0000
+--- gcc-4.4.0-orig/gcc/config/tms9900/ftoa.c	2023-12-18 10:53:18.252077480 +0000
++++ gcc-4.4.0/gcc/config/tms9900/ftoa.c	2023-12-18 10:53:18.256077437 +0000
 @@ -0,0 +1,55 @@
 +/* ftoa.c
 +   This method converts a TI float to an ascii representation of a float.  It
@@ -486,8 +509,8 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/ftoa.c gcc-4.4.0/gcc/config/tms9900/f
 +}
 +
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/gedf2.c gcc-4.4.0/gcc/config/tms9900/gedf2.c
---- gcc-4.4.0-orig/gcc/config/tms9900/gedf2.c	2023-12-13 08:37:05.305412245 +0000
-+++ gcc-4.4.0/gcc/config/tms9900/gedf2.c	2023-12-13 08:37:05.309411717 +0000
+--- gcc-4.4.0-orig/gcc/config/tms9900/gedf2.c	2023-12-18 10:53:18.252077480 +0000
++++ gcc-4.4.0/gcc/config/tms9900/gedf2.c	2023-12-18 10:53:18.256077437 +0000
 @@ -0,0 +1,9 @@
 +/* 06/23/2023 mrvan initial version
 +*/
@@ -499,7 +522,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/gedf2.c gcc-4.4.0/gcc/config/tms9900/
 +   return d_compare (a, b); 
 +}
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/gtdf2.c gcc-4.4.0/gcc/config/tms9900/gtdf2.c
---- gcc-4.4.0-orig/gcc/config/tms9900/gtdf2.c	2023-12-13 08:37:05.305412245 +0000
+--- gcc-4.4.0-orig/gcc/config/tms9900/gtdf2.c	2023-12-18 10:53:18.252077480 +0000
 +++ gcc-4.4.0/gcc/config/tms9900/gtdf2.c	2023-12-09 11:16:04.565816750 +0000
 @@ -0,0 +1,9 @@
 +/* 06/23/2023 mrvan initial version
@@ -512,8 +535,8 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/gtdf2.c gcc-4.4.0/gcc/config/tms9900/
 +   return d_compare (a, b);
 +} 
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/ledf2.c gcc-4.4.0/gcc/config/tms9900/ledf2.c
---- gcc-4.4.0-orig/gcc/config/tms9900/ledf2.c	2023-12-13 08:37:05.305412245 +0000
-+++ gcc-4.4.0/gcc/config/tms9900/ledf2.c	2023-12-13 08:37:05.309411717 +0000
+--- gcc-4.4.0-orig/gcc/config/tms9900/ledf2.c	2023-12-18 10:53:18.252077480 +0000
++++ gcc-4.4.0/gcc/config/tms9900/ledf2.c	2023-12-18 10:53:18.256077437 +0000
 @@ -0,0 +1,9 @@
 +/* 06/23/2023 mrvan initial version
 +*/
@@ -525,8 +548,8 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/ledf2.c gcc-4.4.0/gcc/config/tms9900/
 +   return d_compare (a, b); 
 +}  
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/lib1funcs.asm gcc-4.4.0/gcc/config/tms9900/lib1funcs.asm
---- gcc-4.4.0-orig/gcc/config/tms9900/lib1funcs.asm	2023-12-06 21:24:00.930365503 +0000
-+++ gcc-4.4.0/gcc/config/tms9900/lib1funcs.asm	2023-12-13 08:37:05.309411717 +0000
+--- gcc-4.4.0-orig/gcc/config/tms9900/lib1funcs.asm	2023-12-18 10:53:18.252077480 +0000
++++ gcc-4.4.0/gcc/config/tms9900/lib1funcs.asm	2023-12-18 10:53:18.256077437 +0000
 @@ -0,0 +1,826 @@
 +/*
 + *  MGB 32-bit arithmetic functions never seem to be used.  The compiler emits
@@ -1355,8 +1378,8 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/lib1funcs.asm gcc-4.4.0/gcc/config/tm
 +
 +
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/ltdf2.c gcc-4.4.0/gcc/config/tms9900/ltdf2.c
---- gcc-4.4.0-orig/gcc/config/tms9900/ltdf2.c	2023-12-13 08:37:05.305412245 +0000
-+++ gcc-4.4.0/gcc/config/tms9900/ltdf2.c	2023-12-13 08:37:05.309411717 +0000
+--- gcc-4.4.0-orig/gcc/config/tms9900/ltdf2.c	2023-12-18 10:53:18.252077480 +0000
++++ gcc-4.4.0/gcc/config/tms9900/ltdf2.c	2023-12-18 10:53:18.256077437 +0000
 @@ -0,0 +1,9 @@
 +/* 06/23/2023 mrvan initial version
 +*/
@@ -1368,8 +1391,8 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/ltdf2.c gcc-4.4.0/gcc/config/tms9900/
 +   return d_compare (a, b); 
 +}
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/math_private.h gcc-4.4.0/gcc/config/tms9900/math_private.h
---- gcc-4.4.0-orig/gcc/config/tms9900/math_private.h	2023-12-13 08:37:05.305412245 +0000
-+++ gcc-4.4.0/gcc/config/tms9900/math_private.h	2023-12-13 08:37:05.309411717 +0000
+--- gcc-4.4.0-orig/gcc/config/tms9900/math_private.h	2023-12-18 10:53:18.252077480 +0000
++++ gcc-4.4.0/gcc/config/tms9900/math_private.h	2023-12-18 10:53:18.256077437 +0000
 @@ -0,0 +1,10 @@
 +#ifndef MATH_PRIVATE_H
 +#define MATH_PRIVATE_H
@@ -1382,9 +1405,9 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/math_private.h gcc-4.4.0/gcc/config/t
 +
 +#endif
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms9900/tms9900.c
---- gcc-4.4.0-orig/gcc/config/tms9900/tms9900.c	2023-12-06 21:24:00.930365503 +0000
-+++ gcc-4.4.0/gcc/config/tms9900/tms9900.c	2023-12-14 09:37:30.939313456 +0000
-@@ -0,0 +1,1326 @@
+--- gcc-4.4.0-orig/gcc/config/tms9900/tms9900.c	2023-12-18 10:53:18.252077480 +0000
++++ gcc-4.4.0/gcc/config/tms9900/tms9900.c	2023-12-18 12:08:59.398454974 +0000
+@@ -0,0 +1,1332 @@
 +/* Subroutines for insn-output.c for TMS9900.
 +   Copyright (C) 1987, 1994, 1995, 1997, 1998, 1999, 2000, 2001, 2002,
 +   2004, 2005, 2006, 2007, 2008
@@ -2395,10 +2418,10 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms990
 +static void
 +tms9900_extract_subreg(rtx insn, rtx arg, rtx* parg)
 +{
-+  // dbgprintf("%s\n", __func__);
++  dbgprintf("%s\n", __func__);
 +  if(BINARY_P(arg))
 +  {
-+    // dbgprintf("%s recurse\n", __func__);
++    dbgprintf("%s recurse\n", __func__);
 +    /* Recurse until we find a leaf expression */
 +    tms9900_extract_subreg(insn, XEXP(arg,0), &XEXP(arg,0));
 +    tms9900_extract_subreg(insn, XEXP(arg,1), &XEXP(arg,1));
@@ -2408,7 +2431,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms990
 +  {
 +    if(GET_CODE(arg) == SUBREG && GET_MODE(arg) == QImode)
 +    {
-+      // dbgprintf ("%s creating extract\n", __func__);
++      dbgprintf ("%s creating extract\n", __func__);
 +      /* Found a subreg expression we need to extract.
 +         Place it in a seperate instruction before this one */
 +      rtx temp_reg = gen_reg_rtx(QImode);
@@ -2420,6 +2443,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms990
 +                INSN_UID(insn), INSN_UID(extract));
 +      }
 +
++      // print_inline_rtx (stdout, extract, 0);
 +      /* Replace expression in instruction with our new temp register */
 +      memcpy(parg, &temp_reg, sizeof(rtx));
 +      emit_insn_before(extract, insn);
@@ -2443,17 +2467,18 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms990
 +static unsigned int
 +tms9900_subreg (void)
 +{
-+  // dbgprintf("%s\n", __func__);
++  dbgprintf("%s disabled\n", __func__);
 +  return 0;
 +  basic_block bb;
 +  rtx insn;
 +
 +  FOR_EACH_BB (bb)
 +    FOR_BB_INSNS (bb, insn)
-+    // dbgprintf("%s looping\n", __func__);
++    {
++    dbgprintf("%s looping\n", __func__);
 +    if (INSN_P (insn))
 +    {
-+      // dbgprintf("%s get single_set\n", __func__);
++      dbgprintf("%s get single_set\n", __func__);
 +      rtx set=single_set (insn);
 +      if(set !=NULL)
 +      {
@@ -2469,10 +2494,11 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms990
 +        }
 +      }
 +    }
-+    // else
-+    //   dbgprintf("%s not INSN_P\n", __func__);
++    else
++      dbgprintf("%s not INSN_P\n", __func__);
++    }
 +
-+  // dbgprintf("%s done\n", __func__);
++  dbgprintf("%s done\n", __func__);
 +  return 0;
 +}
 +
@@ -2623,11 +2649,13 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms990
 +  rtx insn;
 +  int i;
 +
++  dbgprintf("%s\n", __func__);
 +  FOR_EACH_BB (bb)
 +  {
 +    memset(reg_last_insn, 0, sizeof(reg_last_insn));
 +    FOR_BB_INSNS (bb, insn)
 +    {
++  dbgprintf("%s loop\n", __func__);
 +      if (INSN_P (insn))
 +      {
 +        rtx set=single_set (insn);
@@ -2640,6 +2668,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms990
 +      }
 +    }
 +  }
++  dbgprintf("%s done\n", __func__);
 +  return 0;
 +}
 +
@@ -2712,9 +2741,9 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms990
 +}
 +
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.h gcc-4.4.0/gcc/config/tms9900/tms9900.h
---- gcc-4.4.0-orig/gcc/config/tms9900/tms9900.h	2023-12-06 21:24:00.930365503 +0000
-+++ gcc-4.4.0/gcc/config/tms9900/tms9900.h	2023-12-13 13:04:46.293701247 +0000
-@@ -0,0 +1,1220 @@
+--- gcc-4.4.0-orig/gcc/config/tms9900/tms9900.h	2023-12-18 10:53:18.252077480 +0000
++++ gcc-4.4.0/gcc/config/tms9900/tms9900.h	2023-12-18 12:08:59.398454974 +0000
+@@ -0,0 +1,1223 @@
 +/* Definitions of target machine for GNU compiler.
 +   Texas Instruments TMS9900
 +   Copyright (C) 2009
@@ -2970,16 +2999,16 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.h gcc-4.4.0/gcc/config/tms990
 +
 +/* Shift count register */
 +#define HARD_SC_REGNUM		HARD_R0_REGNUM
++/* Base pointer */
++#define HARD_BP_REGNUM		HARD_R9_REGNUM
++/* Stack pointer */
++#define HARD_SP_REGNUM		HARD_R10_REGNUM
 +/* Old PC after BL instruction */
 +#define HARD_LR_REGNUM		HARD_R11_REGNUM
 +/* CRU base address or static chain */
 +#define HARD_CB_REGNUM		HARD_R12_REGNUM
 +/* Arg pointer */
 +#define HARD_AP_REGNUM		HARD_R13_REGNUM
-+/* Base pointer */
-+#define HARD_BP_REGNUM		HARD_R14_REGNUM
-+/* Stack pointer */
-+#define HARD_SP_REGNUM		HARD_R15_REGNUM
 +
 +/* How to refer to registers in assembler output.  This sequence is indexed
 +   by compiler's hard-register-number (see above). */
@@ -2993,11 +3022,14 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.h gcc-4.4.0/gcc/config/tms990
 +   those that are not normally considered general registers.  */
 +#define FIRST_PSEUDO_REGISTER	(16)
 +
++/* NOTE - BP (R14) is not a fixed register and may be used as a general
++ * register by functions that do not require a stack frameo
++ */
 +/* 1 for registers that have pervasive standard uses and are not available
 + * for the register allocator.  */
 +#define FIXED_REGISTERS \
-+  {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1}
-+/* SC 1  2  3  4  5  6  7  8  9  10 LR CB AP BP SP*/
++  {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0}
++/* SC 1  2  3  4  5  6  7  8  BP SP LR CB AP 14 15*/
 +
 +/* MGB It seemed excessive to always preserve R13,R14,R15 as these will only
 + * have values to be saved if we were invoked by a BLWP which is never emitted
@@ -3010,8 +3042,8 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.h gcc-4.4.0/gcc/config/tms990
 + */
 +/* 0 for registers which must be preserved across function call boundaries */
 +#define CALL_USED_REGISTERS \
-+  {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1}
-+/* SC 1  2  3  4  5  6  7  8  9  10 LR CB AP BP SP*/
++  {1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1}
++/* SC 1  2  3  4  5  6  7  8  BP SP LR CB AP 14 15*/
 +
 +/* Define this macro to change register usage conditional on target flags. */
 +#define CONDITIONAL_REGISTER_USAGE 
@@ -3021,7 +3053,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.h gcc-4.4.0/gcc/config/tms990
 +#define REG_ALLOC_ORDER	\
 +   {HARD_R1_REGNUM, HARD_R2_REGNUM, HARD_R3_REGNUM, HARD_R4_REGNUM,\
 +    HARD_R5_REGNUM, HARD_R6_REGNUM, HARD_R7_REGNUM, HARD_R8_REGNUM,\
-+    HARD_R9_REGNUM, HARD_R10_REGNUM, HARD_R12_REGNUM, HARD_SC_REGNUM,\
++    HARD_R14_REGNUM, HARD_R15_REGNUM, HARD_R12_REGNUM, HARD_SC_REGNUM,\
 +    HARD_AP_REGNUM, HARD_BP_REGNUM, HARD_LR_REGNUM, HARD_SP_REGNUM}
 +
 +/* A C expression for the number of consecutive hard registers,
@@ -3304,8 +3336,8 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.h gcc-4.4.0/gcc/config/tms990
 +
 +/* Passing Arguments in Registers.  */
 +
-+/* The number of argument registers we can use (R1..R10) */
-+#define TMS9900_ARG_REGS (HARD_R11_REGNUM - HARD_R1_REGNUM)
++/* The number of argument registers we can use (R1..R8) */
++#define TMS9900_ARG_REGS (HARD_R9_REGNUM - HARD_R1_REGNUM)
 +
 +/* Define a data type for recording info about an argument list
 +   during the scan of that argument list.  This data type should
@@ -3381,7 +3413,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.h gcc-4.4.0/gcc/config/tms990
 +
 +/* 1 if N is a possible register number for function argument passing. */
 +#define FUNCTION_ARG_REGNO_P(N)	\
-+     (((N) >= HARD_R1_REGNUM) && ((N) <= HARD_R10_REGNUM))
++     (((N) >= HARD_R1_REGNUM) && ((N) <= HARD_R8_REGNUM))
 +
 +/* 8- and 16-bit values are returned in R1, 32-bit values are
 +   passed in R1+R2, The high word is in R1. */
@@ -3936,9 +3968,9 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.h gcc-4.4.0/gcc/config/tms990
 +#endif
 +
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms9900/tms9900.md
---- gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md	2023-12-06 21:24:00.930365503 +0000
-+++ gcc-4.4.0/gcc/config/tms9900/tms9900.md	2023-12-13 08:37:05.309411717 +0000
-@@ -0,0 +1,2797 @@
+--- gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md	2023-12-18 10:53:18.252077480 +0000
++++ gcc-4.4.0/gcc/config/tms9900/tms9900.md	2023-12-18 13:46:04.031842324 +0000
+@@ -0,0 +1,2837 @@
 +;;- Machine description for the TMS9900 for GNU C compiler
 +;; Copyright (C) 1994, 1995, 1997, 1998, 1999, 2000, 2001, 2004, 2005
 +;; 2007, 2008 Free Software Foundation, Inc.
@@ -4205,11 +4237,12 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +;;-------------------------------------------------------------------
 +;; Move byte value
 +(define_insn "movqi"
-+  [(set (match_operand:QI 0 "nonimmediate_operand" "=rR>,rR>,Q,  Q,r,r")
-+        (match_operand:QI 1 "general_operand"      "rR>, Q,  rR>,Q,i,OM"))]
++  [(set (match_operand:QI 0 "nonimmediate_operand" "=rR>,rR>,Q,  Q,r, r")
++        (match_operand:QI 1 "general_operand"      "rR>, Q,  rR>,Q,OM,i"))]
 +  ""
 +  {
 +    tms9900_debug_operands ("movqi", operands, 2);
++    tms9900_inline_debug ("; movqi alt=%d\n", which_alternative);
 +    int val;
 +    if (which_alternative >= 4)
 +    {
@@ -4234,13 +4267,13 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +      return ("movb %1, %0");
 +    }
 +  }
-+  [(set_attr "length" "2,4,4,6,4,2")])
++  [(set_attr "length" "2,4,4,6,2,4")])
 +
 +;;-------------------------------------------------------------------
 +;; Move two-byte value
 +(define_insn "movhi"
-+  [(set (match_operand:HI 0 "nonimmediate_operand" "=rR>,rR>,Q,  Q,r")
-+	(match_operand:HI 1 "general_operand"      "rR>, Q,  rR>,Q,i"))]
++  [(set (match_operand:HI 0 "nonimmediate_operand" "=rR>,rR>,Q,  Q,r, r")
++        (match_operand:HI 1 "general_operand"      "rR>, Q,  rR>,Q,OM,i"))]
 +  ""
 +  {
 +    tms9900_debug_operands ("movhi", operands, 2);
@@ -4252,6 +4285,9 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +      // TODO by emitting either a 2-byte or 4-byte opcode for the same
 +      // alternative we are breaking the length attribute at the end.  This
 +      // doesn't seem to matter.  Does this mean length is not even needed?
++
++      // TODO adding constraints OM before i works to capture consts we can
++      // reduce
 +
 +      if (val == 0)
 +        return("clr  %0");
@@ -4265,7 +4301,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +      return("mov  %1, %0");
 +    }
 +  }
-+  [(set_attr "length" "2,4,4,6,4")])
++  [(set_attr "length" "2,4,4,6,2,4")])
 +
 +;;-------------------------------------------------------------------
 +;; Move four-byte value as two 2-byte regs.  If immediate, emit two movhi insns
@@ -4324,28 +4360,49 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +;; Type Conversions
 +;;-------------------------------------------------------------------
 +
-+
-+;;-------------------------------------------------------------------
-+;; Zero Extend
-+;; TODO create strict (srl) and non strict (swpb) variants as swpb is faster
-+;;-------------------------------------
-+
-+(define_insn "zero_extendqihi2"
-+  [(set (match_operand:HI 0 "register_operand" "=r")
-+	(zero_extend:HI (match_operand:QI 1 "register_operand" "0")))]
++(define_insn "*zero_extendqihi2_subreg"
++  [(set (match_operand:HI 0 "register_operand" "=r,r,r")
++	(zero_extend:HI (subreg:HI (match_operand:QI 1 "nonimmediate_operand" "0,R,Q") 0)))]
 +  ""
 +  {
-+    tms9900_debug_operands ("zero_extendqihi2", operands, 2);
++    tms9900_debug_operands ("zero_extendqihi2_subreg", operands, 2);
++
++    if (which_alternative > 0)
++    {
++      output_asm_insn ("movb %1, %0", operands);
++    }
 +    output_asm_insn ("srl  %0, 8", operands);
 +    return("");
 +  }
-+  [(set_attr "length" "2")])
++  [(set_attr "length" "2,4,6")])
++
++;;-------------------------------------------------------------------
++;; Zero Extend
++;; If op1 is not a register, we need to mov the value to op0 first.  As a
++;; result, R and Q constraints are different length to r.
++;;-------------------------------------
++
++(define_insn "zero_extendqihi2"
++  [(set (match_operand:HI 0 "register_operand" "=r,r,r")
++	(zero_extend:HI (match_operand:QI 1 "nonimmediate_operand" "0,R,Q")))]
++  ""
++  {
++    tms9900_debug_operands ("zero_extendqihi2", operands, 2);
++
++    if (which_alternative > 0)
++    {
++      output_asm_insn ("movb %1, %0", operands);
++    }
++    output_asm_insn ("srl  %0, 8", operands);
++    return("");
++  }
++  [(set_attr "length" "2,4,6")])
 +
 +
 +;;-------------------------------------
 +(define_expand "zero_extendqisi2"
-+  [(set (match_operand:SI 0 "register_operand" "=r")
-+	(zero_extend:SI (match_operand:QI 1 "register_operand" "0")))]
++  [(set (match_operand:SI 0 "register_operand" "")
++	(zero_extend:SI (match_operand:QI 1 "nonimmediate_operand" "")))]
 +  ""
 +  {
 +    tms9900_debug_operands ("zero_extendqisi2", operands, 2);
@@ -4378,21 +4435,26 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +;; Sign Extend
 +;;-------------------------------------------------------------------
 +
++
 +(define_insn "extendqihi2"
-+  [(set (match_operand:HI 0 "register_operand" "=r")
-+	(sign_extend:HI (match_operand:QI 1 "register_operand" "0")))]
++  [(set (match_operand:HI 0 "register_operand" "=r,r,r")
++	(sign_extend:HI (match_operand:QI 1 "nonimmediate_operand" "0,R,Q")))]
 +  ""
 +  {
 +    tms9900_debug_operands ("extendqihi2", operands, 2);
++    if (which_alternative > 0)
++    {
++      output_asm_insn ("movb %1, %0", operands);
++    }
 +    output_asm_insn("sra  %0, 8", operands);
 +    return("");
 +  }
-+  [(set_attr "length" "2")])
++  [(set_attr "length" "2,4,6")])
 +			 
 +
 +(define_expand "extendqisi2"
-+  [(set (match_operand:SI 0 "register_operand" "=r")
-+	(sign_extend:SI (match_operand:QI 1 "register_operand" "0")))]
++  [(set (match_operand:SI 0 "register_operand" "")
++	(sign_extend:SI (match_operand:QI 1 "nonimmediate_operand" "")))]
 +  ""
 +  {
 +    tms9900_debug_operands ("extendqisi2", operands, 2);
@@ -4433,23 +4495,25 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +
 +;;-------------------------------------------------------------------
 +;; Truncate
-+; TODO swpb will suffice for non-strict truncation
++;
++;  swpb will suffice for non-strict in place truncation.  There is no strict variant of
++;  truncate so I am assuming we doesn't care about unused bits.
 +;;-------------------------------------
 +
 +(define_insn "trunchiqi2"
-+  [(set (match_operand:QI 0 "register_operand" "=r")
-+	(truncate:QI (match_operand:HI 1 "register_operand" "0")))]
++  [(set (match_operand:QI 0 "nonimmediate_operand" "=rR>,Q")
++	(truncate:QI (match_operand:HI 1 "nonimmediate_operand" "0,0")))]
 +  ""
 +  {
 +    tms9900_debug_operands ("trunchiqi2", operands, 2);
-+    output_asm_insn ("sla  %0, 8", operands);
++    output_asm_insn ("swpb  %0", operands);
 +    return("");
 +  }
-+  [(set_attr "length" "2")])
++  [(set_attr "length" "2,4")])
 +
 +(define_insn "truncsihi2"
-+  [(set (match_operand:HI 0 "register_operand" "=rR>,Q")
-+	(truncate:HI (match_operand:SI 1 "register_operand" "0,0")))]
++  [(set (match_operand:HI 0 "nonimmediate_operand" "=rR>,rR>,Q,Q")
++	(truncate:HI (match_operand:SI 1 "nonimmediate_operand" "rR>,Q,rR>,Q")))]
 +  ""
 +  {
 +    tms9900_debug_operands ("truncsihi2", operands, 2);
@@ -4460,11 +4524,11 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +    output_asm_insn("mov  %1, %0", args);
 +    return("");
 +  }
-+  [(set_attr "length" "2,4")])
++  [(set_attr "length" "2,4,4,6")])
 +
 +(define_expand "truncsiqi2"
-+  [(set (match_operand:QI 0 "register_operand" "=r")
-+	(truncate:QI (match_operand:SI 1 "register_operand" "0")))]
++  [(set (match_operand:QI 0 "nonimmediate_operand" "")
++	(truncate:QI (match_operand:SI 1 "nonimmediate_operand" "")))]
 +  ""
 +  {
 +    tms9900_debug_operands ("truncsiqi2", operands, 2);
@@ -5191,23 +5255,46 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +;;  Bitwise Operations
 +;;-------------------------------------------------------------------
 +
-+
 +;;-------------------------------------------------------------------
 +;; And
-+
 +
 +;;-------------------------------------
 +(define_insn "andhi3"
 +  [(clobber (match_scratch:HI 3 "=r,r,r,r,r,r,r"))
-+   (set (match_operand:HI 0 "nonimmediate_operand" "=rR>,rR>,Q,Q,r,R>,Q")
-+	(and:HI (match_operand:HI 1 "nonimmediate_operand" "0,0,0,0,0,0,0")
-+		(match_operand:HI 2 "general_operand" "rR>,Q,rR>,Q,i,i,i")))]
++   (set (match_operand:HI 0 "nonimmediate_operand"         "=rR>,rR>,Q,  Q,r,R>,Q")
++	(and:HI (match_operand:HI 1 "nonimmediate_operand" "0,   0,  0,  0,0,0, 0")
++		(match_operand:HI 2 "general_operand"      "rR>, Q,  rR>,Q,i,i, i")))]
 +  ""
 +  {
 +    tms9900_debug_operands ("andhi3", operands, 3);
++
++    /* TODO There is a case where the combiner fails to generate properly byte
++     * aligned inputs to andhi3 due to using a subreg when it couldn't find a
++     * match for zero extending a byte in a memory location.  My initial fix for
++     * this was to write a variant of andhi3 that accepts subregs and do a byte
++     * swap.  This did fix the andhi3 optimiser bug but what about the general
++     * case?  Surely there is an easier way than to duplicate every insn and add
++     * subreg and non subreg cases?  Its unclear why gcc even promotes byte ops
++     * to int16 for binary and but not for binary or.  I added memory
++     * constraints to the extend and trunc insns but this didn't help find a
++     * match.  So rather than writing a duplicate of every HI insn that can
++     * accept a subreg, I'm checking the offset of operands[1] below.  If non
++     * zero this indicates a subreg and we emit a byte swap.  This may not be
++     * the only place this is needed but andhi3 is the only known sighting of
++     * this issue so far.
++     */
++
++    // If op[1] has an offset of -1 then it came from a paradoxical subreg and
++    // the combiner has eliminated an extend insn and the byte is in the wrong
++    // place.  Emit a swpb to fix it
++
++    if (REG_OFFSET (operands[1]) == -1)
++        output_asm_insn("swpb %0", operands);
++
 +    if(which_alternative >= 4)
 +    {
 +      int val = INTVAL(operands[2]) & 0xFFFF;
++      // TODO move 0 and -1 to separate constraint classes to fix up the length
 +      if(val == 0)
 +      {
 +        /* Result will be zero */
@@ -5234,16 +5321,15 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +    else
 +    {
 +      /* AND against non-const value */
-+      if(!rtx_equal_p(operands[2], operands[3]))
-+      {
-+        output_asm_insn("mov  %2, %3", operands);
-+      }
++      output_asm_insn("mov  %2, %3", operands);
 +      output_asm_insn("inv  %3",     operands);
 +      output_asm_insn("szc  %3, %0", operands);
 +    }
 +    return(""); 
 +  }
 +  [(set_attr "length" "6,8,8,10,4,6,8")])
++
++
 +
 +
 +(define_insn "*andnothi"
@@ -6706,20 +6792,6 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +)
 +
 +
-+;;-------------------------------------------------------------------
-+;; Optimization for (int)X = (unsigned char)((int)X)
-+(define_peephole2
-+  [(set (match_operand:QI 0 "register_operand" "")
-+        (subreg:QI (match_operand:HI 1 "register_operand") 1))
-+   (set (match_operand:HI 2 "register_operand" "")
-+        (zero_extend:HI (match_dup 0)))]
-+  "REGNO(operands[0]) == REGNO(operands[2])"
-+  [(set (match_dup 2)
-+        (match_dup 1))
-+   (set (match_dup 2)
-+        (and:HI (match_dup 2) (const_int 255)))]
-+)
-+
 +(define_insn "*andi_const"
 +  [(set (match_operand:HI 0 "register_operand" "")
 +        (and:HI (match_dup 0)
@@ -6737,8 +6809,8 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +  [(set_attr "length" "4")])
 +
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.opt gcc-4.4.0/gcc/config/tms9900/tms9900.opt
---- gcc-4.4.0-orig/gcc/config/tms9900/tms9900.opt	2023-12-13 08:37:05.305412245 +0000
-+++ gcc-4.4.0/gcc/config/tms9900/tms9900.opt	2023-12-13 08:37:05.309411717 +0000
+--- gcc-4.4.0-orig/gcc/config/tms9900/tms9900.opt	2023-12-18 10:53:18.252077480 +0000
++++ gcc-4.4.0/gcc/config/tms9900/tms9900.opt	2023-12-18 10:53:18.260077394 +0000
 @@ -0,0 +1,30 @@
 +; Options for the TMS9900 port of the compiler.
 +
@@ -6771,8 +6843,8 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.opt gcc-4.4.0/gcc/config/tms9
 +Generate TI console ROM compatible doubles and floats
 +
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900-protos.h gcc-4.4.0/gcc/config/tms9900/tms9900-protos.h
---- gcc-4.4.0-orig/gcc/config/tms9900/tms9900-protos.h	2023-12-06 21:24:00.930365503 +0000
-+++ gcc-4.4.0/gcc/config/tms9900/tms9900-protos.h	2023-12-08 10:04:22.042320676 +0000
+--- gcc-4.4.0-orig/gcc/config/tms9900/tms9900-protos.h	2023-12-18 10:53:18.252077480 +0000
++++ gcc-4.4.0/gcc/config/tms9900/tms9900-protos.h	2023-12-18 10:53:18.256077437 +0000
 @@ -0,0 +1,62 @@
 +/* Definitions of target machine for GNU compiler, for the TMS9900
 +
@@ -6837,8 +6909,8 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900-protos.h gcc-4.4.0/gcc/config
 +extern void tms9900_inline_debug (const char *fmt,...);
 +extern void tms9900_debug_operands (const char *name, rtx ops[], int count);
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/t-tms9900 gcc-4.4.0/gcc/config/tms9900/t-tms9900
---- gcc-4.4.0-orig/gcc/config/tms9900/t-tms9900	2023-12-13 08:37:05.305412245 +0000
-+++ gcc-4.4.0/gcc/config/tms9900/t-tms9900	2023-12-13 08:37:05.309411717 +0000
+--- gcc-4.4.0-orig/gcc/config/tms9900/t-tms9900	2023-12-18 10:53:18.252077480 +0000
++++ gcc-4.4.0/gcc/config/tms9900/t-tms9900	2023-12-18 10:53:18.256077437 +0000
 @@ -0,0 +1,38 @@
 +LIB1ASMSRC    = tms9900/lib1funcs.asm
 +LIB1ASMFUNCS  = _divsi3 _udivsi3 _modsi3 _umodsi3
@@ -6879,8 +6951,8 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/t-tms9900 gcc-4.4.0/gcc/config/tms990
 +	-c -o $(T)crtn.o -x assembler-with-cpp $(srcdir)/config/tms9900/crtn.asm
 +
 diff -ru gcc-4.4.0-orig/gcc/config.gcc gcc-4.4.0/gcc/config.gcc
---- gcc-4.4.0-orig/gcc/config.gcc	2023-12-06 21:24:00.930365503 +0000
-+++ gcc-4.4.0/gcc/config.gcc	2023-12-13 08:37:05.309411717 +0000
+--- gcc-4.4.0-orig/gcc/config.gcc	2023-12-18 10:53:18.252077480 +0000
++++ gcc-4.4.0/gcc/config.gcc	2023-12-18 10:53:18.256077437 +0000
 @@ -2314,6 +2314,9 @@
  	c_target_objs="${c_target_objs} spu-c.o"
  	cxx_target_objs="${cxx_target_objs} spu-c.o"
@@ -6892,8 +6964,8 @@ diff -ru gcc-4.4.0-orig/gcc/config.gcc gcc-4.4.0/gcc/config.gcc
  	target_cpu_default="TARGET_CPU_v850e1"
  	tm_file="dbxelf.h elfos.h svr4.h v850/v850.h"
 diff -ru gcc-4.4.0-orig/gcc/cp/cfns.h gcc-4.4.0/gcc/cp/cfns.h
---- gcc-4.4.0-orig/gcc/cp/cfns.h	2023-12-06 21:24:00.930365503 +0000
-+++ gcc-4.4.0/gcc/cp/cfns.h	2023-12-06 21:24:00.934365487 +0000
+--- gcc-4.4.0-orig/gcc/cp/cfns.h	2023-12-18 10:53:18.252077480 +0000
++++ gcc-4.4.0/gcc/cp/cfns.h	2023-12-18 10:53:18.260077394 +0000
 @@ -1,4 +1,4 @@
 -/* ANSI-C code produced by gperf version 3.0.1 */
 +/* ANSI-C code produced by gperf version 3.0.4 */
@@ -6992,14 +7064,20 @@ diff -ru gcc-4.4.0-orig/gcc/cp/cfns.h gcc-4.4.0/gcc/cp/cfns.h
      }
    return 0;
  }
+diff -ru gcc-4.4.0-orig/gcc/DATESTAMP gcc-4.4.0/gcc/DATESTAMP
+--- gcc-4.4.0-orig/gcc/DATESTAMP	2023-12-18 12:08:59.394454987 +0000
++++ gcc-4.4.0/gcc/DATESTAMP	2023-12-18 13:52:02.362559094 +0000
+@@ -1 +1 @@
+-20090421
++20231218
 diff -ru gcc-4.4.0-orig/gcc/DEV-PHASE gcc-4.4.0/gcc/DEV-PHASE
---- gcc-4.4.0-orig/gcc/DEV-PHASE	2023-12-06 21:24:00.926365516 +0000
-+++ gcc-4.4.0/gcc/DEV-PHASE	2023-12-06 21:24:00.934365487 +0000
+--- gcc-4.4.0-orig/gcc/DEV-PHASE	2023-12-18 10:53:18.248077523 +0000
++++ gcc-4.4.0/gcc/DEV-PHASE	2023-12-18 13:52:02.362559094 +0000
 @@ -0,0 +1 @@
-+TMS9900 patch 1.19
++TMS9900 patch
 diff -ru gcc-4.4.0-orig/gcc/dfp.c gcc-4.4.0/gcc/dfp.c
---- gcc-4.4.0-orig/gcc/dfp.c	2023-12-13 08:37:05.305412245 +0000
-+++ gcc-4.4.0/gcc/dfp.c	2023-12-13 08:37:05.309411717 +0000
+--- gcc-4.4.0-orig/gcc/dfp.c	2023-12-18 10:53:18.252077480 +0000
++++ gcc-4.4.0/gcc/dfp.c	2023-12-18 10:53:18.260077394 +0000
 @@ -355,6 +355,10 @@
  
  /* Helper to round_for_format, handling decimal float types.  */
@@ -7026,8 +7104,8 @@ diff -ru gcc-4.4.0-orig/gcc/dfp.c gcc-4.4.0/gcc/dfp.c
  
    decimal_from_decnumber (r, &dn, &set);
 diff -ru gcc-4.4.0-orig/gcc/libgcc2.c gcc-4.4.0/gcc/libgcc2.c
---- gcc-4.4.0-orig/gcc/libgcc2.c	2023-12-13 08:37:05.305412245 +0000
-+++ gcc-4.4.0/gcc/libgcc2.c	2023-12-13 08:37:05.309411717 +0000
+--- gcc-4.4.0-orig/gcc/libgcc2.c	2023-12-18 10:53:18.252077480 +0000
++++ gcc-4.4.0/gcc/libgcc2.c	2023-12-18 10:53:18.260077394 +0000
 @@ -4,6 +4,7 @@
     2000, 2001, 2002, 2003, 2004, 2005, 2007, 2008, 2009
     Free Software Foundation, Inc.
@@ -7055,8 +7133,8 @@ diff -ru gcc-4.4.0-orig/gcc/libgcc2.c gcc-4.4.0/gcc/libgcc2.c
  	}
      }
 diff -ru gcc-4.4.0-orig/gcc/passes.c gcc-4.4.0/gcc/passes.c
---- gcc-4.4.0-orig/gcc/passes.c	2023-12-06 21:24:00.930365503 +0000
-+++ gcc-4.4.0/gcc/passes.c	2023-12-06 21:24:00.938365474 +0000
+--- gcc-4.4.0-orig/gcc/passes.c	2023-12-18 10:53:18.252077480 +0000
++++ gcc-4.4.0/gcc/passes.c	2023-12-18 10:53:18.260077394 +0000
 @@ -102,6 +102,11 @@
  				   declarations for e.g. AIX 4.x.  */
  #endif
@@ -7081,8 +7159,8 @@ diff -ru gcc-4.4.0-orig/gcc/passes.c gcc-4.4.0/gcc/passes.c
        NEXT_PASS (pass_ira);
        NEXT_PASS (pass_subregs_of_mode_finish);
 diff -ru gcc-4.4.0-orig/gcc/reload.c gcc-4.4.0/gcc/reload.c
---- gcc-4.4.0-orig/gcc/reload.c	2023-12-06 21:24:00.930365503 +0000
-+++ gcc-4.4.0/gcc/reload.c	2023-12-06 21:24:00.938365474 +0000
+--- gcc-4.4.0-orig/gcc/reload.c	2023-12-18 10:53:18.252077480 +0000
++++ gcc-4.4.0/gcc/reload.c	2023-12-18 10:53:18.260077394 +0000
 @@ -5475,7 +5475,7 @@
  	    code0 = GET_CODE (op0);
  	    if (code0 == REG && REGNO (op0) < FIRST_PSEUDO_REGISTER)
@@ -7110,9 +7188,14 @@ diff -ru gcc-4.4.0-orig/gcc/reload.c gcc-4.4.0/gcc/reload.c
  				 subreg_regno_offset (REGNO (SUBREG_REG (*loc)),
  						      GET_MODE (SUBREG_REG (*loc)),
  						      SUBREG_BYTE (*loc),
+diff -ru gcc-4.4.0-orig/gcc/REVISION gcc-4.4.0/gcc/REVISION
+--- gcc-4.4.0-orig/gcc/REVISION	2023-12-18 12:08:59.394454987 +0000
++++ gcc-4.4.0/gcc/REVISION	2023-12-18 13:52:02.362559094 +0000
+@@ -0,0 +1 @@
++1.27
 diff -ru gcc-4.4.0-orig/gcc/toplev.h gcc-4.4.0/gcc/toplev.h
---- gcc-4.4.0-orig/gcc/toplev.h	2023-12-06 21:24:00.930365503 +0000
-+++ gcc-4.4.0/gcc/toplev.h	2023-12-06 21:24:00.938365474 +0000
+--- gcc-4.4.0-orig/gcc/toplev.h	2023-12-18 10:53:18.252077480 +0000
++++ gcc-4.4.0/gcc/toplev.h	2023-12-18 10:53:18.260077394 +0000
 @@ -186,6 +186,7 @@
  #  define CTZ_HWI __builtin_ctz
  # endif
@@ -7129,9 +7212,27 @@ diff -ru gcc-4.4.0-orig/gcc/toplev.h gcc-4.4.0/gcc/toplev.h
  #endif /* GCC_VERSION >= 3004 */
  
  /* Functions used to get and set GCC's notion of in what directory
+diff -ru gcc-4.4.0-orig/gcc/version.c gcc-4.4.0/gcc/version.c
+--- gcc-4.4.0-orig/gcc/version.c	2023-12-18 12:08:59.394454987 +0000
++++ gcc-4.4.0/gcc/version.c	2023-12-18 12:08:59.402454959 +0000
+@@ -15,3 +15,4 @@
+ 
+ const char version_string[] = BASEVER DATESTAMP DEVPHASE REVISION;
+ const char pkgversion_string[] = PKGVERSION;
++const char revision_string[] = REVISION;
+diff -ru gcc-4.4.0-orig/gcc/version.h gcc-4.4.0/gcc/version.h
+--- gcc-4.4.0-orig/gcc/version.h	2023-12-18 12:08:59.394454987 +0000
++++ gcc-4.4.0/gcc/version.h	2023-12-18 12:08:59.402454959 +0000
+@@ -2,5 +2,6 @@
+ #define GCC_VERSION_H
+ extern const char version_string[];
+ extern const char pkgversion_string[];
++extern const char revision_string[];
+ extern const char bug_report_url[];
+ #endif /* ! GCC_VERSION_H */
 diff -ru gcc-4.4.0-orig/libgcc/config.host gcc-4.4.0/libgcc/config.host
---- gcc-4.4.0-orig/libgcc/config.host	2023-12-06 21:24:00.930365503 +0000
-+++ gcc-4.4.0/libgcc/config.host	2023-12-13 08:37:05.309411717 +0000
+--- gcc-4.4.0-orig/libgcc/config.host	2023-12-18 10:53:18.252077480 +0000
++++ gcc-4.4.0/libgcc/config.host	2023-12-18 10:53:18.260077394 +0000
 @@ -127,6 +127,9 @@
  sh[123456789lbe]*-*-*)
  	cpu_type=sh

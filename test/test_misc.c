@@ -1,6 +1,16 @@
 #include "tap.h"
 #include <stdarg.h>
 
+static void t_version (void)
+{
+    printf ("# gcc v=%s, major=%d minor=%d\n",
+            __VERSION__,
+            __TMS9900_PATCH_MAJOR__,
+            __TMS9900_PATCH_MINOR__);
+
+    test_execute (__func__, __TMS9900_PATCH_MAJOR__==1);
+}
+
 /*  Take a variable number of params, verify they are in ascending order, sum
  *  them together and verify the expected sum.  Use this function to ensure
  *  parameter ordering is correct even when the number of parameters is too many
@@ -211,16 +221,32 @@ void t_inline_clobber()
     test_execute (__func__, 1);
 }
 
+static volatile unsigned char color;
+
+static void setbackground(int c)
+{
+  color = (color & 0xF0) | (c & 0x0F);
+}
+
+
+void t_bitwise_replace()
+{
+    color = 0xaa;
+    setbackground(0x55);
+    test_execute (__func__, color==0xa5);
+}
 
 TESTFUNC tests[] = 
 {
+    t_version,
     t_stack_func_arg_small,
     t_stack_func_arg_large,
     t_long_char_str,
     t_for_break,
     t_var_byte_array,
     t_byte_array,
-    t_inline_clobber
+    t_inline_clobber,
+    t_bitwise_replace
 };
 
 #define TEST_COUNT (sizeof (tests) / sizeof (TESTFUNC))

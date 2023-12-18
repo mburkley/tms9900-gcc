@@ -45,8 +45,17 @@ binutils patch 1.10
 
 * No changes to 1.9 but includes the multi-def patch to avoid compile errors relating to "do_wide"
 
-gcc patch 1.25
+gcc patch 1.27
+* Revert SP to R10 and BP to R9
+* Add case to andhi3 to fix missed byte extend (bug manifested in libti99/vdp_bmcolor.c)
+* Replace SRL with SWPB in trunc
+* Added macros  __TMS9900_PATCH_MAJOR__ and  __TMS9900_PATCH_MINOR__ to query patch level
 
+gcc patch 1.26
+* Fix the regression where R11 is not saved
+* Make R15 fixed so compiler does not try to save it
+
+gcc patch 1.25
 * Uses TI float format internally for floats and doubles
 * libgcc now includes floating point operations to call console ROM routines
     * **NOTE** Do not include libgcc if you don't want any dependency on console ROM
