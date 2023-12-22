@@ -81,3 +81,5 @@
        (match_test "memory_address_p (GET_MODE (op), XEXP (op, 0))
                     && simple_memory_operand (op, GET_MODE (op))")))
 
+(define_register_constraint "S" "SHIFT_REGS"
+  "Shift amount register.")

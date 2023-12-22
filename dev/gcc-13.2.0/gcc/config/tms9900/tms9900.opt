@@ -18,7 +18,11 @@
 ; along with GCC; see the file COPYING3.  If not see
 ; <http://www.gnu.org/licenses/>.
 
-mgnu-asm
-Target RejectNegative Mask(GNU_ASM) Negative(munix-asm)
-Use the GNU assembler syntax.
+mno-ti99-float
+Target RejectNegative Mask(NO_TI99_FLOAT)
+Generate IEEE compatible doubles and floats
+
+mti99-float
+Target RejectNegative InverseMask(NO_TI99_FLOAT)
+Generate TI console ROM compatible doubles and floats
 
