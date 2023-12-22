@@ -1,3 +1,27 @@
+/* Subroutines for insn-output.c for TMS9900.
+   Copyright (C) 1987, 1994, 1995, 1997, 1998, 1999, 2000, 2001, 2002,
+   2004, 2005, 2006, 2007, 2008
+   Free Software Foundation, Inc.
+
+Copyright 2009 Eric Welser (EMW)
+Copyright 2023 Mark Burkley (MGB)
+
+This file is part of GCC.
+
+GCC is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3, or (at your option)
+any later version.
+
+GCC is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with GCC; see the file COPYING3.  If not see
+<http://www.gnu.org/licenses/>.  */
+
 
 #define IN_TARGET_CODE 1
 
@@ -30,9 +54,28 @@
 #include "expmed.h"
 #include "calls.h"
 #include "tms9900-protos.h"
+#include "dfp.h"
+#include "decimal128.h"
+#include "decNumber.h"
 
 /* This file should be included last.  */
 #include "target-def.h"
+
+/* Define this to put insn debug info into output files.  Note this method is a
+ * bit of a hack that takes a copy of the output file pointer.  On rare
+ * occasions this pointer may go invalid before we are finished which may cause
+ * a segfault on write so if debugging segfaults make sure to test with inline
+ * debug disabled */
+#undef TMS9900_INLINE_DEBUG
+// #define TMS9900_INLINE_DEBUG 1
+
+/* Define this to 1 to output debug info to stdout as we are compiling */
+#if 0
+#define dbgprintf printf
+#else
+#define dbgprintf(...)
+#endif
+
 
 static rtx tms9900_function_arg (cumulative_args_t cum_v, 
 					const function_arg_info &);
@@ -123,14 +166,85 @@ tms9900_ok_for_sibcall (tree decl ATTRIBUTE_UNUSED, tree exp ATTRIBUTE_UNUSED)
 
 struct gcc_target targetm = TARGET_INITIALIZER;
 
+#include "ftoa.cc"
+#include "atof.cc"
+
+static void
+tms9900_encode_real (const struct real_format *fmt, long *buf,
+		    const REAL_VALUE_TYPE *r)
+{
+  char a[256];
+  unsigned char d[8];
+  decimal128ToString((const decimal128*)r->sig, a);
+
+  tireal_atof (a, d);
+
+  // Convert 8-bytes to 3-longs ????
+  buf[0] = (d[0] << 24) | (d[1] << 16) | (d[2] << 8) | d[3];
+  buf[1] = (d[4] << 24) | (d[5] << 16) | (d[6] << 8) | d[7];
+  buf[2] = 0;
+}
+
+/*  Decode a TI real to REAL_VALUE_TYPE by first converting it to a string.  The
+ *  r->sig member of the real value is a decimal128 struct */
+static void
+tms9900_decode_real (const struct real_format *fmt, REAL_VALUE_TYPE *r,
+		    const long *buf)
+{
+  char s[32];
+  unsigned char d[8];
+
+  /*  Assuming reverse mapping of longs to bytes that we did in encode */
+  d[0] = (buf[0] >> 24) & 0xff;
+  d[1] = (buf[0] >> 16) & 0xff;
+  d[2] = (buf[0] >> 8) & 0xff;
+  d[3] = buf[0] & 0xff;
+  d[4] = (buf[1] >> 24) & 0xff;
+  d[5] = (buf[1] >> 16) & 0xff;
+  d[6] = (buf[1] >> 8) & 0xff;
+  d[7] = buf[1] & 0xff;
+
+  tireal_ftoa (d, s);
+    
+  decimal_real_from_string (r, s);
+}
+
+const struct real_format tms9900_real_format =
+  {
+    tms9900_encode_real,
+    tms9900_decode_real,
+    10,         // base 10
+    14,         // 14 digits
+    14,         // 14 digits
+    -63,        // lowest exp
+    64,         // highest exp
+    63,
+    63,
+    false,      // Don't round toward 0
+    false,      // Don't have sign dependent rounding
+    false,      // Don't have NAN
+    false,      // Don't have INF
+    false,      // Don't have denorm whatever that is
+    true,       // Do have signed zero
+    false,      // Don't have qnan
+    false       // Don't have that last thing
+  };
+
+
+void override_options (void)
+{
+  /* We use TI99 floating point, not IEEE floating point.  */
+  if (!TARGET_NO_TI99_FLOAT)
+    REAL_MODE_FORMAT (DFmode) = &tms9900_real_format;
+}
+
+/* Non-volatile registers to be saved across function calls */
+#define MAX_SAVED_REGS 2
+
 /* Non-volatile registers to be saved across function calls */
 static int nvolregs[]={
-   LR_REGNUM,
-   FRAME_POINTER_REGNUM,
-   LW_REGNUM,
-   LP_REGNUM,
-   LS_REGNUM,
-   0};
+   CALL_RETURN_REGNUM,
+   FRAME_POINTER_REGNUM};
 
 
 /* If defined, a C expression which determines whether, and in which direction,
@@ -144,7 +258,7 @@ pad_direction tms9900_function_arg_padding (machine_mode mode,
 {
   if (type != 0 && AGGREGATE_TYPE_P (type))
   {
-  printf ("%s upward\n", __func__);
+    dbgprintf ("%s upward\n", __func__);
     return PAD_UPWARD;
 }
 
@@ -208,6 +322,7 @@ static rtx tms9900_function_arg (cumulative_args_t cum_v,
     /* Pick an arbitrary value for operand 2 of the call insn.  */
     return const0_rtx;
   
+  // TODO if named is no longer a param, how we do know a var param list?
   if (/* Vararg argument, must live on stack */
       // !named ||
       /* No more argument registers left */
@@ -314,44 +429,72 @@ void print_operand_address (FILE *file,
     }
 }
 
-
-
-/* Should we save this register? */ 
-int tms9900_should_save_reg(int regno ATTRIBUTE_UNUSED)
+/* Should we save this register?  The only registers we care about are R11 which
+ * must be saved if we are not a leaf function or if used by an inline asm and
+ * R9 if we use a frame pointer in this function. */ 
+int tms9900_should_save_reg(int regno)
 {
-#if 0
-return 1;
+  dbgprintf("%s ever_live=%d used=%d R%d leaf=%d fp_need=%d\n",
+         __func__, df_regs_ever_live_p(regno), call_used_regs[regno],
+         regno, crtl->is_leaf,
+         frame_pointer_needed);
 
-#else
-// TODO disabled for now
-   return(
-      /* Save non-volatile registers or r11 if used */
-      (df_regs_ever_live_p(regno) &&
-          (
-          // TODO - no longer defined:
-          call_used_regs[regno] == 0 || 
-          regno == LR_REGNUM)) ||
-      /* Save r11 if this is not a leaf function */
-      (regno == LR_REGNUM && !crtl->is_leaf)
-   );
-#endif
+  /*  Generic condition for register that is used and marked as must be
+   *  preserved */
+  if (df_regs_ever_live_p(regno) && (call_used_regs[regno] == 0))
+  {
+    dbgprintf ("%s save live and not used\n", __func__);
+    return 1;
+  }
+
+  /*  Special case, R11 is declared as used so save it */
+  if (df_regs_ever_live_p(regno) && regno == CALL_RETURN_REGNUM)
+  {
+    dbgprintf ("%s save LR, ever_live\n", __func__);
+    return 1;
+  }
+
+  /*  This function calls other functions, save R11 */
+  if (regno == CALL_RETURN_REGNUM && !crtl->is_leaf)
+  {
+    dbgprintf ("%s save LR, not leaf\n", __func__);
+    return 1;
+  }
+          
+  /*  Not used, but the logic here is to only save BP if we need a frame pointer */
+  if (regno == FRAME_POINTER_REGNUM && frame_pointer_needed)
+  {
+    dbgprintf ("%s save BP\n", __func__);
+    return 1;
+  }
+
+  dbgprintf ("%s no save\n", __func__);
+  return 0;
 }
 
 /* Get number of bytes used to save registers in the current stack frame */
 static int tms9900_get_saved_reg_size(void)
 {
-   int idx = 0;
-   int sz = 0;
-   while(nvolregs[idx] != 0)
-   {      
-      int regno = nvolregs[idx];     
-      if(tms9900_should_save_reg(regno))
-      {
-         sz += 2;
-      }
-      idx++;
-   }
-   return(sz);
+   int size = 0;
+   int i;
+
+   for (i = 0; i < MAX_SAVED_REGS; i++)
+      if (tms9900_should_save_reg (nvolregs[i]))
+         size += 2; 
+
+   return size;
+}
+
+static int tms9900_get_regs_to_save (int saveregs[])
+{
+   int i;
+   int count = 0;
+
+   for (i = 0; i < MAX_SAVED_REGS; i++)
+      if (tms9900_should_save_reg (nvolregs[i]))
+         saveregs[count++] = nvolregs[i];
+
+   return count;
 }
 
 static void print_arg_offset (int from)
@@ -687,40 +830,18 @@ void tms9900_output_ascii(FILE* stream, const char* ptr, int len)
 
 void tms9900_expand_prologue (void)
 {
+   /* Find non-volatile registers which need to be saved */
+   int saveregs[MAX_SAVED_REGS];
+   int regcount = tms9900_get_regs_to_save (saveregs);
    /* Registers to save in this frame */
-   int saveregs[5];
-   int regcount = 0;
-   int idx = 0;
    long frame_size = get_frame_size().to_constant();
 
-   /* Find non-volatile registers which need to be saved */
-   while(nvolregs[idx] != 0)
-   {      
-      int regno = nvolregs[idx];
-      saveregs[idx] = 0;
-      if(tms9900_should_save_reg(regno))
-      {
-         /* Mark this register to be saved */
-         saveregs[idx] = 1;
-         regcount++;
-      }
-      idx++;
-   }
+   printf("%s saving regs=%d frame=%ld ", __func__, regcount, frame_size);
 
-  printf("%s saving regs=%d frame=%ld ", __func__, regcount, frame_size);
-   /* Allocate stack space for saved regs */
-   if(regcount > 0)
+   if (regcount > 2)
    {
-      /* Emit "ai sp, -regcount*2" */
-      emit_insn(gen_addhi3(stack_pointer_rtx, stack_pointer_rtx, 
-                          GEN_INT(-regcount * 2)));
-   }
-
-   /* Actually save registers */
-   // if(regcount > 2)
-   // {
+      /* Allocate stack space for saved regs if more than 2 saved. */
       /*
-      Form 1:
       ai sp, -regs*2        4      14+8+8   = 30
       mov sp, r0            2      14+8     = 22
       mov r9 , *r0+         2      14+8+8+8 = 38
@@ -730,72 +851,66 @@ void tms9900_expand_prologue (void)
       mov r11, *r0          2      14+8+8+8 = 34
       ai sp, -frame         4      14+8+8   = 30
       */
+      /* Emit "ai sp, -regcount*2" */
+      emit_insn(gen_addhi3(stack_pointer_rtx, stack_pointer_rtx, 
+                          GEN_INT(-regcount * 2)));
 
+      /* Copy sp to r0 and use r0 as the dest
+       * with auto-inc */
       /* Emit "mov sp, r0" */
       emit_insn(gen_movhi(gen_rtx_REG(HImode, R0_REGNUM),
                           stack_pointer_rtx));
 
-      idx = 0;
-      while(nvolregs[idx] != 0)
+      for (int i = 0; i < regcount; i++)
       {
-         if(saveregs[idx]!=0)
+         /*  Don't postinc if last reg */
+         if(i == regcount-1)
          {
-            int regno = nvolregs[idx];
-            if(nvolregs[idx + 1] == 0)
-            {
-               /* Emit "mov Rx, *R0" */
-               emit_insn(gen_movhi(
-                  gen_rtx_MEM(HImode, gen_rtx_REG(HImode, R0_REGNUM)),
-                  gen_rtx_REG(HImode, regno)));
-            }
-            else
-            {
-               /* Emit "mov Rx, *R0+" */
-               emit_insn(gen_movhi(
-                  gen_rtx_MEM(HImode, 
-                              gen_rtx_POST_INC(HImode, 
-                                 gen_rtx_REG(HImode, R0_REGNUM))),
-                  gen_rtx_REG(HImode, regno)));
-            }
+            /* Emit "mov Rx, *R0" */
+            emit_insn(gen_movhi(
+            gen_rtx_MEM(HImode, gen_rtx_REG(HImode, R0_REGNUM)),
+                        gen_rtx_REG(HImode, saveregs[i])));
          }
-         idx++;
+         else
+         {
+            /* Emit "mov Rx, *R0+" */
+            emit_insn(gen_movhi(
+            gen_rtx_MEM(HImode, 
+                        gen_rtx_POST_INC(HImode, 
+                            gen_rtx_REG(HImode, R0_REGNUM))),
+                        gen_rtx_REG(HImode, saveregs[i])));
+         }
       }
-   #if 0
    }
    else
    {
+      /* Save registers and create stack frame.  Since we currently only save up to 2 regs,
+       * we use dect instead of ai for the sp.  NOTE we must store regs in
+       * reverse order if doing it this way.  */
       /*
-      Form 2:
-      ai sp, -regs*2       4      14+8+8   = 30
-      mov r9, *sp          2      14+8+4+8 = 34
-      mov r13, @2(sp)      4      14+8+8+8 = 38
-      mov r14, @4(sp)      4      14+8+8+8 = 38
-      mov r15, @6(sp)      4      14+8+8+8 = 38
-      mov r11, @8(sp)      4      14+8+8+8 = 38
-      ai sp, -frame        4      14+8+8   = 30
+      dect sp               3      10+6     = 16
+      mov r11, *sp          2      14+8+8+8 = 38
+      dect sp               3      10+6     = 16
+      mov r14, *sp          2      14+8+8+8 = 38
+      ai sp, -frame         4      14+8+8   = 30
       */
-      int offset = 0;
-      idx = 0;
-      while(nvolregs[idx] != 0)
+      for (int i = regcount-1; i >= 0; i--)
       {
-         if(saveregs[idx]!=0)
-         {
-            /* Emit "mov Rn, @X(sp)" */
-            int regno = nvolregs[idx];
-            emit_insn(gen_movhi(
-               adjust_address(gen_rtx_MEM(HImode, stack_pointer_rtx), 
-                              HImode, offset),
-               gen_rtx_REG(HImode, regno)));
-            offset += 2;
-         }
-         idx++;
+         dbgprintf("%s save R%d\n", __func__, saveregs[i]);
+         /* Emit "dect sp" */
+         emit_insn(gen_addhi3(stack_pointer_rtx, stack_pointer_rtx, GEN_INT(-2)));
+
+         /* Emit "mov Rx, *SP" */
+         emit_insn(gen_movhi(
+                     gen_rtx_MEM(HImode, stack_pointer_rtx),
+                     gen_rtx_REG(HImode, saveregs[i])));
       }
    }
-   #endif
+
 
    if(frame_size > 0)
    {
-  printf("%s alloc frame\n", __func__);
+      dbgprintf("%s alloc frame %d\n", __func__, frame_size);
       /* Emit "ai sp, -framesize" */
       emit_insn(gen_addhi3(stack_pointer_rtx, stack_pointer_rtx, 
                           GEN_INT(-frame_size)));
@@ -804,7 +919,7 @@ void tms9900_expand_prologue (void)
    /* Set frame pointer */
    if(frame_pointer_needed)
    {
-  printf("%s set fp\n", __func__);
+      dbgprintf("%s set fp\n", __func__);
       emit_insn(gen_movhi(gen_rtx_REG(HImode, FRAME_POINTER_REGNUM),
                           stack_pointer_rtx));
    }
@@ -815,74 +930,46 @@ void tms9900_expand_prologue (void)
 void tms9900_expand_epilogue (bool is_sibcall)
 {
    /*
-   There is one only form for the epilogue.
-
    ai sp, frame         4      14+8+8   = 30
-   mov *sp+, r9         2      14+8+8+8 = 38
-   mov *sp+, r13        2      14+8+8+8 = 38
    mov *sp+, r14        2      14+8+8+8 = 38
-   mov *sp+, r15        2      14+8+8+8 = 38
    mov *sp+, r11        2      14+8+8+8 = 38
    */
-
-   int saveregs[5];
-   int restored;
 
    /* Find frame size to restore */
    long frame_size = get_frame_size().to_constant();
 
    if(frame_size != 0)
    {
-  printf("%s delete frame\n", __func__);
+      dbgprintf("%s delete frame size=%ld\n", __func__, frame_size);
       /* Emit "ai sp, frame_size" */
       emit_insn(gen_addhi3(stack_pointer_rtx, stack_pointer_rtx, 
                            GEN_INT(frame_size)));
    }
 
    /* Find non-volatile registers which need to be restored */
-   int idx = 0;
-   int regcount = 0;
-   while(nvolregs[idx] != 0)
-   {      
-      int regno = nvolregs[idx];
-      saveregs[idx] = 0;
-      if(tms9900_should_save_reg(regno))
-      {
-         /* Mark this register to be saved */
-         saveregs[idx] = 1;
-         regcount++;
-      }
-      idx++;
-   }
+   int saveregs[MAX_SAVED_REGS];
+   int regcount = tms9900_get_regs_to_save (saveregs);
+   int i = 0;
 
-  printf("%s restore %d regs\n", __func__, regcount);
-   idx = 0;
-   restored = 0;
-   while(nvolregs[idx] != 0)
-   {      
-      if(saveregs[idx] != 0)
-      {
-         /* Restore this register */
-         int regno = nvolregs[idx];
-         restored++;
-        /* Emit "mov *SP+, Rx" */
-        emit_insn(gen_movhi(
-           gen_rtx_REG(HImode, regno),
-           gen_rtx_MEM(HImode, 
-                       gen_rtx_POST_INC(HImode, stack_pointer_rtx))));
-      }
-      idx++;
+   for (i = 0; i < regcount; i++)
+   {
+      dbgprintf("%s restore R%d\n", __func__, saveregs[i]);
+      /* Emit "mov *SP+, Rx" */
+      emit_insn(gen_movhi(
+         gen_rtx_REG(HImode, saveregs[i]),
+         gen_rtx_MEM(HImode, 
+                     gen_rtx_POST_INC(HImode, stack_pointer_rtx))));
    }
    
    if(!is_sibcall)
    {
-  printf("%s return\n", __func__);
+      dbgprintf("%s return\n", __func__);
       /* Emit the return instruction "b *R11" */
       emit_insn(gen_rtx_UNSPEC(HImode, 
                                gen_rtvec (1, gen_rtx_REG(HImode, R11_REGNUM)),
                                UNSPEC_RETURN));
    }
-  printf("%s done\n", __func__);
+   dbgprintf("%s done\n", __func__);
 }
 
 
@@ -1369,31 +1456,16 @@ void tms9900_divmod (int sign, rtx operands[])
     }
 #endif
 
+// MGB additions start here - mostly for debug
+
 #include <stdlib.h>
 #include <stdarg.h>
 
-static int regMode[16] =
-{
-    HImode, HImode, HImode, HImode,
-    HImode, HImode, HImode, HImode,
-    HImode, HImode, HImode, HImode,
-    HImode, HImode, HImode, HImode
-};
-
-const char *tms9900_get_mode (int mode)
-{
-    switch (mode)
-    {
-    case QImode: return "QI"; break;
-    case HImode: return "HI"; break;
-    case SImode: return "SI"; break;
-    default: break;
-    }
-    return "??";
-}
-
 extern void tms9900_inline_debug (const char *fmt,...)
 {
+#ifndef TMS9900_INLINE_DEBUG
+    return;
+#endif
     FILE *file = outputFile?outputFile:stdout;
 
     va_list ap;
@@ -1405,6 +1477,10 @@ extern void tms9900_inline_debug (const char *fmt,...)
 
 extern void tms9900_debug_operands (const char *name, rtx ops[], int count)
 {
+#ifndef TMS9900_INLINE_DEBUG
+    return;
+#endif
+
     FILE *file = outputFile?outputFile:stdout;
 
     static int refcount;
@@ -1420,100 +1496,9 @@ extern void tms9900_debug_operands (const char *name, rtx ops[], int count)
         print_rtx_head = "; ";
 
         print_inline_rtx (file, ops[i], 0);
-        const char *code = "??";
-        switch (GET_CODE (ops[i]))
-        {
-        case SUBREG: code = "SUBREG"; break;
-        case TRUNCATE: code = "TRUNCATE"; break;
-        case CONST_INT: code = "CONST_INT"; break;
-        case REG: code = "REG"; break;
-        case MEM: code = "MEM"; break;
-        default: break;
-        }
-        fprintf (file, "code=[%s:%s]\n", code, tms9900_get_mode (GET_MODE (ops[i])));
+        fprintf (file, "code=[%s:%s]\n", GET_RTX_NAME(GET_CODE(ops[i])),
+                 GET_MODE_NAME (GET_MODE (ops[i])));
     }
     fprintf (file, "\n");
-}
-
-
-void tms9900_register_mode_set (rtx operand, int mode)
-{
-   return;
-   if (!REG_P (operand))
-       return;
-
-   int regno = REGNO (operand);
-
-   if (regno > 15)
-   {
-       printf("Pseudo r%d ignored\n", regno);
-       return;
-   }
-   printf("Mode set r%d to %s\n", regno, tms9900_get_mode (mode));
-   regMode[regno] = mode;
-}
-
-void tms9900_register_convert (rtx operand, int mode, int sign)
-{
-   return;
-   if (!REG_P (operand))
-       return;
-
-   int regno = REGNO (operand);
-
-   if (regno > 15)
-   {
-       printf("Pseudo r%d ignored\n", regno);
-       return;
-   }
-
-   if (regMode[regno] == mode)
-   {
-       printf("Mode r%d is already %s\n", regno, tms9900_get_mode (mode));
-       return;
-   }
-
-   printf ("Converting r%d from %s to %s\n", regno,
-            tms9900_get_mode (regMode[regno]),
-            tms9900_get_mode (mode));
-
-   regMode[regno] = mode;
-
-   if (mode == QImode)
-   {
-      /*  This register is in HI mode and we need it to be in QI mode so emit a
-       *  sla */
-      /* Emit "sla %0, 8" */
-      output_asm_insn("sla  %0, 8", &operand);
-      // output_asm_insn("sla %0, 8", gen_rtx_REG(QImode, regno));
-      // emit_insn(gen_ashlhi3(gen_rtx_REG(HImode, regno),
-      //                       gen_rtx_REG(HImode, regno),
-      //                       GEN_INT(8)));
-   }
-   else
-   {
-      /*  This register is in QI mode and we need it to be in HI mode so emit a
-       *  sra or srl depending on sign */
-      if (sign)
-      {
-          /* Emit "sra %0, 8" */
-          output_asm_insn("sra  %0, 8", &operand);
-          // output_asm_insn("sra %0, 8", gen_rtx_REG(HImode, regno));
-          // emit_insn(gen_ashrhi3(gen_rtx_REG(HImode, regno),
-          //                   gen_rtx_REG(HImode, regno),
-          //                   GEN_INT(8)));
-
-      }
-      else
-      {
-          /* Emit "srl %0, 8" */
-          output_asm_insn("srl  %0, 8", &operand);
-          // output_asm_insn("srl %0, 8", gen_rtx_REG(HImode, regno));
-          // emit_insn(gen_lshrhi3(gen_rtx_REG(HImode, regno),
-          //                   gen_rtx_REG(HImode, regno),
-          //                   GEN_INT(8)));
-
-      } 
-   }
 }
 

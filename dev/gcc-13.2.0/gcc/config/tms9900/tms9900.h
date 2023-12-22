@@ -313,7 +313,6 @@ extern short *reg_renumber;	/* def in local_alloc.c */
 /* 1 for registers that have pervasive standard uses and are not available
    for the register allocator.
 
-   MGB TODO move BP, AP to R12/R13 so that we can have 1-10 as general regs
 */
 #define FIXED_REGISTERS \
   {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1}

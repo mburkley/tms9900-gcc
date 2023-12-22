@@ -34,7 +34,7 @@
    (FRAME_POINTER_REGNUM  9)
    (STACK_POINTER_REGNUM  10)
    ;; Old PC after BL instruction
-   (LR_REGNUM		  11)
+   (CALL_RETURN_REGNUM		  11)
    ;; CRU base address
    (CB_REGNUM		  12)
    ;; Old workspace after BLWP instruction
@@ -73,8 +73,7 @@
 (define_attr "type" "unknown,arith,fp" (const_string "arith"))
 
 ;; length default is 1 word each
-;; MGB TODO is length bytes or words?
-(define_attr "length" "" (const_int 1))
+(define_attr "length" "" (const_int 2))
 
 ;; a user's asm statement
 (define_asm_attributes
@@ -83,22 +82,10 @@
 ; whenever jumping around it !!!
    (set_attr "length" "256")])
 
-;; MGB To address the issue where tms9900 stores bytes in the MSB position, all
-;; QI loads to registers are right-shifted 8 bits before storage as a HI value
-
 ;;-------------------------------------------------------------------
 ;;  UNSPEC Definitions
 ;;-------------------------------------------------------------------
 (define_constants
   [(UNSPEC_RETURN  0)])
-
-
-;;-------------------------------------------------------------------
-;;  Predicate Definitions
-;;-------------------------------------------------------------------
-
-(define_predicate "shift_count_operand"
-  (ior (match_code "const_int")
-       (match_code "reg")))
 
 
