@@ -1,7 +1,7 @@
 #ifndef __TAP_H
 #define __TAP_H
 
-#ifdef __tms9900__
+#if 1 // def __tms9900__
 #include <vdp.h>
 
 /* Define 32 bit type so we have the same size values on host and target to

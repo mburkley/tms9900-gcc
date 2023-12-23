@@ -67,6 +67,7 @@ along with GCC; see the file COPYING3.  If not see
 #define TARGET_CPU_CPP_BUILTINS()		\
   do						\
     {						\
+      builtin_define ("__tms9900__");		\
       builtin_define_std ("cpu=tms9900");	\
     }						\
   while (0)
