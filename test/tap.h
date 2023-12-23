@@ -11,11 +11,15 @@
 #ifndef __TAP_H
 #define __TAP_H
 
+<<<<<<< HEAD
 #include "xop.h"
 
 #ifdef __tms9900__
 
 #ifndef EMUL_TEST
+=======
+#if 1 // def __tms9900__
+>>>>>>> bc2f69e (stash debug)
 #include <vdp.h>
 #define USE_VDP 1
 #endif
