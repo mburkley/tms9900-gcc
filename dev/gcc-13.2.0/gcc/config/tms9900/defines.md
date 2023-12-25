@@ -88,4 +88,6 @@
 (define_constants
   [(UNSPEC_RETURN  0)])
 
+;; Several insns are common for QI and HI
+(define_mode_iterator QHI [QI HI])
 
