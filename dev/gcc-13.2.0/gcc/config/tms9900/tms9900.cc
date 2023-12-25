@@ -673,36 +673,56 @@ simple_memory_operand(rtx op, machine_mode mode ATTRIBUTE_UNUSED)
 }
 
 
-/* Emit a branch condtional instruction */
-const char* output_branch (const char *pos, const char *neg, int length)
+/* Emit a branch condtional instruction.
+   TODO we don't have some instructions like jump greater or equal
+
+   Forms:
+
+      jne $+x   // 2
+
+      jeq $+4   // 6
+      b @x
+
+      jlt $+x   // 4, but we don't generate this from md so detect instead
+      jeq $+x
+
+      jlt $+6   // 8, again we don't generate
+      jeq $+4
+      b @x
+   */
+const char *output_jump (rtx *operands, int ccnz ATTRIBUTE_UNUSED, int length)
 {
-    static int label_id = 0;
-    
-    static char buf[1000];
-    length -= 10;
-    if(length == 2)
-    {
-        sprintf(buf, "%s  %%l0",pos);
-    }
-    else if(length == 4)
-    {
+   const char *pos, *neg;
+   enum rtx_code code = GET_CODE (operands[0]);
+   char buf[100] = "";
+   static int label_id = 0;
+   // length -= 10;
+   switch (code)
+   {
+      case EQ: pos = "jeq", neg = "jne"; break;
+      case NE: pos = "jne", neg = "jeq"; break;
+      case GT: pos = "jgt", neg = "L"; break;
+      case GTU: pos = "jh", neg = "jle"; break;
+      case LT: pos = "jlt", neg = "G"; break;
+      case LTU: pos = "jl", neg = "jhe"; break;
+      case GE: pos = "G", neg = "jlt"; break;
+      case GEU: pos = "jhe", neg = "jl"; break;
+      case LE: pos = "L", neg = "jgt"; break;
+      case LEU: pos = "jle", neg = "jh"; break;
+      default: gcc_unreachable ();
+   }
+   if(length == 2)
+   {
         if(*pos == 'L')
-            sprintf(buf, "jlt  %%l0\n"
-                         "\tjeq  %%l0");
+          sprintf(buf, "jlt  %%l0\n"
+                       "\tjeq  %%l0");
         else if(*pos == 'G')
-            sprintf(buf, "jgt  %%l0\n"
-                         "\tjeq  %%l0");
+          sprintf(buf, "jgt  %%l0\n"
+                       "\tjeq  %%l0");
         else
-            gcc_unreachable();
+          sprintf(buf, "%s  %%l0",pos);
     }
     else if(length == 6)
-    {
-	sprintf(buf, "%s  JMP_%d\n"
-                     "\tb    @%%l0\n"
-                     "JMP_%d", neg, label_id, label_id);	
-	label_id++;
-    }
-    else if(length == 8)
     {
         if(*neg == 'L')
             sprintf(buf, "jlt  JMP_%d\n"
@@ -715,30 +735,34 @@ const char* output_branch (const char *pos, const char *neg, int length)
                          "\tb    @%%l0\n"
                          "JMP_%d", label_id, label_id, label_id);
         else
-            gcc_unreachable();
+	sprintf(buf, "%s  JMP_%d\n"
+                     "\tb    @%%l0\n"
+                     "JMP_%d", neg, label_id, label_id);	
 
-	label_id++;
+        label_id++;
     }
     else
     {
 	gcc_unreachable();
     }    
+    printf ("%s buf='%s'\n", buf);
     return buf;
 }
 
 
+#if 0
+// Handled in the insn
 /* Emit a jump instrcution */
 const char* output_jump (int length)
 {
-    length -= 10;
     switch(length)    
     {
-        case 2: return("jmp  %l0");
-        case 4: return("b    @%l0");
+        case 12: return("jmp  %l0");
+        case 14: return("b    @%l0");
         default: gcc_unreachable();
     }
 }
-
+#endif
 
 #if 0
 /* MGB removed - cc0 is deprecated */
