@@ -66,8 +66,8 @@ along with GCC; see the file COPYING3.  If not see
  * occasions this pointer may go invalid before we are finished which may cause
  * a segfault on write so if debugging segfaults make sure to test with inline
  * debug disabled */
-#undef TMS9900_INLINE_DEBUG
-// #define TMS9900_INLINE_DEBUG 1
+// #undef TMS9900_INLINE_DEBUG
+#define TMS9900_INLINE_DEBUG 1
 
 /* Define this to 1 to output debug info to stdout as we are compiling */
 #if 0
@@ -286,7 +286,7 @@ void tms9900_function_arg_advance (cumulative_args_t cum_v,
      arg_bytes = (unsigned) GET_MODE_SIZE (mode);
   }
   cum->nregs += ((arg_bytes + 1)/ UNITS_PER_WORD) * REGS_PER_WORD;
-  printf("%s bytes=%d\n", __func__, arg_bytes);
+  dbgprintf("%s bytes=%d\n", __func__, arg_bytes);
   return;
 }
 
@@ -330,12 +330,12 @@ static rtx tms9900_function_arg (cumulative_args_t cum_v,
       /* Argument doesn't completely fit in arg registers */      
       GET_MODE_SIZE(mode) + cum->nregs > TMS9900_ARG_REGS)
     {
-    printf ("%s alloc on stack\n", __func__);
+    dbgprintf ("%s alloc on stack\n", __func__);
     return NULL_RTX;
     }
 
   /* Allocate registers for argument */
-    printf ("%s alloc in reg %d\n", __func__, cum->nregs+1);
+    dbgprintf ("%s alloc in reg %d\n", __func__, cum->nregs+1);
   return gen_rtx_REG (mode, cum->nregs + R1_REGNUM);
 }
 
@@ -501,10 +501,10 @@ static void print_arg_offset (int from)
 {
     switch (from)
     {
-    case ARG_POINTER_REGNUM: printf ("%d=ARG_PTR_R ", from); break;
-    case STACK_POINTER_REGNUM: printf ("%d=HARD_SP_R ", from); break;
-    case FRAME_POINTER_REGNUM: printf ("%d=FR_PTR_R ", from); break;
-    default: printf ("%d=dunno? ", from); break;
+    case ARG_POINTER_REGNUM: dbgprintf ("%d=ARG_PTR_R ", from); break;
+    case STACK_POINTER_REGNUM: dbgprintf ("%d=HARD_SP_R ", from); break;
+    case FRAME_POINTER_REGNUM: dbgprintf ("%d=FR_PTR_R ", from); break;
+    default: dbgprintf ("%d=dunno? ", from); break;
     }
 }
 
@@ -525,7 +525,7 @@ int tms9900_initial_elimination_offset (int from,
       . <- frame pointer
   */
 
-  printf("%s savedregs=%d frame=%ld ", __func__,
+  dbgprintf("%s savedregs=%d frame=%ld ", __func__,
       tms9900_get_saved_reg_size(), (long) get_frame_size().to_constant());
   print_arg_offset (from);
   print_arg_offset (to);
@@ -548,7 +548,7 @@ int tms9900_initial_elimination_offset (int from,
     // ret =(tms9900_get_saved_reg_size());
   }
   // ret =(0);
-  printf ("%s res=%d\n", __func__, ret);
+  dbgprintf ("%s res=%d\n", __func__, ret);
   return ret;
 }
 
@@ -836,7 +836,7 @@ void tms9900_expand_prologue (void)
    /* Registers to save in this frame */
    long frame_size = get_frame_size().to_constant();
 
-   printf("%s saving regs=%d frame=%ld ", __func__, regcount, frame_size);
+   dbgprintf("%s saving regs=%d frame=%ld ", __func__, regcount, frame_size);
 
    if (regcount > 2)
    {
@@ -923,7 +923,7 @@ void tms9900_expand_prologue (void)
       emit_insn(gen_movhi(gen_rtx_REG(HImode, FRAME_POINTER_REGNUM),
                           stack_pointer_rtx));
    }
-  printf("%s done\n", __func__);
+   dbgprintf("%s done\n", __func__);
 }
 
 
@@ -1136,10 +1136,10 @@ tms9900_fixed_condition_code_regs (unsigned int *p1, unsigned int *p2)
 static void
 tms9900_extract_subreg(rtx insn, rtx arg, rtx* parg)
 {
-  printf("%s\n", __func__);
+  dbgprintf("%s\n", __func__);
   if(BINARY_P(arg))
   {
-  printf("%s recurse\n", __func__);
+  dbgprintf("%s recurse\n", __func__);
     /* Recurse until we find a leaf expression */
     tms9900_extract_subreg(insn, XEXP(arg,0), &XEXP(arg,0));
     tms9900_extract_subreg(insn, XEXP(arg,1), &XEXP(arg,1));
@@ -1149,7 +1149,7 @@ tms9900_extract_subreg(rtx insn, rtx arg, rtx* parg)
   {
     if(GET_CODE(arg) == SUBREG && GET_MODE(arg) == QImode)
     {
-      printf ("%s creating extract\n", __func__);
+      dbgprintf ("%s creating extract\n", __func__);
       /* Found a subreg expression we need to extract.
          Place it in a seperate instruction before this one */
       rtx temp_reg = gen_reg_rtx(QImode);
@@ -1184,17 +1184,17 @@ gate_tms9900_subreg (void)
 static unsigned int
 tms9900_subreg (void)
 {
-  printf("%s\n", __func__);
+  dbgprintf("%s\n", __func__);
   return 0;
   basic_block bb;
   rtx insn;
 
   FOR_EACH_BB (bb)
     FOR_BB_INSNS (bb, insn)
-  printf("%s loping\n", __func__);
+  dbgprintf("%s loping\n", __func__);
     if (INSN_P (insn))
     {
-  printf("%s get single_set\n", __func__);
+  dbgprintf("%s get single_set\n", __func__);
       rtx set=single_set (insn);
       if(set !=NULL)
       {
@@ -1211,9 +1211,9 @@ tms9900_subreg (void)
       }
     }
     else
-  printf("%s not INSN_P\n", __func__);
+  dbgprintf("%s not INSN_P\n", __func__);
 
-  printf("%s done\n", __func__);
+  dbgprintf("%s done\n", __func__);
   return 0;
 }
 
