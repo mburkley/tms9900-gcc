@@ -89,5 +89,27 @@
   [(UNSPEC_RETURN  0)])
 
 ;; Several insns are common for QI and HI
-(define_mode_iterator QHI [QI HI])
+;; These are also analogous for use in splitters and expanders.
+(define_mode_iterator QHint [QI HI])
+(define_mode_iterator QHSint [QI HI SI])
 
+;; Substitution to turn a CC clobber into a CC setter.  We have two of
+;; these: for CCmode vs. CCNZmode.  TODO not sure yet if we need CCNZ
+(define_subst "cc_cc"
+  [(set (match_operand 0 "") (match_operand 1 ""))
+   (clobber (reg CC_REGNUM))]
+  ""
+  [(set (reg:CC CC_REGNUM)
+	(compare:CC (match_dup 1) (const_int 0)))
+   (set (match_dup 0) (match_dup 1))])
+
+; (define_subst "cc_ccnz"
+;   [(set (match_operand 0 "") (match_operand 1 ""))
+;    (clobber (reg CC_REGNUM))]
+;   ""
+;   [(set (reg:CCNZ CC_REGNUM)
+; 	(compare:CCNZ (match_dup 1) (const_int 0)))
+;    (set (match_dup 0) (match_dup 1))])
+
+(define_subst_attr "cc_cc" "cc_cc" "_nocc" "_cc")
+; (define_subst_attr "cc_ccnz" "cc_ccnz" "_nocc" "_cc")

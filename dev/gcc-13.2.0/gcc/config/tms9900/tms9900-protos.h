@@ -26,8 +26,7 @@ extern int legitimate_address_p (enum machine_mode, rtx);
 extern void notice_update_cc_on_set (rtx, rtx);
 #endif /* RTX_CODE */
 
-extern const char *output_branch (const char *, const char *, int);
-extern const char *output_jump (int);
+extern const char *output_jump (rtx *operands, int ccnz ATTRIBUTE_UNUSED, int length);
 
 
 extern void tms9900_init_cumulative_args (CUMULATIVE_ARGS *cum,
