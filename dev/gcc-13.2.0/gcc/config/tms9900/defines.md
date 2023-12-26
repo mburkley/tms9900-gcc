@@ -34,7 +34,7 @@
    (FRAME_POINTER_REGNUM  9)
    (STACK_POINTER_REGNUM  10)
    ;; Old PC after BL instruction
-   (CALL_RETURN_REGNUM		  11)
+   (CALL_RETURN_REGNUM	  11)
    ;; CRU base address
    (CB_REGNUM		  12)
    ;; Old workspace after BLWP instruction
