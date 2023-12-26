@@ -673,22 +673,33 @@ simple_memory_operand(rtx op, machine_mode mode ATTRIBUTE_UNUSED)
 }
 
 
-/* Emit a branch condtional instruction.
-   TODO we don't have some instructions like jump greater or equal
+/* Emit a branch condtional instruction.  If short emit a positive jump.  If
+ * long, emit a negative jump over a branch.  If we don't have a positive or a
+ * negative jump over a jump.  Length is longer by 2 bytes for the latter case
+ * so attr length is set to the longer length to be conservative
 
-   Forms:
+   Forms (using EQ as an example):
 
-      jne $+x   // 2
+      jeq x   // 2 (declared as 4)
 
-      jeq $+4   // 6
+      jne L1   // 6 (declared as 8)
       b @x
+      L1:
 
-      jlt $+x   // 4, but we don't generate this from md so detect instead
-      jeq $+x
+      if jump is long and we don't have a negative instruction then we could
+      emit the positive followed by a jump over:
 
-      jlt $+6   // 8, again we don't generate
-      jeq $+4
+      jeq L1    // Length will be 8 instead of 6
+      jmp L2 
+      L1:
       b @x
+      L2:
+
+      Or if is short and we don't have the positive we could:
+
+      jne L1  // Length 4 instead of 2
+      jmp x
+      L1:
    */
 const char *output_jump (rtx *operands, int ccnz ATTRIBUTE_UNUSED, int length)
 {
@@ -696,50 +707,51 @@ const char *output_jump (rtx *operands, int ccnz ATTRIBUTE_UNUSED, int length)
    enum rtx_code code = GET_CODE (operands[0]);
    char buf[100] = "";
    static int label_id = 0;
-   // length -= 10;
    switch (code)
    {
       case EQ: pos = "jeq", neg = "jne"; break;
       case NE: pos = "jne", neg = "jeq"; break;
-      case GT: pos = "jgt", neg = "L"; break;
+      case GT: pos = "jgt", neg = ""; break;
       case GTU: pos = "jh", neg = "jle"; break;
-      case LT: pos = "jlt", neg = "G"; break;
+      case LT: pos = "jlt", neg = ""; break;
       case LTU: pos = "jl", neg = "jhe"; break;
-      case GE: pos = "G", neg = "jlt"; break;
+      case GE: pos = "", neg = "jlt"; break;
       case GEU: pos = "jhe", neg = "jl"; break;
-      case LE: pos = "L", neg = "jgt"; break;
+      case LE: pos = "", neg = "jgt"; break;
       case LEU: pos = "jle", neg = "jh"; break;
       default: gcc_unreachable ();
    }
-   if(length == 2)
+   if(length == 4)
    {
-        if(*pos == 'L')
-          sprintf(buf, "jlt  %%l0\n"
-                       "\tjeq  %%l0");
-        else if(*pos == 'G')
-          sprintf(buf, "jgt  %%l0\n"
-                       "\tjeq  %%l0");
+        if(*pos == 0)
+        {
+            sprintf(buf, "%s  JMP_%d\n"
+                         "\tjmp  %%l0", neg, label_id);
+            label_id++;
+        }
         else
           sprintf(buf, "%s  %%l0",pos);
     }
-    else if(length == 6)
+    else if(length == 8)
     {
-        if(*neg == 'L')
-            sprintf(buf, "jlt  JMP_%d\n"
-                         "\tjeq  JMP_%d\n"
+        if(*neg == 0)
+        {
+            sprintf(buf, "%s  JMP_%d\n"
+                         "\tjmp  JMP_%d\n"
+                         "JMP_%d\n"
                          "\tb    @%%l0\n"
-                         "JMP_%d", label_id, label_id, label_id);
-        else if(*neg == 'G')
-            sprintf(buf, "jgt  JMP_%d\n"
-                         "\tjeq  JMP_%d\n"
-                         "\tb    @%%l0\n"
-                         "JMP_%d", label_id, label_id, label_id);
+                         "JMP_%d", pos, label_id, label_id+1,
+                         label_id, label_id+1);
+            label_id += 2;
+        }
         else
-	sprintf(buf, "%s  JMP_%d\n"
-                     "\tb    @%%l0\n"
-                     "JMP_%d", neg, label_id, label_id);	
+        {
+            sprintf(buf, "%s  JMP_%d\n"
+                         "\tb    @%%l0\n"
+                         "JMP_%d", neg, label_id, label_id);	
 
-        label_id++;
+            label_id++;
+        }
     }
     else
     {

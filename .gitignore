@@ -3,6 +3,7 @@
 build
 dev
 gccdump.*
+<<<<<<< HEAD
 deb/opt
 *.deb
 test/*.i
@@ -12,3 +13,6 @@ test/harness/harness
 elfutils/elf2cart
 elfutils/elf2ea5
 elfutils/ea5split
+=======
+*.c.*
+>>>>>>> d86df45 (No longer asserting, but doesn't emit any jump code)
