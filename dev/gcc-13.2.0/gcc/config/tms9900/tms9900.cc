@@ -700,12 +700,16 @@ simple_memory_operand(rtx op, machine_mode mode ATTRIBUTE_UNUSED)
       jne L1  // Length 4 instead of 2
       jmp x
       L1:
+
+NOTE: Label ref is hardcoded to %l1.  If calling insn varies this will need to
+be made a parameter
+
    */
 const char *output_jump (rtx *operands, int ccnz ATTRIBUTE_UNUSED, int length)
 {
    const char *pos, *neg;
    enum rtx_code code = GET_CODE (operands[0]);
-   char buf[100] = "";
+   static char buf[100] = "";
    static int label_id = 0;
    switch (code)
    {
@@ -726,11 +730,11 @@ const char *output_jump (rtx *operands, int ccnz ATTRIBUTE_UNUSED, int length)
         if(*pos == 0)
         {
             sprintf(buf, "%s  JMP_%d\n"
-                         "\tjmp  %%l0", neg, label_id);
+                         "\tjmp  %%l1", neg, label_id);
             label_id++;
         }
         else
-          sprintf(buf, "%s  %%l0",pos);
+          sprintf(buf, "%s  %%l1",pos);
     }
     else if(length == 8)
     {
@@ -739,7 +743,7 @@ const char *output_jump (rtx *operands, int ccnz ATTRIBUTE_UNUSED, int length)
             sprintf(buf, "%s  JMP_%d\n"
                          "\tjmp  JMP_%d\n"
                          "JMP_%d\n"
-                         "\tb    @%%l0\n"
+                         "\tb    @%%l1\n"
                          "JMP_%d", pos, label_id, label_id+1,
                          label_id, label_id+1);
             label_id += 2;
@@ -747,7 +751,7 @@ const char *output_jump (rtx *operands, int ccnz ATTRIBUTE_UNUSED, int length)
         else
         {
             sprintf(buf, "%s  JMP_%d\n"
-                         "\tb    @%%l0\n"
+                         "\tb    @%%l1\n"
                          "JMP_%d", neg, label_id, label_id);	
 
             label_id++;
@@ -757,7 +761,7 @@ const char *output_jump (rtx *operands, int ccnz ATTRIBUTE_UNUSED, int length)
     {
 	gcc_unreachable();
     }    
-    printf ("%s buf='%s'\n", buf);
+    printf ("%s buf='%s'\n", __func__, buf);
     return buf;
 }
 
