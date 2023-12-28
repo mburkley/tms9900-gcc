@@ -73,6 +73,7 @@ $(FNAME).elf: $(OBJECT_LIST)
 	rm -f *.s
 	rm -f mapfile
 	rm -f gccdump.*
+	rm -f *.c.*r.*
 
 %.o: %.asm
 	$(GAS) $< -o $@

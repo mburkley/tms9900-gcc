@@ -88,10 +88,16 @@
 (define_constants
   [(UNSPEC_RETURN  0)])
 
-;; Several insns are common for QI and HI
+;; Several insns are common for QI and HI.  Some only differ with a "b" suffix.
+;; Define iterators to make it possible to collapse from insns
 ;; These are also analogous for use in splitters and expanders.
 (define_mode_iterator QHint [QI HI])
 (define_mode_iterator QHSint [QI HI SI])
+
+; Append a b for QI or a space for HI in mov,movb,c,cb, etc.
+(define_mode_attr  isfx [(QI "b") (HI " ")])
+(define_mode_attr  mname [(QI "QImode") (HI "HImode") (SI "SImode") (DI "DImode")])
+(define_mode_attr  hmode [(QI "hi") (HI "hi") (SI "si") (DI "di")])
 
 ;; Substitution to turn a CC clobber into a CC setter.  We have two of
 ;; these: for CCmode vs. CCNZmode.  TODO not sure yet if we need CCNZ
