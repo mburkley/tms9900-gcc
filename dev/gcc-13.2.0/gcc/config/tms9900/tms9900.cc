@@ -77,16 +77,16 @@ along with GCC; see the file COPYING3.  If not see
 #endif
 
 
-static rtx tms9900_function_arg (cumulative_args_t cum_v, 
-					const function_arg_info &);
+static rtx tms9900_function_arg (cumulative_args_t cum_v,
+                                        const function_arg_info &);
 
 static bool tms9900_pass_by_reference (cumulative_args_t,
-				     const function_arg_info &arg);
+                                     const function_arg_info &arg);
 static pad_direction tms9900_function_arg_padding (machine_mode mode,
                                   const_tree type);
 
 static void tms9900_function_arg_advance (cumulative_args_t,
-				      const function_arg_info &);
+                                      const function_arg_info &);
 static bool tms9900_asm_integer(rtx x, unsigned int size, int aligned_p);
 
 static bool
@@ -171,7 +171,7 @@ struct gcc_target targetm = TARGET_INITIALIZER;
 
 static void
 tms9900_encode_real (const struct real_format *fmt, long *buf,
-		    const REAL_VALUE_TYPE *r)
+                    const REAL_VALUE_TYPE *r)
 {
   char a[256];
   unsigned char d[8];
@@ -189,7 +189,7 @@ tms9900_encode_real (const struct real_format *fmt, long *buf,
  *  r->sig member of the real value is a decimal128 struct */
 static void
 tms9900_decode_real (const struct real_format *fmt, REAL_VALUE_TYPE *r,
-		    const long *buf)
+                    const long *buf)
 {
   char s[32];
   unsigned char d[8];
@@ -205,7 +205,7 @@ tms9900_decode_real (const struct real_format *fmt, REAL_VALUE_TYPE *r,
   d[7] = buf[1] & 0xff;
 
   tireal_ftoa (d, s);
-    
+
   decimal_real_from_string (r, s);
 }
 
@@ -271,7 +271,7 @@ pad_direction tms9900_function_arg_padding (machine_mode mode,
    of mode MODE and data type TYPE.
    (TYPE is null for libcalls where that information may not be available.)  */
 void tms9900_function_arg_advance (cumulative_args_t cum_v,
-				      const function_arg_info &arg)
+                                      const function_arg_info &arg)
 {
   CUMULATIVE_ARGS *cum = get_cumulative_args (cum_v);
   tree type = arg.type;
@@ -313,21 +313,21 @@ void tms9900_init_cumulative_args (struct tms9900_args *cum, tree fntype ATTRIBU
       the preceding args and about the function being called.
    NAMED is nonzero if this argument is a named parameter
       (otherwise it is an extra parameter matching an ellipsis).  */
-static rtx tms9900_function_arg (cumulative_args_t cum_v, 
-					const function_arg_info &arg)
+static rtx tms9900_function_arg (cumulative_args_t cum_v,
+                                        const function_arg_info &arg)
 {
   CUMULATIVE_ARGS *cum = get_cumulative_args (cum_v);
   machine_mode mode = arg.mode;
   if (mode == VOIDmode)
     /* Pick an arbitrary value for operand 2 of the call insn.  */
     return const0_rtx;
-  
+
   // TODO if named is no longer a param, how we do know a var param list?
   if (/* Vararg argument, must live on stack */
       // !named ||
       /* No more argument registers left */
       cum->nregs >= TMS9900_ARG_REGS ||
-      /* Argument doesn't completely fit in arg registers */      
+      /* Argument doesn't completely fit in arg registers */
       GET_MODE_SIZE(mode) + cum->nregs > TMS9900_ARG_REGS)
     {
     dbgprintf ("%s alloc on stack\n", __func__);
@@ -431,7 +431,7 @@ void print_operand_address (FILE *file,
 
 /* Should we save this register?  The only registers we care about are R11 which
  * must be saved if we are not a leaf function or if used by an inline asm and
- * R9 if we use a frame pointer in this function. */ 
+ * R9 if we use a frame pointer in this function. */
 int tms9900_should_save_reg(int regno)
 {
   dbgprintf("%s ever_live=%d used=%d R%d leaf=%d fp_need=%d\n",
@@ -460,7 +460,7 @@ int tms9900_should_save_reg(int regno)
     dbgprintf ("%s save LR, not leaf\n", __func__);
     return 1;
   }
-          
+
   /*  Not used, but the logic here is to only save BP if we need a frame pointer */
   if (regno == FRAME_POINTER_REGNUM && frame_pointer_needed)
   {
@@ -480,7 +480,7 @@ static int tms9900_get_saved_reg_size(void)
 
    for (i = 0; i < MAX_SAVED_REGS; i++)
       if (tms9900_should_save_reg (nvolregs[i]))
-         size += 2; 
+         size += 2;
 
    return size;
 }
@@ -514,7 +514,7 @@ static void print_arg_offset (int from)
 int tms9900_initial_elimination_offset (int from,
                                         int to)
 {
-  /*  
+  /*
       [argn]
       .
       [arg0]
@@ -557,9 +557,9 @@ int tms9900_initial_elimination_offset (int from,
 int legitimate_address_p (enum machine_mode mode,
                           rtx address)
 {
-    GO_IF_LEGITIMATE_ADDRESS(mode, address, win);   
+    GO_IF_LEGITIMATE_ADDRESS(mode, address, win);
     return 0;
-    
+
   win:
     return 1;
 }
@@ -588,19 +588,19 @@ indirection:
     case REG:
       /* Register indirect: *Rn */
       return 1;
-	
+
     case POST_INC:
       /* Post increment: *Rn+ */
       return 2;
-	
+
     case MEM:
       /* Yes, we know this is a memory expression.
          Strip this code and try again */
       op=addr;
       goto indirection;
-	
+
     case CONST_INT:
-    case LABEL_REF:	       
+    case LABEL_REF:
     case CONST:
     case SYMBOL_REF:
       /* Indexed register : @ADDRESS(R0) - extra word required */
@@ -612,7 +612,7 @@ indirection:
     default:
       break;
   }
-    
+
   /* We should never get here, but we need to return something */
   return 0;
 }
@@ -630,7 +630,7 @@ simple_memory_operand(rtx op, machine_mode mode ATTRIBUTE_UNUSED)
   /* Decode the address now.  */
 
  indirection:
-    
+
   addr = XEXP (op, 0);
 
   switch (GET_CODE (addr))
@@ -638,24 +638,24 @@ simple_memory_operand(rtx op, machine_mode mode ATTRIBUTE_UNUSED)
     case REG:
       /* (R0) - no extra cost */
       return 1;
-	
+
     case POST_INC:
       /* -(R0), (R0)+ - cheap! */
       return 1;
-	
-    case MEM:
-      /* cheap - is encoded in addressing mode info! 
 
-	 -- except for @(R0), which has to be @0(R0) !!! */
+    case MEM:
+      /* cheap - is encoded in addressing mode info!
+
+         -- except for @(R0), which has to be @0(R0) !!! */
 
       if (GET_CODE (XEXP (addr, 0)) == REG)
-	return 0;
-	
+        return 0;
+
       op=addr;
       goto indirection;
-	
+
     case CONST_INT:
-    case LABEL_REF:	       
+    case LABEL_REF:
     case CONST:
     case SYMBOL_REF:
       /* @#address - extra cost */
@@ -668,7 +668,7 @@ simple_memory_operand(rtx op, machine_mode mode ATTRIBUTE_UNUSED)
     default:
       break;
     }
-    
+
   return FALSE;
 }
 
@@ -690,7 +690,7 @@ simple_memory_operand(rtx op, machine_mode mode ATTRIBUTE_UNUSED)
       emit the positive followed by a jump over:
 
       jeq L1    // Length will be 8 instead of 6
-      jmp L2 
+      jmp L2
       L1:
       b @x
       L2:
@@ -729,7 +729,7 @@ const char *output_jump (rtx *operands, int ccnz ATTRIBUTE_UNUSED, int length)
    {
         if(*pos == 0)
         {
-            sprintf(buf, "%s  JMP_%d\n"
+            sprintf(buf, "%s  $+4 JMP_%d\n"
                          "\tjmp  %%l1", neg, label_id);
             label_id++;
         }
@@ -740,8 +740,8 @@ const char *output_jump (rtx *operands, int ccnz ATTRIBUTE_UNUSED, int length)
     {
         if(*neg == 0)
         {
-            sprintf(buf, "%s  JMP_%d\n"
-                         "\tjmp  JMP_%d\n"
+            sprintf(buf, "%s  $+4 JMP_%d\n"
+                         "\tjmp  $+6 JMP_%d\n"
                          "JMP_%d\n"
                          "\tb    @%%l1\n"
                          "JMP_%d", pos, label_id, label_id+1,
@@ -750,17 +750,17 @@ const char *output_jump (rtx *operands, int ccnz ATTRIBUTE_UNUSED, int length)
         }
         else
         {
-            sprintf(buf, "%s  JMP_%d\n"
+            sprintf(buf, "%s  $+6 JMP_%d\n"
                          "\tb    @%%l1\n"
-                         "JMP_%d", neg, label_id, label_id);	
+                         "JMP_%d", neg, label_id, label_id);
 
             label_id++;
         }
     }
     else
     {
-	gcc_unreachable();
-    }    
+        gcc_unreachable();
+    }
     printf ("%s buf='%s'\n", __func__, buf);
     return buf;
 }
@@ -771,7 +771,7 @@ const char *output_jump (rtx *operands, int ccnz ATTRIBUTE_UNUSED, int length)
 /* Emit a jump instrcution */
 const char* output_jump (int length)
 {
-    switch(length)    
+    switch(length)
     {
         case 12: return("jmp  %l0");
         case 14: return("b    @%l0");
@@ -790,9 +790,9 @@ void notice_update_cc_on_set(rtx exp, rtx insn ATTRIBUTE_UNUSED)
 {
   if (GET_CODE (SET_DEST (exp)) == CC0)
   {
-    cc_status.flags = 0;					
-    cc_status.value1 = SET_DEST (exp);			
-    cc_status.value2 = SET_SRC (exp);			
+    cc_status.flags = 0;
+    cc_status.value1 = SET_DEST (exp);
+    cc_status.value2 = SET_SRC (exp);
   }
   else if((GET_MODE (SET_DEST(exp)) == HImode ||
            GET_MODE (SET_DEST(exp)) == QImode)
@@ -813,17 +813,17 @@ void notice_update_cc_on_set(rtx exp, rtx insn ATTRIBUTE_UNUSED)
     cc_status.value2 = SET_DEST (exp);
   }
   else
-  {  
+  {
     /* This last else is a bit paranoid, but since nearly all
        instructions play with condition codes, it's reasonable. */
     CC_STATUS_INIT;
-  }		        
+  }
 }
 #endif
 
 /* Determine where the return value from a function will lie */
-rtx tms9900_function_value (const_tree valtype) /*, 
-                            const_tree func ATTRIBUTE_UNUSED, 
+rtx tms9900_function_value (const_tree valtype) /*,
+                            const_tree func ATTRIBUTE_UNUSED,
                             bool outgoing ATTRIBUTE_UNUSED) */
 {
   return gen_rtx_REG (TYPE_MODE (valtype), R1_REGNUM);
@@ -892,7 +892,7 @@ void tms9900_expand_prologue (void)
       ai sp, -frame         4      14+8+8   = 30
       */
       /* Emit "ai sp, -regcount*2" */
-      emit_insn(gen_addhi3(stack_pointer_rtx, stack_pointer_rtx, 
+      emit_insn(gen_addhi3(stack_pointer_rtx, stack_pointer_rtx,
                           GEN_INT(-regcount * 2)));
 
       /* Copy sp to r0 and use r0 as the dest
@@ -915,8 +915,8 @@ void tms9900_expand_prologue (void)
          {
             /* Emit "mov Rx, *R0+" */
             emit_insn(gen_movhi(
-            gen_rtx_MEM(HImode, 
-                        gen_rtx_POST_INC(HImode, 
+            gen_rtx_MEM(HImode,
+                        gen_rtx_POST_INC(HImode,
                             gen_rtx_REG(HImode, R0_REGNUM))),
                         gen_rtx_REG(HImode, saveregs[i])));
          }
@@ -952,7 +952,7 @@ void tms9900_expand_prologue (void)
    {
       dbgprintf("%s alloc frame %d\n", __func__, frame_size);
       /* Emit "ai sp, -framesize" */
-      emit_insn(gen_addhi3(stack_pointer_rtx, stack_pointer_rtx, 
+      emit_insn(gen_addhi3(stack_pointer_rtx, stack_pointer_rtx,
                           GEN_INT(-frame_size)));
    }
 
@@ -982,7 +982,7 @@ void tms9900_expand_epilogue (bool is_sibcall)
    {
       dbgprintf("%s delete frame size=%ld\n", __func__, frame_size);
       /* Emit "ai sp, frame_size" */
-      emit_insn(gen_addhi3(stack_pointer_rtx, stack_pointer_rtx, 
+      emit_insn(gen_addhi3(stack_pointer_rtx, stack_pointer_rtx,
                            GEN_INT(frame_size)));
    }
 
@@ -997,15 +997,15 @@ void tms9900_expand_epilogue (bool is_sibcall)
       /* Emit "mov *SP+, Rx" */
       emit_insn(gen_movhi(
          gen_rtx_REG(HImode, saveregs[i]),
-         gen_rtx_MEM(HImode, 
+         gen_rtx_MEM(HImode,
                      gen_rtx_POST_INC(HImode, stack_pointer_rtx))));
    }
-   
+
    if(!is_sibcall)
    {
       dbgprintf("%s return\n", __func__);
       /* Emit the return instruction "b *R11" */
-      emit_insn(gen_rtx_UNSPEC(HImode, 
+      emit_insn(gen_rtx_UNSPEC(HImode,
                                gen_rtvec (1, gen_rtx_REG(HImode, R11_REGNUM)),
                                UNSPEC_RETURN));
    }
@@ -1013,11 +1013,11 @@ void tms9900_expand_epilogue (bool is_sibcall)
 }
 
 
-/* All registers may be used as a base, except R0 or 
+/* All registers may be used as a base, except R0 or
    pseudoregs when we are in strict mod */
 int tms9900_reg_ok_for_base(int strict, rtx reg)
 {
-  return(!strict || 
+  return(!strict ||
          (REGNO(reg) !=0 && REGNO(reg) <= R15_REGNUM));
 }
 
@@ -1072,10 +1072,10 @@ int tms9900_go_if_legitimate_address(enum machine_mode mode ATTRIBUTE_UNUSED, rt
 
 #if 1
 /* All aggregate types or types larger than four bytes which are
-   to be passsed by value are silently copied to the stack and 
+   to be passsed by value are silently copied to the stack and
    then passed by reference. */
 static bool tms9900_pass_by_reference (cumulative_args_t,
-				     const function_arg_info &arg)
+                                     const function_arg_info &arg)
 {
   tree type = arg.type;
   machine_mode mode = arg.mode;
@@ -1143,7 +1143,7 @@ tms9900_asm_integer(rtx x, unsigned int size, int aligned_p)
       fprintf(asm_out_file, "\tbyte\t");
       for(i = size-1; i>=1; i--)
       {
-        fprintf(asm_out_file, "0x%X,", (value >> (i*8)) & 0xFF);        
+        fprintf(asm_out_file, "0x%X,", (value >> (i*8)) & 0xFF);
       }
       fprintf(asm_out_file, "0x%X", value & 0xFF);
       return true;
@@ -1300,7 +1300,7 @@ gate_tms9900_postinc(void)
 }
 
 
-/* Find an instruction which uses a form like *(register+constant) we could 
+/* Find an instruction which uses a form like *(register+constant) we could
    merge via pointer postincrement in an earlier instruction.*/
 static void
 tms9900_find_merge_insn(rtx insn, rtx parent, int argnum, rtx arg)
@@ -1330,7 +1330,7 @@ tms9900_find_merge_insn(rtx insn, rtx parent, int argnum, rtx arg)
          reg = val1;
       }
 
-      if((regnum >= 0) && 
+      if((regnum >= 0) &&
          (offset == 2 || offset == 1) &&
          (find_regno_note(insn, REG_DEAD, regnum)))
       {
@@ -1348,14 +1348,14 @@ tms9900_find_merge_insn(rtx insn, rtx parent, int argnum, rtx arg)
         {
           /* Modify previous instruction to use postincrement */
           rtx temp_inc = gen_rtx_POST_INC(last->mode, reg);
-          rtx temp_arg = gen_rtx_MEM(last->mode,temp_inc); 
+          rtx temp_arg = gen_rtx_MEM(last->mode,temp_inc);
           memcpy(XEXP(last->parent, last->argnum), temp_arg, rtx_size(temp_arg));
 
           /* Modify this instruction to remove index */
-          temp_arg = gen_rtx_MEM(last->mode,reg); 
+          temp_arg = gen_rtx_MEM(last->mode,reg);
           memcpy(XEXP(parent, argnum), temp_arg, rtx_size(temp_arg));
 
-          if(dump_file) 
+          if(dump_file)
           {
             fprintf(dump_file,"\nModified instruction %d:\n",INSN_UID(last->insn));
             print_rtl_single(dump_file,last->insn);
@@ -1387,7 +1387,7 @@ tms9900_find_merge_insn(rtx insn, rtx parent, int argnum, rtx arg)
       int index = REGNO(arg);
       reg_last_insn[index].insn = insn;
       reg_last_insn[index].is_deref = is_deref;
-      reg_last_insn[index].mode = GET_MODE(arg);     
+      reg_last_insn[index].mode = GET_MODE(arg);
       reg_last_insn[index].regnum = REGNO(arg);
       reg_last_insn[index].parent = parent;
       reg_last_insn[index].argnum = argnum;
