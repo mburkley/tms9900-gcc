@@ -158,9 +158,12 @@ static int tms9900_dwarf_label_counter;
 #undef TARGET_FIXED_CONDITION_CODE_REGS
 #define TARGET_FIXED_CONDITION_CODE_REGS tms9900_fixed_condition_code_regs
 
+/*  Is it ok for us to make a tail call to a sibling function?  I don't know of
+ *  any reason why not. */
 static bool
 tms9900_ok_for_sibcall (tree decl ATTRIBUTE_UNUSED, tree exp ATTRIBUTE_UNUSED)
 {
+  printf ("%s tree %p is ok\n", __func__, decl);
   return true;
 }
 
