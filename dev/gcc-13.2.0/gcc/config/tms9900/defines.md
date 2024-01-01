@@ -97,7 +97,7 @@
 ; Append a b for QI or a space for HI in mov,movb,c,cb, etc.
 (define_mode_attr  isfx [(QI "b") (HI " ")])
 (define_mode_attr  mname [(QI "QImode") (HI "HImode") (SI "SImode") (DI "DImode")])
-(define_mode_attr  hmode [(QI "hi") (HI "hi") (SI "si") (DI "di")])
+(define_mode_attr  hmode [(QI "qi") (HI "hi") (SI "si") (DI "di")])
 
 ;; Substitution to turn a CC clobber into a CC setter.  We have two of
 ;; these: for CCmode vs. CCNZmode.  TODO not sure yet if we need CCNZ
