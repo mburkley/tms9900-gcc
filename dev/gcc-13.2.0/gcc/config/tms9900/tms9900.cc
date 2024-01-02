@@ -685,24 +685,20 @@ simple_memory_operand(rtx op, machine_mode mode ATTRIBUTE_UNUSED)
 
       jeq x   // 2 (declared as 4)
 
-      jne L1   // 6 (declared as 8)
+      jne $+6   // 6 (declared as 8)
       b @x
-      L1:
 
       if jump is long and we don't have a negative instruction then we could
       emit the positive followed by a jump over:
 
-      jeq L1    // Length will be 8 instead of 6
-      jmp L2
-      L1:
+      jeq S+4    // Length will be 8 instead of 6
+      jmp $+6
       b @x
-      L2:
 
       Or if is short and we don't have the positive we could:
 
-      jne L1  // Length 4 instead of 2
+      jne S+4  // Length 4 instead of 2
       jmp x
-      L1:
 
 NOTE: Label ref is hardcoded to %l1.  If calling insn varies this will need to
 be made a parameter
@@ -732,9 +728,8 @@ const char *output_jump (rtx *operands, int ccnz ATTRIBUTE_UNUSED, int length)
    {
         if(*pos == 0)
         {
-            sprintf(buf, "%s  $+4 JMP_%d\n"
-                         "\tjmp  %%l1", neg, label_id);
-            label_id++;
+            sprintf(buf, "%s  $+4\n"
+                         "\tjmp  %%l1", neg);
         }
         else
           sprintf(buf, "%s  %%l1",pos);
@@ -743,21 +738,15 @@ const char *output_jump (rtx *operands, int ccnz ATTRIBUTE_UNUSED, int length)
     {
         if(*neg == 0)
         {
-            sprintf(buf, "%s  $+4 JMP_%d\n"
-                         "\tjmp  $+6 JMP_%d\n"
-                         "JMP_%d\n"
-                         "\tb    @%%l1\n"
-                         "JMP_%d", pos, label_id, label_id+1,
-                         label_id, label_id+1);
-            label_id += 2;
+            sprintf(buf, "%s  $+4\n"
+                         "\tjmp  $+6\n"
+                         "\tb    @%%l1\n",
+                         pos);
         }
         else
         {
-            sprintf(buf, "%s  $+6 JMP_%d\n"
-                         "\tb    @%%l1\n"
-                         "JMP_%d", neg, label_id, label_id);
-
-            label_id++;
+            sprintf(buf, "%s  $+6\n"
+                         "\tb    @%%l1\n", neg);
         }
     }
     else
