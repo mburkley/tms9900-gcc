@@ -66,8 +66,8 @@ along with GCC; see the file COPYING3.  If not see
  * occasions this pointer may go invalid before we are finished which may cause
  * a segfault on write so if debugging segfaults make sure to test with inline
  * debug disabled */
-#undef TMS9900_INLINE_DEBUG
-// #define TMS9900_INLINE_DEBUG 1
+// #undef TMS9900_INLINE_DEBUG
+#define TMS9900_INLINE_DEBUG 1
 
 /* Define this to 1 to output debug info to stdout as we are compiling */
 #if 0
@@ -234,9 +234,13 @@ const struct real_format tms9900_real_format =
   };
 
 
+// TODO this needs to be refactored for gcc13.  THe OVERRIDE_OPTIONS macro is
+// poisoned
+
 void override_options (void)
 {
   /* We use TI99 floating point, not IEEE floating point.  */
+  // printf ("TI99_FLOAT is %d\n", TARGET_NO_TI99_FLOAT);
   if (!TARGET_NO_TI99_FLOAT)
     REAL_MODE_FORMAT (DFmode) = &tms9900_real_format;
 }
@@ -753,7 +757,7 @@ const char *output_jump (rtx *operands, int ccnz ATTRIBUTE_UNUSED, int length)
     {
         gcc_unreachable();
     }
-    printf ("%s buf='%s'\n", __func__, buf);
+    // printf ("%s buf='%s'\n", __func__, buf);
     return buf;
 }
 
