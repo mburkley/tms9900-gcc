@@ -66,8 +66,8 @@ along with GCC; see the file COPYING3.  If not see
  * occasions this pointer may go invalid before we are finished which may cause
  * a segfault on write so if debugging segfaults make sure to test with inline
  * debug disabled */
-// #undef TMS9900_INLINE_DEBUG
-#define TMS9900_INLINE_DEBUG 1
+#undef TMS9900_INLINE_DEBUG
+// #define TMS9900_INLINE_DEBUG 1
 
 /* Define this to 1 to output debug info to stdout as we are compiling */
 #if 0
