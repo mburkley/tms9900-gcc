@@ -1,6 +1,15 @@
 #include "tap.h"
 #include <stdarg.h>
 
+#ifndef __TMS9900_PATCH_MAJOR__
+#define __TMS9900_PATCH_MAJOR__ 1
+#endif
+
+#ifndef __TMS9900_PATCH_MINOR__
+#define __TMS9900_PATCH_MINOR__ 28
+#endif
+
+
 static void t_version (void)
 {
     printf ("# gcc v=%s, major=%d minor=%d\n",

@@ -432,7 +432,8 @@ void t_cmp_s_char()
     char lt=(x<y);
     char gt=(x>y);
     char eq=(x==y);
-    test_execute (__func__, lt&&!eq&&!gt);
+    int pass=lt&&!eq&&!gt;
+    test_execute (__func__, pass);
 }
 
 void t_cmp_s_short()

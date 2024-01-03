@@ -1,11 +1,12 @@
 LIBTI99DIR?=../libti99
 
-GCCDIR=/opt/tms9900-gcc/bin/
-
-GAS=$(GCCDIR)tms9900-as
+GCC4DIR=/opt/tms9900-gcc/bin/
+GCCDIR=/home/mark/tms9900-gcc/tmsgcc13/bin/
+GAS=$(GCC4DIR)tms9900-as
 LD=$(GCCDIR)tms9900-ld
 CC=$(GCCDIR)tms9900-gcc
-LIBGCC=$(GCCDIR)../lib/gcc/tms9900/4.4.0/libgcc.a
+# LIBGCC=$(GCCDIR)../lib/gcc/tms9900/4.4.0/libgcc.a
+# LIBGCC=$(GCCDIR)../lib/gcc/tms9900/13.2.0/libgcc.a
 ELF2CART=elf2cart
 
 FNAME=test
@@ -17,14 +18,14 @@ FNAME=test
 
 # TODO make these targets
 
-# TEST_SRC=test_char_short
+TEST_SRC=test_char_short
 # TEST_SRC=test_long
 # TEST_SRC=test_float
-TEST_SRC=test_misc
+# TEST_SRC=test_misc
 # TEST_SRC=test_one
 
 LDFLAGS=\
-  --section-start .text=6000 --section-start .data=2080
+  --section-start .text=0000 --section-start .data=2080
 
 CFLAGS=-std=c99 --save-temp -I$(LIBTI99DIR)
 
@@ -42,7 +43,7 @@ CRT0 = $(LIBTI99DIR)/crt0_ea5.o
 LIBTI99=-lti99
 
 OBJECT_LIST=\
-  header.o\
+  temu_hdr.o\
   $(CRT0)\
   $(TEST_SRC).o \
   tap.o

@@ -1,14 +1,23 @@
 #ifndef __TAP_H
 #define __TAP_H
 
+#undef USE_VDP
+
 #if 1 // def __tms9900__
+#ifdef USE_VDP
 #include <vdp.h>
+#endif
+
+#include "temu.h"
 
 /* Define 32 bit type so we have the same size values on host and target to
  * compare test results */
 typedef long int32_t;
 typedef unsigned long uint32_t;
 
+#define printfd temu_printfd
+#define printfs temu_printfs
+#define printf printfs
 #else
 #include <stdio.h>
 #include <string.h>
@@ -21,7 +30,7 @@ typedef unsigned int uint32_t;
 #ifndef _DEBUG
 #define dprintf(...)
 #else
-#define dprintf printf
+#define dprintf printfd
 #endif
 
 

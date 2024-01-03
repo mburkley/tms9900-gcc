@@ -117,5 +117,6 @@
 ; 	(compare:CCNZ (match_dup 1) (const_int 0)))
 ;    (set (match_dup 0) (match_dup 1))])
 
-(define_subst_attr "cc_cc" "cc_cc" "_nocc" "_cc")
+; (define_subst_attr "cc_cc" "cc_cc" "_nocc" "_cc")
+(define_subst_attr "cc_cc" "cc_cc" "" "_cc")
 ; (define_subst_attr "cc_ccnz" "cc_ccnz" "_nocc" "_cc")
