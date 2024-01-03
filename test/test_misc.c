@@ -12,7 +12,20 @@
 #include "tap.h"
 #include <stdarg.h>
 
+<<<<<<< HEAD
 void t_version (void)
+=======
+#ifndef __TMS9900_PATCH_MAJOR__
+#define __TMS9900_PATCH_MAJOR__ 1
+#endif
+
+#ifndef __TMS9900_PATCH_MINOR__
+#define __TMS9900_PATCH_MINOR__ 28
+#endif
+
+
+static void t_version (void)
+>>>>>>> e254d80 (Mostly working, some unit tests failing)
 {
     dprintf ("# gcc v=");
     dprintf (__VERSION__);

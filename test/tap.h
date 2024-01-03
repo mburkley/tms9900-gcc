@@ -12,6 +12,7 @@
 #define __TAP_H
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 #include "xop.h"
 
 #ifdef __tms9900__
@@ -23,13 +24,30 @@
 #include <vdp.h>
 #define USE_VDP 1
 #endif
+=======
+#undef USE_VDP
+
+#if 1 // def __tms9900__
+#ifdef USE_VDP
+#include <vdp.h>
+#endif
+
+#include "temu.h"
+>>>>>>> e254d80 (Mostly working, some unit tests failing)
 
 /* Define 32 bit type so we have the same size values on host and target to
  * compare test results */
 typedef long int32_t;
 typedef unsigned long uint32_t;
 
+<<<<<<< HEAD
 #else // tms9900
+=======
+#define printfd temu_printfd
+#define printfs temu_printfs
+#define printf printfs
+#else
+>>>>>>> e254d80 (Mostly working, some unit tests failing)
 #include <stdio.h>
 #include <string.h>
 
@@ -41,10 +59,14 @@ typedef unsigned int uint32_t;
 #ifndef _DEBUG
 #define dprintf(...)
 #else
+<<<<<<< HEAD
 #ifdef EMUL_TEST
 #define dprintf test_printf
 #else
 #define dprintf printf
+=======
+#define dprintf printfd
+>>>>>>> e254d80 (Mostly working, some unit tests failing)
 #endif
 #endif
 
