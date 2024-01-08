@@ -28,3 +28,7 @@ mti99-float
 Target RejectNegative Report InverseMask(NO_TI99_FLOAT)
 Generate TI console ROM compatible doubles and floats
 
+minline_rtl
+Target RejectNegative Report Mask(TI99_INLINE_RTL)
+Generate RTL dumps as inline comments in assembly output
+

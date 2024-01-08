@@ -1,9 +1,3 @@
-#ifdef __tms9900__
-#include <vdp.h>
-#else
-#include <stdio.h>
-#endif
-
 #include "tap.h"
 
 static int testsRun = 0;
@@ -32,7 +26,7 @@ void test_report (void)
 
 void test_run (TESTFUNC tests[], int count)
 {
-#ifdef __tms9900__
+#ifdef USE_VDP
     set_graphics(0);
     charset();
 #endif
@@ -44,7 +38,7 @@ void test_run (TESTFUNC tests[], int count)
         
     test_report ();
 
-#ifdef __tms9900__
+#ifdef USE_VDP
     while(1);
 #endif
 }

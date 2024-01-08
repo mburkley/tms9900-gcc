@@ -1,6 +1,7 @@
 LIBTI99DIR?=../libti99
 
 GCCDIR=/opt/tms9900-gcc/bin/
+# GCCDIR=../tms9900-gcc/bin/
 
 GAS=$(GCCDIR)tms9900-as
 LD=$(GCCDIR)tms9900-ld
@@ -17,11 +18,12 @@ FNAME=test
 
 # TODO make these targets
 
-# TEST_SRC=test_char_short
+TEST_SRC=test_char_short
 # TEST_SRC=test_long
 # TEST_SRC=test_float
-TEST_SRC=test_misc
+# TEST_SRC=test_misc
 # TEST_SRC=test_one
+# TEST_SRC=zap
 
 LDFLAGS=\
   --section-start .text=6000 --section-start .data=2080
@@ -37,12 +39,18 @@ CFLAGS=-std=c99 --save-temp -I$(LIBTI99DIR)
 # Uncomment to turn on unit test debug output
 # CFLAGS+=-D_DEBUG=1
 
+# Uncomment to build binary for use with emulator
+# CFLAGS+=-DEMUL_TEST=1
+
 CRT0 = $(LIBTI99DIR)/crt0_ea5.o
 
 LIBTI99=-lti99
 
-OBJECT_LIST=\
-  header.o\
+OBJECT_LIST=header.o
+
+# OBJECT_LIST=temu_hdr.o
+
+OBJECT_LIST+=\
   $(CRT0)\
   $(TEST_SRC).o \
   tap.o
@@ -73,6 +81,7 @@ $(FNAME).elf: $(OBJECT_LIST)
 	rm -f *.s
 	rm -f mapfile
 	rm -f gccdump.*
+	rm -f *.c.*r.*
 
 %.o: %.asm
 	$(GAS) $< -o $@

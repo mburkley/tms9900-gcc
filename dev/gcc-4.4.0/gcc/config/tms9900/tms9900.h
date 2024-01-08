@@ -259,7 +259,7 @@ extern short *reg_renumber;	/* def in local_alloc.c */
 #define HARD_SP_REGNUM		HARD_R10_REGNUM
 /* Old PC after BL instruction */
 #define HARD_LR_REGNUM		HARD_R11_REGNUM
-/* CRU base address or static chain */
+/* static chain */
 #define HARD_CB_REGNUM		HARD_R12_REGNUM
 /* Arg pointer */
 #define HARD_AP_REGNUM		HARD_R13_REGNUM
@@ -344,14 +344,10 @@ extern short *reg_renumber;	/* def in local_alloc.c */
 
    For any two classes, it is very desirable that there be another
    class that represents their union.
-
-   MGB TODO remove CRU.  No CRU code is emitted by this back end
 */
 enum reg_class
 {
   NO_REGS,
-  SHIFT_REGS,     /* Register used for variable shift (SC) */
-  CRU_REGS,       /* Register used for CRU access (CB) */
   FIXED_REGS,     /* Register used for fixed purposes (LR, SP) */
   BASE_REGS,      /* Registers which may be used as a memory base */
   ALL_REGS,       /* All registers, including fakes */
@@ -371,8 +367,6 @@ enum reg_class
 /* Give names of register classes as strings for dump file.  */
 #define REG_CLASS_NAMES \
 { "NO_REGS",       \
-  "SHIFT_REGS",    \
-  "CRU_REGS",      \
   "FIXED_REGS",    \
   "BASE_REGS",     \
   "ALL_REGS" }
@@ -403,17 +397,14 @@ enum reg_class
 
 #define REG_CLASS_CONTENTS \
 /* NO_REGS       */  {{ 0x00000000 }, \
-/* SHIFT_REGS    */   { 0x00000001 }, /* SC */ \
-/* CRU_REGS      */   { 0x00001000 }, /* CB */ \
-/* FIXED_REGS    */   { 0x00008800 }, /* LR,SP */ \
+/* FIXED_REGS    */   { 0x00008801 }, /* SC,LR,SP */ \
 /* BASE_REGS     */   { 0x0000FFFE }, \
 /* ALL_REGS      */   { 0x0000FFFF }}
 
 /* Set up a C expression whose value is a register class containing hard
    register REGNO */
 #define REGNO_REG_CLASS(REGNO) \
-   (REGNO == HARD_SC_REGNUM  ? SHIFT_REGS : \
-    REGNO == HARD_CB_REGNUM  ? CRU_REGS   : \
+   (REGNO == HARD_SC_REGNUM  ? FIXED_REGS : \
     REGNO == HARD_LR_REGNUM  ? FIXED_REGS   : \
     REGNO == HARD_SP_REGNUM  ? FIXED_REGS   : \
     REGNO <= HARD_R15_REGNUM ? ALL_REGS   : \
@@ -421,9 +412,7 @@ enum reg_class
 
 /* Get register class from a letter in the machine description. */
 #define REG_CLASS_FROM_LETTER(C) \
-   ((C) == 'S' ? SHIFT_REGS : \
-    (C) == 'C' ? CRU_REGS   : \
-    (C) == 'T' ? ALL_REGS   : \
+   ((C) == 'T' ? ALL_REGS   : \
     NO_REGS)
 
 /* A C expression that places additional restrictions of the register
@@ -587,6 +576,12 @@ enum reg_class
    the data type of the function (as a tree), or for a library call it is
    an identifier node for the subroutine name. */
 #define RETURN_POPS_ARGS(FUNDECL,FUNTYPE,SIZE)	0
+
+/* MGB to load a byte into a word we need to zero extend it.  Defining this
+ * macro solves some problems with upgrading QI to HI but introduces others
+ * where it extends a QI and then subsequently refers to the reg in QI mode
+ * anyway.  Leaving commented out for now */
+// #define LOAD_EXTEND_OP(MODE) ZERO_EXTEND
 
 /* Passing Arguments in Registers.  */
 
