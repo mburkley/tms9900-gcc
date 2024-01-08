@@ -2,6 +2,6 @@ Package: tms9900-gcc
 Section: free
 Priority: optional
 Architecture: amd64
-Version: 1.27
+Version: 1.28
 Maintainer: Mark Burkley <mark@burkley.net>
 Description: GCC 4.4.0 and binutils for the TMS9900 CPU

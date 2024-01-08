@@ -3,3 +3,5 @@
 build
 dev
 gccdump.*
+deb/opt
+*.deb

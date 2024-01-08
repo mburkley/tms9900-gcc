@@ -20,6 +20,19 @@ static void t_int32_mul (void)
     test_execute (__func__, z==42);
 }
 
+#include "ltoa.c"
+
+static void t_int32_div (void)
+{
+    int32_t x =200000;
+    int32_t y =66528;
+    int32_t z;
+    z = x/y;
+
+    printf("# z=%s\n", ltoa (z));
+    test_execute (__func__, z==3);
+}
+
 static void t_int32_or()
 {
     int32_t x = 0x56784321;
@@ -136,7 +149,7 @@ static void t_int32_srl_var()
 
     int z=4;
     y = x>>z;
-    dprintf("# y=%x\n",y);
+    printf("# y=%x\n",y);
     test_execute (__func__, y== 0x08734123);
 }
 
@@ -206,6 +219,7 @@ TESTFUNC tests[] =
 {
     t_mul_short_int32,
     t_int32_mul,
+    t_int32_div,
     t_int32_or,
     t_uint32_or,
     t_int32_and,

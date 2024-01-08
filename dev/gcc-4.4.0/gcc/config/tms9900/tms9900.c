@@ -58,11 +58,15 @@ along with GCC; see the file COPYING3.  If not see
  * bit of a hack that takes a copy of the output file pointer.  On rare
  * occasions this pointer may go invalid before we are finished which may cause
  * a segfault on write so if debugging segfaults make sure to test with inline
- * debug disabled */
-#undef TMS9900_INLINE_DEBUG
-// #define TMS9900_INLINE_DEBUG 1
+ * debug disabled 
 
-/* Define this to 1 to output debug info to stdout as we are compiling */
+ * Note that this is also controlled by the -minline_rtl command line switch, so is
+ * always left enabled now.
+ */
+// #undef TMS9900_INLINE_DEBUG
+#define TMS9900_INLINE_DEBUG 1
+
+/* Define this to 1 to output debug info to stdout as we are compiling. */
 #if 0
 #define dbgprintf printf
 #else
@@ -1293,6 +1297,8 @@ extern void tms9900_inline_debug (const char *fmt,...)
 #ifndef TMS9900_INLINE_DEBUG
     return;
 #endif
+    if (!TARGET_TI99_INLINE_RTL)
+        return;
 
     FILE *file = outputFile?outputFile:stdout;
 
@@ -1308,6 +1314,9 @@ extern void tms9900_debug_operands (const char *name, rtx ops[], int count)
 #ifndef TMS9900_INLINE_DEBUG
     return;
 #endif
+
+    if (!TARGET_TI99_INLINE_RTL)
+        return;
 
     FILE *file = outputFile?outputFile:stdout;
 

@@ -1,7 +1,7 @@
 #include "tap.h"
 #include <stdarg.h>
 
-static void t_version (void)
+void t_version (void)
 {
     printf ("# gcc v=%s, major=%d minor=%d\n",
             __VERSION__,
@@ -40,18 +40,18 @@ static void stack_func_arg (int count, int expect_sum, ...)
     test_execute (__func__, (sum == expect_sum) && ascending);
 }
 
-static void t_stack_func_arg_small (void)
+void t_stack_func_arg_small (void)
 {
     stack_func_arg (4, 42, 1, 10, 15, 16);
 }
 
-static void t_stack_func_arg_large (void)
+void t_stack_func_arg_large (void)
 {
     // Use Fibonacci, why not
     stack_func_arg (15, 986, 0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377);
 }
 
-static void t_for_break(void)
+void t_for_break(void)
 {
     int i;
 
@@ -123,7 +123,7 @@ void t_byte_array()
     test_execute (__func__, pass);
 }
 
-static void t_long_char_str ()
+void t_long_char_str ()
 {
     /*  The limitation of 1024 chars in a single string is an assembler limit,
      *  not a compiler limit.  The size is hardcoded in
@@ -221,19 +221,56 @@ void t_inline_clobber()
     test_execute (__func__, 1);
 }
 
-static volatile unsigned char color;
+unsigned char color;
 
-static void setbackground(int c)
+/*  Replicating a bug in vdp_bmcolor where a swpb was missed in andhi3.  If
+ *  compiled with -O2 the following output drops the extend of r2:
+
+	andi r1, >F
+	movb @color, r2
+	andi r2, >F0
+	soc  r2, r1
+*/
+
+void __attribute__ ((noinline)) setbackground(int c)
 {
-  color = (color & 0xF0) | (c & 0x0F);
+    color = (color & 0xF0) | (c & 0x0F);
 }
-
 
 void t_bitwise_replace()
 {
     color = 0xaa;
     setbackground(0x55);
+    printf("# color=%d\n", color);
     test_execute (__func__, color==0xa5);
+}
+
+int __attribute__ ((noinline)) test_mixed_params (unsigned char c, unsigned int len)
+{
+    return c+len;
+}
+
+/*  We are looking for a bug in movqi.  With -O2 in 1.27, this code produces:
+
+	li   r2, >20
+	movb r2, r1
+	bl   @test_mixed_params
+
+    and without -O2, the correct code:
+
+	li   r2, >20
+	li   r1, >2000
+	bl   @test_mixed_params
+*/
+unsigned char test_return_mixed ()
+{
+    return test_mixed_params (32, 32);
+}
+
+void t_mixed_params()
+{
+    char x = test_return_mixed();
+    test_execute (__func__, x==64);
 }
 
 TESTFUNC tests[] = 
@@ -246,7 +283,8 @@ TESTFUNC tests[] =
     t_var_byte_array,
     t_byte_array,
     t_inline_clobber,
-    t_bitwise_replace
+    t_bitwise_replace,
+    t_mixed_params
 };
 
 #define TEST_COUNT (sizeof (tests) / sizeof (TESTFUNC))
