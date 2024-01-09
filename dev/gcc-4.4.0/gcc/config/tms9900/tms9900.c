@@ -625,8 +625,8 @@ const char* output_jump (int length)
     length -= 10;
     switch(length)    
     {
-        case 2: return("jmp  %l0");
-        case 4: return("b    @%l0");
+        case 2: return("jmp  %l0  ; output jump");
+        case 4: return("b    @%l0 ; output jump");
         default: gcc_unreachable();
     }
 }
@@ -1289,6 +1289,48 @@ struct rtl_opt_pass pass_tms9900_postinc =
 
 // MGB additions start here - mostly for debug
 
+/*
+ *  In the case that src operand is a reg and has an offset, then it is either a
+ *  QI that should have been truncated from a HI or a HI that should have been
+ *  extended from a QI.  We try to correct this in the source operand if we can.
+ *  Return false if no correction required or if correction has been applied to
+ *  source op.  Return true if correction is needed to dest operand after
+ *  operation.
+ */
+bool tms9900_correct_byte_order (rtx insn, rtx operands[])
+{
+  /*  If the source operand is not a register or does not have an offset then
+   *  no action required */
+  if (!REG_P (operands[1]) || REG_OFFSET (operands[1]) == 0)
+    return false;
+
+  /*  If the source register is not the original register, and the original is a
+   *  mem expression, then the offset refers to something else, so we can ignore
+   *  this case */
+  if (ORIGINAL_REGNO (operands[1]) != REGNO (operands[1]) && 
+      REG_EXPR (operands[1]))
+    return false;
+
+  /*  We have determined that the byte order in operands[1] is wrong.  If
+   *  the operands[1] register dies in this insn or if the target operands[0]
+   *  has the same register number, then we can emit swpb for the source */
+  if (REGNO (operands[1]) == REGNO (operands[0]) ||
+      find_regno_note (insn, REG_DEAD, REGNO (operands[1])))
+  {
+    output_asm_insn ("swpb %1 ; subreg offset correction", operands);
+    return false;
+  }
+
+  /*  We need to swap after the operation but the destination is not a register.  We
+   *  don't know how to handle this, so just asser */
+  if (!REG_P (operands[0]))
+      gcc_unreachable();
+
+  /*  Correction is required but cannot be applied to source.  Return true so
+   *  caller can apply to dest */
+  return true;
+}
+
 #include <stdlib.h>
 #include <stdarg.h>
 
@@ -1309,7 +1351,7 @@ extern void tms9900_inline_debug (const char *fmt,...)
     va_end (ap);
 }
 
-extern void tms9900_debug_operands (const char *name, rtx ops[], int count)
+extern void tms9900_debug_operands (const char *name, rtx insn, rtx ops[], int count)
 {
 #ifndef TMS9900_INLINE_DEBUG
     return;
@@ -1321,7 +1363,10 @@ extern void tms9900_debug_operands (const char *name, rtx ops[], int count)
     FILE *file = outputFile?outputFile:stdout;
 
     static int refcount;
-    fprintf(file, "\n; %s-%d\n", name, ++refcount);
+    if (insn)
+        fprintf(file, "\n; %s-%d\n", name, INSN_UID(insn));
+    else
+        fprintf(file, "\n; %s-exp-%d\n", name, ++refcount);
     for (int i = 0; i < count; i++)
     {
         fprintf(file, "; OP%d : ", i);
@@ -1336,6 +1381,5 @@ extern void tms9900_debug_operands (const char *name, rtx ops[], int count)
         fprintf (file, "code=[%s:%s]\n", GET_RTX_NAME(GET_CODE(ops[i])),
                  GET_MODE_NAME (GET_MODE (ops[i])));
     }
-    fprintf (file, "\n");
 }
 

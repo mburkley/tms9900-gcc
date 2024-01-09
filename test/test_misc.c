@@ -1,3 +1,14 @@
+/*
+ *  This is a collection of miscellaneous tests, mostly added due to bug reports
+ *  on the forums.  Comments ahead of each test should describe how the failure
+ *  was observed.  Many of these tests only fail with -O2 enabled.
+ *
+ *  When creating tests that should run when optimised, avoid initialising vars
+ *  inside the test function as the compiler will short circuit the test
+ *  otherise.  Also don't declare funcs as static and if necessary declare as
+ *  noinline.  Static vars may need to be declared volatile.
+ */
+
 #include "tap.h"
 #include <stdarg.h>
 
@@ -273,6 +284,26 @@ void t_mixed_params()
     test_execute (__func__, x==64);
 }
 
+/*  This test reproduces a faulty movqi issue reported by Tursi on Dec 24 */
+
+char SpriteTab[10] = { 0x22, 0x44, 0x66 };
+#define SHIP_C SpriteTab[1]
+int playerXspeed = 0x3333;
+
+void t_cmp_sub()
+{
+    #if 0
+    SpriteTab[0] = 0x22;
+    SpriteTab[1] = 0x44;
+    SpriteTab[2] = 0x66;
+    playerXspeed = 0x3333;
+    #endif
+
+    if (SHIP_C < 224-playerXspeed) SHIP_C+=playerXspeed;
+    test_execute (__func__, SpriteTab[0] == 0x22 && SpriteTab[1] == 0x77 &&
+    SpriteTab[2] == 0x66);
+}
+
 TESTFUNC tests[] = 
 {
     t_version,
@@ -284,7 +315,8 @@ TESTFUNC tests[] =
     t_byte_array,
     t_inline_clobber,
     t_bitwise_replace,
-    t_mixed_params
+    t_mixed_params,
+    t_cmp_sub
 };
 
 #define TEST_COUNT (sizeof (tests) / sizeof (TESTFUNC))
