@@ -13,17 +13,8 @@
 
 #ifdef __tms9900__
 
-#ifdef EMUL_TEST
-#include "temu.h"
-
-#define printfd temu_printfd
-#define printfs temu_printfs
-#define printf printfs
-
-#else // EMUL_TEST
 #include <vdp.h>
 #define USE_VDP 1
-#endif // EMUL_TEST
 
 /* Define 32 bit type so we have the same size values on host and target to
  * compare test results */

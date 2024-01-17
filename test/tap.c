@@ -1,3 +1,10 @@
+#ifdef __tms9900__
+#include <vdp.h>
+#else
+#include <stdio.h>
+#endif
+
+
 #include "tap.h"
 
 static int testsRun = 0;
