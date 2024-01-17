@@ -10,6 +10,16 @@
 static int testsRun = 0;
 static int testsPass = 0;
 
+/*  Dummy functions that may be called by test functions */
+void test_dummy_void (void)
+{
+}
+
+void test_dummy_int (int x)
+{
+    x=x;
+}
+
 void test_execute (const char *name, int passed)
 {
     testsRun++;

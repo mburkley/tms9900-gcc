@@ -304,6 +304,34 @@ void t_cmp_sub()
     SpriteTab[2] == 0x66);
 }
 
+#define uint8 unsigned char
+#define NUM_SHOTS 9
+
+int f18a;
+int shc [NUM_SHOTS];
+int ep [3];
+
+#define spposn test_dummy_int
+#define xx_VDP_SET_REGISTER test_dummy_void
+
+void t_whoded() { 
+    for (uint8 a=0; a<NUM_SHOTS; a++) {
+        for (uint8 b=0; b<3; ++b) {
+            spposn(b);
+            if (shc[a] == 0) {
+                if (f18a) {
+                    xx_VDP_SET_REGISTER();
+                } else {
+                    xx_VDP_SET_REGISTER();
+                }
+                ep[b]-=1;
+                break;
+            }
+        }
+    }
+    test_execute (__func__, 1==1);
+}
+
 TESTFUNC tests[] = 
 {
     t_version,
@@ -316,7 +344,8 @@ TESTFUNC tests[] =
     t_inline_clobber,
     t_bitwise_replace,
     t_mixed_params,
-    t_cmp_sub
+    t_cmp_sub,
+    t_whoded
 };
 
 #define TEST_COUNT (sizeof (tests) / sizeof (TESTFUNC))

@@ -35,6 +35,7 @@ CFLAGS=-std=c99 --save-temp -I$(LIBTI99DIR)
 #  NOTE some tests are useless with -O2 as the compiler optimises away any
 #  arithmetic or comparisons with constants.
 # CFLAGS+=-O2
+CFLAGS+=-Os
 
 # Uncomment to turn on unit test debug output
 # CFLAGS+=-D_DEBUG=1

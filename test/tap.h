@@ -39,6 +39,8 @@ typedef unsigned int uint32_t;
 
 typedef void (*TESTFUNC) (void);
 
+void test_dummy_void (void);
+void test_dummy_int (int x);
 void test_execute (const char *name, int passed);
 void test_report (void);
 void test_run (TESTFUNC funcs[], int count);
