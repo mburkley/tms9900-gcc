@@ -332,6 +332,17 @@ void t_whoded() {
     test_execute (__func__, 1==1);
 }
 
+// return the distance between a and b
+unsigned char distance(unsigned char a, unsigned char b) {
+	if (a>b) return a-b; else return b-a;
+}
+
+void t_distance (void)
+{
+    unsigned char x = distance (5, 10);
+    test_execute (__func__, x==5);
+}
+
 TESTFUNC tests[] = 
 {
     t_version,
@@ -345,7 +356,8 @@ TESTFUNC tests[] =
     t_bitwise_replace,
     t_mixed_params,
     t_cmp_sub,
-    t_whoded
+    t_whoded,
+    t_distance
 };
 
 #define TEST_COUNT (sizeof (tests) / sizeof (TESTFUNC))
