@@ -1364,7 +1364,11 @@ extern void tms9900_debug_operands (const char *name, rtx insn, rtx ops[], int c
 
     static int refcount;
     if (insn)
-        fprintf(file, "\n; %s-%d\n", name, INSN_UID(insn));
+    {
+        fprintf(file, "\n; %s-%d : ", name, INSN_UID(insn));
+        print_inline_rtx (file, insn, 0);
+        fprintf(file, "\n\n");
+    }
     else
         fprintf(file, "\n; %s-exp-%d\n", name, ++refcount);
     for (int i = 0; i < count; i++)
