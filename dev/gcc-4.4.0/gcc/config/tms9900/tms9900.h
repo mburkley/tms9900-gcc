@@ -276,7 +276,7 @@ extern short *reg_renumber;	/* def in local_alloc.c */
    those that are not normally considered general registers.  */
 #define FIRST_PSEUDO_REGISTER	(16)
 
-/* NOTE - BP (R14) is not a fixed register and may be used as a general
+/* NOTE - BP (R9) is not a fixed register and may be used as a general
  * register by functions that do not require a stack frameo
  */
 /* 1 for registers that have pervasive standard uses and are not available
@@ -386,18 +386,18 @@ enum reg_class
    R6      0x00000040
    R7      0x00000080
    R8      0x00000100
-   R9      0x00000200
-   R10     0x00000400
+   BP      0x00000200
+   SP      0x00000400
    LR      0x00000800
-   CB      0x00001000
-   AP      0x00002000
-   BP      0x00004000
-   SP      0x00008000
+   R12     0x00001000
+   R13     0x00002000
+   R14     0x00004000
+   R15     0x00008000
 --------------------------------------------------------------*/
 
 #define REG_CLASS_CONTENTS \
 /* NO_REGS       */  {{ 0x00000000 }, \
-/* FIXED_REGS    */   { 0x00008801 }, /* SC,LR,SP */ \
+/* FIXED_REGS    */   { 0x00000A01 }, /* SC,LR,SP */ \
 /* BASE_REGS     */   { 0x0000FFFE }, \
 /* ALL_REGS      */   { 0x0000FFFF }}
 
@@ -435,10 +435,10 @@ enum reg_class
    'I' is for 32-bit value xxxx0000
    'J' is for 32-bit value 0000xxxx
    'K' is for 32-bit value xxxxxxxx
-   'L' is for 1
+   'L' is for 2 or -2
    'M' is for -1
-   'N' is for 0
-   'O' is for 2 or -2
+   'N' is for 1
+   'O' is for 0
    'P' is for 16-bit value 00ff
 */
 #define CONST_OK_FOR_LETTER_P(VALUE, C) \
@@ -585,8 +585,9 @@ enum reg_class
 
 /* Passing Arguments in Registers.  */
 
-/* The number of argument registers we can use (R1..R8) */
-#define TMS9900_ARG_REGS (HARD_R9_REGNUM - HARD_R1_REGNUM)
+/* The number of argument registers we can use (R1..R4)
+ * MGB reducing this to 4 to see if it frees up others as general regs */
+#define TMS9900_ARG_REGS (HARD_R5_REGNUM - HARD_R1_REGNUM)
 
 /* Define a data type for recording info about an argument list
    during the scan of that argument list.  This data type should
@@ -660,9 +661,10 @@ typedef struct tms9900_args
    caller saving results in spill failure.  */
 #define CALLER_SAVE_PROFITABLE(REFS,CALLS) 0
 
-/* 1 if N is a possible register number for function argument passing. */
+/* 1 if N is a possible register number for function argument passing.i
+ *  MGB reduced to 4*/
 #define FUNCTION_ARG_REGNO_P(N)	\
-     (((N) >= HARD_R1_REGNUM) && ((N) <= HARD_R8_REGNUM))
+     (((N) >= HARD_R1_REGNUM) && ((N) <= HARD_R4_REGNUM))
 
 /* 8- and 16-bit values are returned in R1, 32-bit values are
    passed in R1+R2, The high word is in R1. */
