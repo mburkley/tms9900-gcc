@@ -585,9 +585,8 @@ enum reg_class
 
 /* Passing Arguments in Registers.  */
 
-/* The number of argument registers we can use (R1..R4)
- * MGB reducing this to 4 to see if it frees up others as general regs */
-#define TMS9900_ARG_REGS (HARD_R5_REGNUM - HARD_R1_REGNUM)
+/* The number of argument registers we can use (R1..R8) */
+#define TMS9900_ARG_REGS (HARD_R9_REGNUM - HARD_R1_REGNUM)
 
 /* Define a data type for recording info about an argument list
    during the scan of that argument list.  This data type should
@@ -661,10 +660,9 @@ typedef struct tms9900_args
    caller saving results in spill failure.  */
 #define CALLER_SAVE_PROFITABLE(REFS,CALLS) 0
 
-/* 1 if N is a possible register number for function argument passing.i
- *  MGB reduced to 4*/
+/* 1 if N is a possible register number for function argument passing. */
 #define FUNCTION_ARG_REGNO_P(N)	\
-     (((N) >= HARD_R1_REGNUM) && ((N) <= HARD_R4_REGNUM))
+     (((N) >= HARD_R1_REGNUM) && ((N) <= HARD_R8_REGNUM))
 
 /* 8- and 16-bit values are returned in R1, 32-bit values are
    passed in R1+R2, The high word is in R1. */

@@ -1322,7 +1322,7 @@ bool tms9900_correct_byte_order (rtx insn, rtx operands[])
   }
 
   /*  We need to swap after the operation but the destination is not a register.  We
-   *  don't know how to handle this, so just asser */
+   *  don't know how to handle this, so just assert */
   if (!REG_P (operands[0]))
       gcc_unreachable();
 
