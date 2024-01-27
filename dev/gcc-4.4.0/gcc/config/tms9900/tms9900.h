@@ -296,7 +296,7 @@ extern short *reg_renumber;	/* def in local_alloc.c */
  */
 /* 0 for registers which must be preserved across function call boundaries */
 #define CALL_USED_REGISTERS \
-  {1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1}
+  {1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0}
 /* SC 1  2  3  4  5  6  7  8  BP SP LR CB AP 14 15*/
 
 /* Define this macro to change register usage conditional on target flags. */
@@ -568,7 +568,7 @@ enum reg_class
 
 /* We want the stack and args grow in opposite directions, even if
    PUSH_ARGS is 0.
-   MGB added, var param lists not working */
+   MGB added, var param lists were not working */
 #define PUSH_ARGS_REVERSED 1
 
 /* Value is 1 if returning from a function call automatically pops the
@@ -586,7 +586,7 @@ enum reg_class
 /* Passing Arguments in Registers.  */
 
 /* The number of argument registers we can use (R1..R8) */
-#define TMS9900_ARG_REGS (HARD_R9_REGNUM - HARD_R1_REGNUM)
+#define TMS9900_ARG_REGS (HARD_R8_REGNUM - HARD_R1_REGNUM + 1)
 
 /* Define a data type for recording info about an argument list
    during the scan of that argument list.  This data type should

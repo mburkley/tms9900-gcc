@@ -183,11 +183,15 @@ void override_options (void)
 }
 
 /* Non-volatile registers to be saved across function calls */
-#define MAX_SAVED_REGS 2
+#define MAX_SAVED_REGS 6
 
 static int nvolregs[]={
    HARD_LR_REGNUM,
-   HARD_BP_REGNUM};
+   HARD_BP_REGNUM,
+   HARD_R12_REGNUM,
+   HARD_R13_REGNUM,
+   HARD_R14_REGNUM,
+   HARD_R15_REGNUM};
 
 /* If defined, a C expression which determines whether, and in which direction,
    to pad out an argument with extra space.  The value should be of type
