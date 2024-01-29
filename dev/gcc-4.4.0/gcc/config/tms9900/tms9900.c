@@ -95,11 +95,16 @@ static int tms9900_dwarf_label_counter;
 #undef  TARGET_FUNCTION_OK_FOR_SIBCALL
 #define TARGET_FUNCTION_OK_FOR_SIBCALL tms9900_ok_for_sibcall
 
+// MGB if we return true here, then any constants we define using
+// force_const_mem will get added to a shared pool instead of a function pool.
+// The shared pool never seems to be emitted???
+
 static bool
 tms9900_use_blocks_for_constant_p (enum machine_mode mode ATTRIBUTE_UNUSED,
 				const_rtx x ATTRIBUTE_UNUSED)
 {
-  return true;
+  return false;
+  // return true;
 }
 
 #undef TARGET_USE_BLOCKS_FOR_CONSTANT_P
@@ -123,8 +128,6 @@ tms9900_cannot_force_const_mem (rtx x);
 #define TARGET_CANNOT_FORCE_CONST_MEM tms9900_cannot_force_const_mem
 
 struct gcc_target targetm = TARGET_INITIALIZER;
-
-/* Set global variables as needed for the options enabled.  */
 
 #include "ftoa.c"
 #include "atof.c"
@@ -191,11 +194,20 @@ const struct real_format tms9900_real_format =
   };
 
 
+/* Set global variables as needed for the options enabled.  */
+
 void override_options (void)
 {
   /* We use TI99 floating point, not IEEE floating point.  */
   if (!TARGET_NO_TI99_FLOAT)
     REAL_MODE_FORMAT (DFmode) = &tms9900_real_format;
+
+  /* Turning on anchored addresses by default. This is an optimization
+     that could decrease the code size by placing anchors in data and
+     accessing offsets from the anchor for file local data variables.
+     This isnt the default at O2 as yet. */
+  flag_section_anchors = 1;
+
 }
 
 /* Non-volatile registers to be saved across function calls */
@@ -936,9 +948,9 @@ int tms9900_go_if_legitimate_address(enum machine_mode mode ATTRIBUTE_UNUSED, rt
   }
 */
   /* Anything else is invalid */
-printf("MGB not legit add : ");
-print_inline_rtx (stdout, operand, 0);
-printf("\n");
+// printf("MGB not legit add : ");
+// print_inline_rtx (stdout, operand, 0);
+// printf("\n");
   return 0;
 }
 
@@ -1361,15 +1373,17 @@ bool tms9900_correct_byte_order (rtx insn, rtx operands[])
 static bool
 tms9900_cannot_force_const_mem (rtx x)
 {
-  printf("%s code=%s\n", __func__, GET_RTX_NAME(GET_CODE(x)));
+  // printf("%s code=%s\n", __func__, GET_RTX_NAME(GET_CODE(x)));
   switch (GET_CODE (x))
     {
     case CONST_INT:
     case CONST_DOUBLE:
     case CONST_VECTOR:
+    case LABEL_REF:
+    case SYMBOL_REF:
       /* Accept all non-symbolic constants.  */
       return false;
-
+#if 0
     case LABEL_REF:
       /* Labels are OK iff we are non-PIC.  */
       return flag_pic != 0;
@@ -1381,7 +1395,7 @@ tms9900_cannot_force_const_mem (rtx x)
 	return true;
       else
 	return flag_pic != 0;
-
+#endif
     case CONST:
       return tms9900_cannot_force_const_mem (XEXP (x, 0));
     case PLUS:
@@ -1392,6 +1406,38 @@ tms9900_cannot_force_const_mem (rtx x)
       return true;
     default:
       gcc_unreachable ();
+    }
+}
+
+/* Determine if a given RTX is a valid constant.  We already know this
+   satisfies CONSTANT_P.  */
+
+bool
+tms9900_legitimate_constant_p (rtx x)
+{
+  // printf ("%s x=%s\n", __func__, GET_RTX_NAME(GET_CODE(x)));
+  return true;
+}
+
+/* Determine if a given RTX is a valid constant address.  */
+
+bool
+tms9900_constant_address_p (rtx x)
+{
+  // printf ("%s x=%s\n", __func__, GET_RTX_NAME(GET_CODE(x)));
+  switch (GET_CODE (x))
+    {
+    case LABEL_REF:
+    case CONST_INT:
+    case HIGH:
+      return true;
+
+    case CONST:
+    case SYMBOL_REF:
+      return tms9900_legitimate_constant_p (x);
+
+    default:
+      return false;
     }
 }
 

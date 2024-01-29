@@ -66,6 +66,10 @@ along with GCC; see the file COPYING3.  If not see
 #endif
 
 // MGB TODO
+// Setting to 0 or 1 makes no difference to string constants - they are always
+// emitted before the function.  Int consts are currently never emitted but it
+// doesn't logically make sense to emit them before as they haven't been defined
+// yet???
 #define CONSTANT_POOL_BEFORE_FUNCTION	0
 
 /* Names to predefine in the preprocessor for this target machine.  */
@@ -762,7 +766,8 @@ typedef struct tms9900_args
           || CONST_INT_P (X) || GET_CODE (X) == CONST      \
           || GET_CODE (X) == HIGH)
 */
-#define CONSTANT_ADDRESS_P(X)  CONSTANT_P(X)
+// #define CONSTANT_ADDRESS_P(X)  CONSTANT_P(X)
+#define CONSTANT_ADDRESS_P(X)  tms9900_constant_address_p(X)
 
 /* Maximum number of registers that can appear in a valid memory address */
 #define MAX_REGS_PER_ADDRESS	1
@@ -836,8 +841,17 @@ typedef struct tms9900_args
 
 /* Nonzero if the constant value X is a legitimate general operand.
    It is given that X satisfies CONSTANT_P or is a CONST_DOUBLE.  */
-#define LEGITIMATE_CONSTANT_P(X)	1
+
+/* "TARGET_CANNOT_FORCE_CONST_MEM should not be defined to be true for an
+    ordinary constant.  It should only return true for special cases like
+    the address of a TLS symbol.
+ 
+    gcc will automatically generate a constant pool when it sees a
+    constant which is not LEGITIMATE_CONSTANT_P." */
+
+// #define LEGITIMATE_CONSTANT_P(X)	1
 // #define LEGITIMATE_CONSTANT_P(X)	(GET_CODE(X)!=CONST_INT)
+#define LEGITIMATE_CONSTANT_P(X) tms9900_legitimate_constant_p(X)
 
 /* Tell final.c how to eliminate redundant test instructions.  */
 #define NOTICE_UPDATE_CC(EXP, INSN) \

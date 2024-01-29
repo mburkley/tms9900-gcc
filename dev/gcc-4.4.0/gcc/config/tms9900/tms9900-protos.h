@@ -58,6 +58,8 @@ extern int tms9900_go_if_legitimate_address(enum machine_mode mode ATTRIBUTE_UNU
 
 extern void tms9900_register_mode_set (rtx operand, int mode);
 extern void tms9900_register_convert (rtx operand, int mode, int sign);
+extern bool tms9900_legitimate_constant_p (rtx x);
+extern bool tms9900_constant_address_p (rtx x);
 extern bool tms9900_correct_byte_order (rtx insn, rtx operands[]);
 extern void tms9900_inline_debug (const char *fmt,...);
 extern void tms9900_debug_operands (const char *name, rtx insn, rtx ops[], int count);
