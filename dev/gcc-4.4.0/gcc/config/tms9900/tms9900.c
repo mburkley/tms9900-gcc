@@ -96,6 +96,16 @@ static int tms9900_dwarf_label_counter;
 #define TARGET_FUNCTION_OK_FOR_SIBCALL tms9900_ok_for_sibcall
 
 static bool
+tms9900_use_blocks_for_constant_p (enum machine_mode mode ATTRIBUTE_UNUSED,
+				const_rtx x ATTRIBUTE_UNUSED)
+{
+  return true;
+}
+
+#undef TARGET_USE_BLOCKS_FOR_CONSTANT_P
+#define TARGET_USE_BLOCKS_FOR_CONSTANT_P tms9900_use_blocks_for_constant_p
+
+static bool
 tms9900_ok_for_sibcall (tree decl, tree exp)
 {
   return true;
@@ -105,6 +115,12 @@ tms9900_ok_for_sibcall (tree decl, tree exp)
 #define TARGET_ASM_ALIGNED_SI_OP NULL
 #define TARGET_ASM_ALIGNED_DI_OP NULL
 #define TARGET_ASM_ALIGNED_TI_OP NULL
+
+static bool
+tms9900_cannot_force_const_mem (rtx x);
+
+#undef TARGET_CANNOT_FORCE_CONST_MEM
+#define TARGET_CANNOT_FORCE_CONST_MEM tms9900_cannot_force_const_mem
 
 struct gcc_target targetm = TARGET_INITIALIZER;
 
@@ -920,6 +936,9 @@ int tms9900_go_if_legitimate_address(enum machine_mode mode ATTRIBUTE_UNUSED, rt
   }
 */
   /* Anything else is invalid */
+printf("MGB not legit add : ");
+print_inline_rtx (stdout, operand, 0);
+printf("\n");
   return 0;
 }
 
@@ -1333,6 +1352,47 @@ bool tms9900_correct_byte_order (rtx insn, rtx operands[])
   /*  Correction is required but cannot be applied to source.  Return true so
    *  caller can apply to dest */
   return true;
+}
+
+/* Determine if it's legal to put X into the constant pool.  This
+   is not possible if X contains the address of a symbol that is
+   not constant (TLS) or not known at final link time (PIC).  */
+
+static bool
+tms9900_cannot_force_const_mem (rtx x)
+{
+  printf("%s code=%s\n", __func__, GET_RTX_NAME(GET_CODE(x)));
+  switch (GET_CODE (x))
+    {
+    case CONST_INT:
+    case CONST_DOUBLE:
+    case CONST_VECTOR:
+      /* Accept all non-symbolic constants.  */
+      return false;
+
+    case LABEL_REF:
+      /* Labels are OK iff we are non-PIC.  */
+      return flag_pic != 0;
+
+    case SYMBOL_REF:
+      /* 'Naked' TLS symbol references are never OK,
+	 non-TLS symbols are OK iff we are non-PIC.  */
+      if (SYMBOL_REF_TLS_MODEL (x))
+	return true;
+      else
+	return flag_pic != 0;
+
+    case CONST:
+      return tms9900_cannot_force_const_mem (XEXP (x, 0));
+    case PLUS:
+    case MINUS:
+      return tms9900_cannot_force_const_mem (XEXP (x, 0))
+         || tms9900_cannot_force_const_mem (XEXP (x, 1));
+    case UNSPEC:
+      return true;
+    default:
+      gcc_unreachable ();
+    }
 }
 
 #include <stdlib.h>

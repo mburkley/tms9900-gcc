@@ -65,6 +65,9 @@ along with GCC; see the file COPYING3.  If not see
 #define CPP_SPEC ""
 #endif
 
+// MGB TODO
+#define CONSTANT_POOL_BEFORE_FUNCTION	0
+
 /* Names to predefine in the preprocessor for this target machine.  */
 #define TARGET_CPU_CPP_BUILTINS()		\
   do						\
@@ -476,6 +479,7 @@ enum reg_class
    : ((CODE) == 'Q') ? (tms9900_address_type (OP, GET_MODE (OP)) == 3)  \
    : ((CODE) == 'R') ? (tms9900_address_type (OP, GET_MODE (OP)) == 1)	\
    : 0)
+   // constantpool_mem_p (OP)
 
 /* Stack layout; function entry, exit and calling.  */
 
@@ -833,6 +837,7 @@ typedef struct tms9900_args
 /* Nonzero if the constant value X is a legitimate general operand.
    It is given that X satisfies CONSTANT_P or is a CONST_DOUBLE.  */
 #define LEGITIMATE_CONSTANT_P(X)	1
+// #define LEGITIMATE_CONSTANT_P(X)	(GET_CODE(X)!=CONST_INT)
 
 /* Tell final.c how to eliminate redundant test instructions.  */
 #define NOTICE_UPDATE_CC(EXP, INSN) \
