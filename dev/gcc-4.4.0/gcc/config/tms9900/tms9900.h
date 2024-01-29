@@ -972,12 +972,14 @@ EMW*/
 
 #define ASM_OUTPUT_LABEL(FILE,NAME) \
   {							\
+    printf("MGB out lab\n");\
     assemble_name ((FILE), (NAME));			\
     fputc ('\n', (FILE));				\
   }
 
 #define ASM_OUTPUT_INTERNAL_LABEL(FILE,NAME) \
   {							\
+    printf("MGB out int lab\n");\
     assemble_name ((FILE), (NAME));			\
     fputc ('\n', (FILE));				\
   }
@@ -1139,8 +1141,10 @@ EMW*/
    NAME whose size is SIZE bytes.  The variable ROUNDED is the size
    rounded up to whatever alignment the caller wants. */
 #define ASM_OUTPUT_ALIGNED_BSS(STREAM, DECL, NAME, SIZE, ALIGNMENT)     \
+  do{\
+  printf("aligned bss\n");\
   if(ALIGNMENT > 1) fprintf ((STREAM), "\n\teven\n");                   \
-  asm_output_aligned_bss ((STREAM), (DECL), (NAME), (SIZE), (ALIGNMENT));
+  asm_output_aligned_bss ((STREAM), (DECL), (NAME), (SIZE), (ALIGNMENT)); }while(0)
 
 /* A C statement (sans semicolon) to output to the stdio stream
    STREAM the assembler definition of a common-label named NAME whose
@@ -1148,6 +1152,7 @@ EMW*/
    to whatever alignment the caller wants. */
 #define ASM_OUTPUT_ALIGNED_COMMON(STREAM, NAME, SIZE, ALIGNMENT)           \
 do {                                                                       \
+  printf("switch bss\n");\
      switch_to_section (bss_section);                                      \
      if(ALIGNMENT > 1) fprintf ((STREAM), "\n\teven");                     \
      fprintf ((STREAM), "\n\tdef %s\n", (NAME));                           \
@@ -1161,6 +1166,7 @@ do {                                                                       \
    rounded up to whatever alignment the caller wants. */
 #define ASM_OUTPUT_ALIGNED_LOCAL(STREAM, NAME, SIZE, ALIGNMENT)            \
 do {                                                                       \
+  printf("aligned loc\n");\
      switch_to_section (bss_section);                                      \
      if(ALIGNMENT > 1) fprintf ((STREAM), "\n\teven\n");                   \
      assemble_name ((STREAM), (NAME));                                     \
