@@ -1,7 +1,7 @@
 LIBTI99DIR?=../libti99
 
-GCCDIR=/opt/tms9900-gcc/bin/
-# GCCDIR=../tms9900-gcc/bin/
+# GCCDIR=/opt/tms9900-gcc/bin/
+GCCDIR=../tms9900-gcc/bin/
 
 GAS=$(GCCDIR)tms9900-as
 LD=$(GCCDIR)tms9900-ld
@@ -35,7 +35,7 @@ CFLAGS=-std=c99 --save-temp -I$(LIBTI99DIR)
 #  NOTE some tests are useless with -O2 as the compiler optimises away any
 #  arithmetic or comparisons with constants.
 # CFLAGS+=-O2
-CFLAGS+=-Os
+# CFLAGS+=-Os
 
 # Uncomment to turn on unit test debug output
 # CFLAGS+=-D_DEBUG=1

@@ -69,8 +69,8 @@ along with GCC; see the file COPYING3.  If not see
 // Setting to 0 or 1 makes no difference to string constants - they are always
 // emitted before the function.  Int consts are currently never emitted but it
 // doesn't logically make sense to emit them before as they haven't been defined
-// yet???
-#define CONSTANT_POOL_BEFORE_FUNCTION	0
+// yet???  They have if use expand
+// #define CONSTANT_POOL_BEFORE_FUNCTION	0
 
 /* Names to predefine in the preprocessor for this target machine.  */
 #define TARGET_CPU_CPP_BUILTINS()		\

@@ -288,7 +288,7 @@ void t_mixed_params()
 
 char SpriteTab[10] = { 0x22, 0x44, 0x66 };
 #define SHIP_C SpriteTab[1]
-int playerXspeed = 0x3333;
+int playerXspeed = 0x33;
 
 void t_cmp_sub()
 {

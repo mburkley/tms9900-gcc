@@ -95,16 +95,21 @@ static int tms9900_dwarf_label_counter;
 #undef  TARGET_FUNCTION_OK_FOR_SIBCALL
 #define TARGET_FUNCTION_OK_FOR_SIBCALL tms9900_ok_for_sibcall
 
-// MGB if we return true here, then any constants we define using
-// force_const_mem will get added to a shared pool instead of a function pool.
-// The shared pool never seems to be emitted???
+/*  MGB if we return true here, then any constants we define using
+ *  force_const_mem will get added to a shared pool instead of a function pool.
+ *  This should result in better use of memory as duplicates will be eliminated.
+ *  We don't care about distances as all memory references are 16-bits.
+ *
+ *  NOTE : force_const_mem must only be called in a define_expand not a
+ *  define_insn as it is too late to add a constant to the pool for output by
+ *  the time we are emitting insns.
+ */
 
 static bool
 tms9900_use_blocks_for_constant_p (enum machine_mode mode ATTRIBUTE_UNUSED,
 				const_rtx x ATTRIBUTE_UNUSED)
 {
-  return false;
-  // return true;
+  return true;
 }
 
 #undef TARGET_USE_BLOCKS_FOR_CONSTANT_P
