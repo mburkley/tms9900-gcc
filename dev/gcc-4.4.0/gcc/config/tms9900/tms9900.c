@@ -206,13 +206,6 @@ void override_options (void)
   /* We use TI99 floating point, not IEEE floating point.  */
   if (!TARGET_NO_TI99_FLOAT)
     REAL_MODE_FORMAT (DFmode) = &tms9900_real_format;
-
-  /* Turning on anchored addresses by default. This is an optimization
-     that could decrease the code size by placing anchors in data and
-     accessing offsets from the anchor for file local data variables.
-     This isnt the default at O2 as yet. */
-  flag_section_anchors = 1;
-
 }
 
 /* Non-volatile registers to be saved across function calls */
