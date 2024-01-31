@@ -103,13 +103,23 @@ static int tms9900_dwarf_label_counter;
  *  NOTE : force_const_mem must only be called in a define_expand not a
  *  define_insn as it is too late to add a constant to the pool for output by
  *  the time we are emitting insns.
+ *
+ *  Actually, expands have problems too.  Presumably because later compiler
+ *  passes can generate new compare insns which then can't be matched.
+ *  define_insn_and_split works better
+ *
+ *  Changing this to be false to use per fucntion pools instead.  If byte
+ *  constants are placed at the end of a compilation unit, it may result in an
+ *  odd address for the end of the pseg which messes up loading.  TODO fix that
+ *  properly sometime.
  */
 
 static bool
 tms9900_use_blocks_for_constant_p (enum machine_mode mode ATTRIBUTE_UNUSED,
 				const_rtx x ATTRIBUTE_UNUSED)
 {
-  return true;
+  // return true;
+  return false;
 }
 
 #undef TARGET_USE_BLOCKS_FOR_CONSTANT_P

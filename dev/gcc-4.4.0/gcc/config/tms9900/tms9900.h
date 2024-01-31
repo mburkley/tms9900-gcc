@@ -69,7 +69,7 @@ along with GCC; see the file COPYING3.  If not see
 // Setting to 0 or 1 makes no difference to string constants - they are always
 // emitted before the function.  Int consts are currently never emitted but it
 // doesn't logically make sense to emit them before as they haven't been defined
-// yet???  They have if use expand
+// yet???  They have if use expand or split so undefning now.
 // #define CONSTANT_POOL_BEFORE_FUNCTION	0
 
 /* Names to predefine in the preprocessor for this target machine.  */
@@ -972,14 +972,12 @@ EMW*/
 
 #define ASM_OUTPUT_LABEL(FILE,NAME) \
   {							\
-    printf("MGB out lab\n");\
     assemble_name ((FILE), (NAME));			\
     fputc ('\n', (FILE));				\
   }
 
 #define ASM_OUTPUT_INTERNAL_LABEL(FILE,NAME) \
   {							\
-    printf("MGB out int lab\n");\
     assemble_name ((FILE), (NAME));			\
     fputc ('\n', (FILE));				\
   }
@@ -1142,7 +1140,6 @@ EMW*/
    rounded up to whatever alignment the caller wants. */
 #define ASM_OUTPUT_ALIGNED_BSS(STREAM, DECL, NAME, SIZE, ALIGNMENT)     \
   do{\
-  printf("aligned bss\n");\
   if(ALIGNMENT > 1) fprintf ((STREAM), "\n\teven\n");                   \
   asm_output_aligned_bss ((STREAM), (DECL), (NAME), (SIZE), (ALIGNMENT)); }while(0)
 
@@ -1152,7 +1149,6 @@ EMW*/
    to whatever alignment the caller wants. */
 #define ASM_OUTPUT_ALIGNED_COMMON(STREAM, NAME, SIZE, ALIGNMENT)           \
 do {                                                                       \
-  printf("switch bss\n");\
      switch_to_section (bss_section);                                      \
      if(ALIGNMENT > 1) fprintf ((STREAM), "\n\teven");                     \
      fprintf ((STREAM), "\n\tdef %s\n", (NAME));                           \
@@ -1166,7 +1162,6 @@ do {                                                                       \
    rounded up to whatever alignment the caller wants. */
 #define ASM_OUTPUT_ALIGNED_LOCAL(STREAM, NAME, SIZE, ALIGNMENT)            \
 do {                                                                       \
-  printf("aligned loc\n");\
      switch_to_section (bss_section);                                      \
      if(ALIGNMENT > 1) fprintf ((STREAM), "\n\teven\n");                   \
      assemble_name ((STREAM), (NAME));                                     \
