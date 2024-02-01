@@ -300,6 +300,9 @@ extern short *reg_renumber;	/* def in local_alloc.c */
  *
  * It also seems counter-intuitive that LR should be identified as a call reg
  * but gcc/reginfo.c will assert if any register is fixed and not a call reg.
+ *
+ * MGB JAN-24 I'm adding back in R12 thru R15 as call used regs.  It actually
+ * seems to allow gcc to generate better code - why is that? TODO
  */
 /* 0 for registers which must be preserved across function call boundaries */
 #define CALL_USED_REGISTERS \
@@ -966,7 +969,7 @@ EMW*/
 /* output external reference */
 #undef ASM_OUTPUT_EXTERNAL
 #define ASM_OUTPUT_EXTERNAL(FILE,DECL,NAME) \
-  {fputs ("\n\tref\t", FILE); \
+  {fputs ("\tref\t", FILE); \
   assemble_name (FILE, NAME); \
   fputs ("\n", FILE);}
 
@@ -1076,7 +1079,7 @@ EMW*/
 /*#define LOCAL_LABEL_PREFIX "."*/
 
 /* Directive to give a symbol global scope */
-#define GLOBAL_ASM_OP   "\n\tdef\t"
+#define GLOBAL_ASM_OP   "\tdef\t"
 
 /* Miscellaneous Parameters.  */
 

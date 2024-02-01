@@ -1376,7 +1376,11 @@ bool tms9900_correct_byte_order (rtx insn, rtx operands[])
 
 /* Determine if it's legal to put X into the constant pool.  This
    is not possible if X contains the address of a symbol that is
-   not constant (TLS) or not known at final link time (PIC).  */
+   not constant (TLS) or not known at final link time (PIC).
+
+   MGB : This is probably overkill for us as we can't generate PIC code and
+   don't have threads but including it here for completeness 
+*/
 
 static bool
 tms9900_cannot_force_const_mem (rtx x)
