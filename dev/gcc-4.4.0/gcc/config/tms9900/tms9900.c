@@ -1361,6 +1361,7 @@ bool tms9900_correct_byte_order (rtx insn, rtx operands[])
       find_regno_note (insn, REG_DEAD, REGNO (operands[1])))
   {
     output_asm_insn ("swpb %1 ; subreg offset correction", operands);
+    printf ("swpb pre movb subreg offset correction");
     return false;
   }
 
