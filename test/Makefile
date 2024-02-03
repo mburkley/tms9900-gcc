@@ -20,8 +20,9 @@ FNAME=test
 
 # TEST_SRC=test_char_short
 # TEST_SRC=test_long
-# TEST_SRC=test_float
-TEST_SRC=test_misc
+TEST_SRC=test_float
+# TEST_SRC=test_misc
+# TEST_SRC=test_subreg
 # TEST_SRC=test_one
 # TEST_SRC=zap
 
@@ -35,7 +36,7 @@ CFLAGS=-std=c99 --save-temp -I$(LIBTI99DIR)
 #  NOTE some tests are useless with -O2 as the compiler optimises away any
 #  arithmetic or comparisons with constants.
 # CFLAGS+=-O2
-# CFLAGS+=-Os
+CFLAGS+=-Os
 
 # Uncomment to turn on unit test debug output
 # CFLAGS+=-D_DEBUG=1

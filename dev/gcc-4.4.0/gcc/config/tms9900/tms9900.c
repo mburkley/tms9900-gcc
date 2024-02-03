@@ -665,8 +665,8 @@ const char* output_jump (int length)
     length -= 10;
     switch(length)    
     {
-        case 2: return("jmp  %l0  ; output jump");
-        case 4: return("b    @%l0 ; output jump");
+        case 2: return("jmp  %l0");
+        case 4: return("b    @%l0");
         default: gcc_unreachable();
     }
 }
@@ -1360,8 +1360,8 @@ bool tms9900_correct_byte_order (rtx insn, rtx operands[])
   if (REGNO (operands[1]) == REGNO (operands[0]) ||
       find_regno_note (insn, REG_DEAD, REGNO (operands[1])))
   {
-    output_asm_insn ("swpb %1 ; subreg offset correction", operands);
-    printf ("swpb pre movb subreg offset correction");
+    output_asm_insn ("swpb %1", operands);
+    // printf ("swpb pre movb subreg offset correction");
     return false;
   }
 
