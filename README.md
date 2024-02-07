@@ -16,7 +16,7 @@ to create modified sources for gcc and binutils.
 
 The branch **main** in the repo contains The latest scripts and patch files. The patch files are:
 * binutils-2.19.1-tms9900-1.10.patch
-* gcc-4.4.0-tms9900-1.25.patch
+* gcc-4.4.0-tms9900-1.29.patch
 
 Patch files are cumulative.  The latest version of the patch file includes all
 previous updates as well.  Only the latest patch file is stored in the repo.
@@ -44,6 +44,17 @@ Release Notes
 binutils patch 1.10
 
 * No changes to 1.9 but includes the multi-def patch to avoid compile errors relating to "do_wide"
+
+gcc patch 1.29
+* Add function to swpb before or after MOV[B] if subreg offset seen
+* Fix operand count for one_cmpl ops
+* Changed compare insns "cmphi" and "cmpqi" to be insn_and_split
+* Added peepholes to remove SRL Rx,8 ; SWPB
+* Added R12 thru R15 to save regs to improve general reg availability
+* Added literal constants for movqi and movhi to avoid LI to a scratch reg
+* Removed sub_const_hi and associated peepholes
+* Removed NEG from subtract operations that had reversed operands
+* Added debugs to peepholes to find which ones are actually used
 
 gcc patch 1.28
 * Improve shift operations by moving shift count to R0

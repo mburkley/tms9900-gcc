@@ -65,6 +65,13 @@ along with GCC; see the file COPYING3.  If not see
 #define CPP_SPEC ""
 #endif
 
+// MGB TODO
+// Setting to 0 or 1 makes no difference to string constants - they are always
+// emitted before the function.  Int consts are currently never emitted but it
+// doesn't logically make sense to emit them before as they haven't been defined
+// yet???  They have if use expand or split so undefning now.
+// #define CONSTANT_POOL_BEFORE_FUNCTION	0
+
 /* Names to predefine in the preprocessor for this target machine.  */
 #define TARGET_CPU_CPP_BUILTINS()		\
   do						\
@@ -276,7 +283,7 @@ extern short *reg_renumber;	/* def in local_alloc.c */
    those that are not normally considered general registers.  */
 #define FIRST_PSEUDO_REGISTER	(16)
 
-/* NOTE - BP (R14) is not a fixed register and may be used as a general
+/* NOTE - BP (R9) is not a fixed register and may be used as a general
  * register by functions that do not require a stack frameo
  */
 /* 1 for registers that have pervasive standard uses and are not available
@@ -293,10 +300,13 @@ extern short *reg_renumber;	/* def in local_alloc.c */
  *
  * It also seems counter-intuitive that LR should be identified as a call reg
  * but gcc/reginfo.c will assert if any register is fixed and not a call reg.
+ *
+ * MGB JAN-24 I'm adding back in R12 thru R15 as call used regs.  It actually
+ * seems to allow gcc to generate better code - why is that? TODO
  */
 /* 0 for registers which must be preserved across function call boundaries */
 #define CALL_USED_REGISTERS \
-  {1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1}
+  {1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0}
 /* SC 1  2  3  4  5  6  7  8  BP SP LR CB AP 14 15*/
 
 /* Define this macro to change register usage conditional on target flags. */
@@ -386,18 +396,18 @@ enum reg_class
    R6      0x00000040
    R7      0x00000080
    R8      0x00000100
-   R9      0x00000200
-   R10     0x00000400
+   BP      0x00000200
+   SP      0x00000400
    LR      0x00000800
-   CB      0x00001000
-   AP      0x00002000
-   BP      0x00004000
-   SP      0x00008000
+   R12     0x00001000
+   R13     0x00002000
+   R14     0x00004000
+   R15     0x00008000
 --------------------------------------------------------------*/
 
 #define REG_CLASS_CONTENTS \
 /* NO_REGS       */  {{ 0x00000000 }, \
-/* FIXED_REGS    */   { 0x00008801 }, /* SC,LR,SP */ \
+/* FIXED_REGS    */   { 0x00000A01 }, /* SC,LR,SP */ \
 /* BASE_REGS     */   { 0x0000FFFE }, \
 /* ALL_REGS      */   { 0x0000FFFF }}
 
@@ -435,10 +445,10 @@ enum reg_class
    'I' is for 32-bit value xxxx0000
    'J' is for 32-bit value 0000xxxx
    'K' is for 32-bit value xxxxxxxx
-   'L' is for 1
+   'L' is for 2 or -2
    'M' is for -1
-   'N' is for 0
-   'O' is for 2 or -2
+   'N' is for 1
+   'O' is for 0
    'P' is for 16-bit value 00ff
 */
 #define CONST_OK_FOR_LETTER_P(VALUE, C) \
@@ -476,6 +486,7 @@ enum reg_class
    : ((CODE) == 'Q') ? (tms9900_address_type (OP, GET_MODE (OP)) == 3)  \
    : ((CODE) == 'R') ? (tms9900_address_type (OP, GET_MODE (OP)) == 1)	\
    : 0)
+   // constantpool_mem_p (OP)
 
 /* Stack layout; function entry, exit and calling.  */
 
@@ -568,7 +579,7 @@ enum reg_class
 
 /* We want the stack and args grow in opposite directions, even if
    PUSH_ARGS is 0.
-   MGB added, var param lists not working */
+   MGB added, var param lists were not working */
 #define PUSH_ARGS_REVERSED 1
 
 /* Value is 1 if returning from a function call automatically pops the
@@ -586,7 +597,7 @@ enum reg_class
 /* Passing Arguments in Registers.  */
 
 /* The number of argument registers we can use (R1..R8) */
-#define TMS9900_ARG_REGS (HARD_R9_REGNUM - HARD_R1_REGNUM)
+#define TMS9900_ARG_REGS (HARD_R8_REGNUM - HARD_R1_REGNUM + 1)
 
 /* Define a data type for recording info about an argument list
    during the scan of that argument list.  This data type should
@@ -758,7 +769,8 @@ typedef struct tms9900_args
           || CONST_INT_P (X) || GET_CODE (X) == CONST      \
           || GET_CODE (X) == HIGH)
 */
-#define CONSTANT_ADDRESS_P(X)  CONSTANT_P(X)
+// #define CONSTANT_ADDRESS_P(X)  CONSTANT_P(X)
+#define CONSTANT_ADDRESS_P(X)  tms9900_constant_address_p(X)
 
 /* Maximum number of registers that can appear in a valid memory address */
 #define MAX_REGS_PER_ADDRESS	1
@@ -832,7 +844,17 @@ typedef struct tms9900_args
 
 /* Nonzero if the constant value X is a legitimate general operand.
    It is given that X satisfies CONSTANT_P or is a CONST_DOUBLE.  */
-#define LEGITIMATE_CONSTANT_P(X)	1
+
+/* "TARGET_CANNOT_FORCE_CONST_MEM should not be defined to be true for an
+    ordinary constant.  It should only return true for special cases like
+    the address of a TLS symbol.
+ 
+    gcc will automatically generate a constant pool when it sees a
+    constant which is not LEGITIMATE_CONSTANT_P." */
+
+// #define LEGITIMATE_CONSTANT_P(X)	1
+// #define LEGITIMATE_CONSTANT_P(X)	(GET_CODE(X)!=CONST_INT)
+#define LEGITIMATE_CONSTANT_P(X) tms9900_legitimate_constant_p(X)
 
 /* Tell final.c how to eliminate redundant test instructions.  */
 #define NOTICE_UPDATE_CC(EXP, INSN) \
@@ -947,7 +969,7 @@ EMW*/
 /* output external reference */
 #undef ASM_OUTPUT_EXTERNAL
 #define ASM_OUTPUT_EXTERNAL(FILE,DECL,NAME) \
-  {fputs ("\n\tref\t", FILE); \
+  {fputs ("\tref\t", FILE); \
   assemble_name (FILE, NAME); \
   fputs ("\n", FILE);}
 
@@ -1057,7 +1079,7 @@ EMW*/
 /*#define LOCAL_LABEL_PREFIX "."*/
 
 /* Directive to give a symbol global scope */
-#define GLOBAL_ASM_OP   "\n\tdef\t"
+#define GLOBAL_ASM_OP   "\tdef\t"
 
 /* Miscellaneous Parameters.  */
 
@@ -1120,8 +1142,9 @@ EMW*/
    NAME whose size is SIZE bytes.  The variable ROUNDED is the size
    rounded up to whatever alignment the caller wants. */
 #define ASM_OUTPUT_ALIGNED_BSS(STREAM, DECL, NAME, SIZE, ALIGNMENT)     \
+  do{\
   if(ALIGNMENT > 1) fprintf ((STREAM), "\n\teven\n");                   \
-  asm_output_aligned_bss ((STREAM), (DECL), (NAME), (SIZE), (ALIGNMENT));
+  asm_output_aligned_bss ((STREAM), (DECL), (NAME), (SIZE), (ALIGNMENT)); }while(0)
 
 /* A C statement (sans semicolon) to output to the stdio stream
    STREAM the assembler definition of a common-label named NAME whose

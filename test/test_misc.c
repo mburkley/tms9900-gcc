@@ -1,3 +1,14 @@
+/*
+ *  This is a collection of miscellaneous tests, mostly added due to bug reports
+ *  on the forums.  Comments ahead of each test should describe how the failure
+ *  was observed.  Many of these tests only fail with -O2 enabled.
+ *
+ *  When creating tests that should run when optimised, avoid initialising vars
+ *  inside the test function as the compiler will short circuit the test
+ *  otherise.  Also don't declare funcs as static and if necessary declare as
+ *  noinline.  Static vars may need to be declared volatile.
+ */
+
 #include "tap.h"
 #include <stdarg.h>
 
@@ -221,56 +232,69 @@ void t_inline_clobber()
     test_execute (__func__, 1);
 }
 
-unsigned char color;
 
-/*  Replicating a bug in vdp_bmcolor where a swpb was missed in andhi3.  If
- *  compiled with -O2 the following output drops the extend of r2:
-
-	andi r1, >F
-	movb @color, r2
-	andi r2, >F0
-	soc  r2, r1
-*/
-
-void __attribute__ ((noinline)) setbackground(int c)
-{
-    color = (color & 0xF0) | (c & 0x0F);
+// return the distance between a and b
+unsigned char distance(unsigned char a, unsigned char b) {
+	if (a>b) return a-b; else return b-a;
 }
 
-void t_bitwise_replace()
+void t_distance (void)
 {
-    color = 0xaa;
-    setbackground(0x55);
-    printf("# color=%d\n", color);
-    test_execute (__func__, color==0xa5);
+    unsigned char x = distance (5, 10);
+    test_execute (__func__, x==5);
 }
 
-int __attribute__ ((noinline)) test_mixed_params (unsigned char c, unsigned int len)
+volatile unsigned int peep_j;
+volatile char peep_b;
+
+// Compile with: -Os
+
+
+void t_peephole (void)
 {
-    return c+len;
+    // ;; Optimization for (unsigned char)X < N
+    if ((unsigned char)peep_b < 2)
+        peep_j = 0;
+    // ;; Optimization for (unsigned char)X >= N
+    if ((unsigned char)peep_b >= 2)
+        peep_j = 0;
+    // ;; Optimization for (unsigned char)X <= N
+    if ((unsigned char)peep_b <= 2)
+        peep_j = 0;
+    // ;; Optimization for (char)X > N
+    if (peep_b > 2)
+        peep_j = 0;
+    // ;; Optimization for (char)X < N
+    if (peep_b < 2)
+        peep_j = 0;
+    // ;; Optimization for (char)X >= N
+    if (peep_b >= 2)
+        peep_j = 0;
+    // ;; Optimization for (char)X <= N
+    if (peep_b <= 2)
+        peep_j = 0;
 }
 
-/*  We are looking for a bug in movqi.  With -O2 in 1.27, this code produces:
-
-	li   r2, >20
-	movb r2, r1
-	bl   @test_mixed_params
-
-    and without -O2, the correct code:
-
-	li   r2, >20
-	li   r1, >2000
-	bl   @test_mixed_params
-*/
-unsigned char test_return_mixed ()
+int f2(int x);
+char c;
+int d;
+long e;
+int t_tbd_f(int x)
 {
-    return test_mixed_params (32, 32);
+    int y;
+    int z=777777777;
+    printf("hi");
+    char cc=c+1;
+    char dd=c+7;
+    if(cc==0x55||dd==0x77) f2(c-1);
+    while(x--)
+        y=f2(x);
+    return y;
 }
-
-void t_mixed_params()
+void t_tbd_f3(void)
 {
-    char x = test_return_mixed();
-    test_execute (__func__, x==64);
+    printf("hi2");
+e=1;
 }
 
 TESTFUNC tests[] = 
@@ -283,8 +307,7 @@ TESTFUNC tests[] =
     t_var_byte_array,
     t_byte_array,
     t_inline_clobber,
-    t_bitwise_replace,
-    t_mixed_params
+    t_distance
 };
 
 #define TEST_COUNT (sizeof (tests) / sizeof (TESTFUNC))

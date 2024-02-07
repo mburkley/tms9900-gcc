@@ -13,17 +13,8 @@
 
 #ifdef __tms9900__
 
-#ifdef EMUL_TEST
-#include "temu.h"
-
-#define printfd temu_printfd
-#define printfs temu_printfs
-#define printf printfs
-
-#else // EMUL_TEST
 #include <vdp.h>
 #define USE_VDP 1
-#endif // EMUL_TEST
 
 /* Define 32 bit type so we have the same size values on host and target to
  * compare test results */
@@ -48,6 +39,8 @@ typedef unsigned int uint32_t;
 
 typedef void (*TESTFUNC) (void);
 
+void test_dummy_void (void);
+void test_dummy_int (int x);
 void test_execute (const char *name, int passed);
 void test_report (void);
 void test_run (TESTFUNC funcs[], int count);

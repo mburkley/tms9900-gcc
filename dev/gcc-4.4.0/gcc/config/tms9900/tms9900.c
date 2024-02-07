@@ -95,6 +95,36 @@ static int tms9900_dwarf_label_counter;
 #undef  TARGET_FUNCTION_OK_FOR_SIBCALL
 #define TARGET_FUNCTION_OK_FOR_SIBCALL tms9900_ok_for_sibcall
 
+/*  MGB if we return true here, then any constants we define using
+ *  force_const_mem will get added to a shared pool instead of a function pool.
+ *  This should result in better use of memory as duplicates will be eliminated.
+ *  We don't care about distances as all memory references are 16-bits.
+ *
+ *  NOTE : force_const_mem must only be called in a define_expand not a
+ *  define_insn as it is too late to add a constant to the pool for output by
+ *  the time we are emitting insns.
+ *
+ *  Actually, expands have problems too.  Presumably because later compiler
+ *  passes can generate new compare insns which then can't be matched.
+ *  define_insn_and_split works better
+ *
+ *  Changing this to be false to use per fucntion pools instead.  If byte
+ *  constants are placed at the end of a compilation unit, it may result in an
+ *  odd address for the end of the pseg which messes up loading.  TODO fix that
+ *  properly sometime.
+ */
+
+static bool
+tms9900_use_blocks_for_constant_p (enum machine_mode mode ATTRIBUTE_UNUSED,
+				const_rtx x ATTRIBUTE_UNUSED)
+{
+  // return true;
+  return false;
+}
+
+#undef TARGET_USE_BLOCKS_FOR_CONSTANT_P
+#define TARGET_USE_BLOCKS_FOR_CONSTANT_P tms9900_use_blocks_for_constant_p
+
 static bool
 tms9900_ok_for_sibcall (tree decl, tree exp)
 {
@@ -106,9 +136,13 @@ tms9900_ok_for_sibcall (tree decl, tree exp)
 #define TARGET_ASM_ALIGNED_DI_OP NULL
 #define TARGET_ASM_ALIGNED_TI_OP NULL
 
-struct gcc_target targetm = TARGET_INITIALIZER;
+static bool
+tms9900_cannot_force_const_mem (rtx x);
 
-/* Set global variables as needed for the options enabled.  */
+#undef TARGET_CANNOT_FORCE_CONST_MEM
+#define TARGET_CANNOT_FORCE_CONST_MEM tms9900_cannot_force_const_mem
+
+struct gcc_target targetm = TARGET_INITIALIZER;
 
 #include "ftoa.c"
 #include "atof.c"
@@ -175,6 +209,8 @@ const struct real_format tms9900_real_format =
   };
 
 
+/* Set global variables as needed for the options enabled.  */
+
 void override_options (void)
 {
   /* We use TI99 floating point, not IEEE floating point.  */
@@ -183,11 +219,15 @@ void override_options (void)
 }
 
 /* Non-volatile registers to be saved across function calls */
-#define MAX_SAVED_REGS 2
+#define MAX_SAVED_REGS 6
 
 static int nvolregs[]={
    HARD_LR_REGNUM,
-   HARD_BP_REGNUM};
+   HARD_BP_REGNUM,
+   HARD_R12_REGNUM,
+   HARD_R13_REGNUM,
+   HARD_R14_REGNUM,
+   HARD_R15_REGNUM};
 
 /* If defined, a C expression which determines whether, and in which direction,
    to pad out an argument with extra space.  The value should be of type
@@ -916,6 +956,9 @@ int tms9900_go_if_legitimate_address(enum machine_mode mode ATTRIBUTE_UNUSED, rt
   }
 */
   /* Anything else is invalid */
+// printf("MGB not legit add : ");
+// print_inline_rtx (stdout, operand, 0);
+// printf("\n");
   return 0;
 }
 
@@ -1289,6 +1332,128 @@ struct rtl_opt_pass pass_tms9900_postinc =
 
 // MGB additions start here - mostly for debug
 
+/*
+ *  In the case that src operand is a reg and has an offset, then it is either a
+ *  QI that should have been truncated from a HI or a HI that should have been
+ *  extended from a QI.  We try to correct this in the source operand if we can.
+ *  Return false if no correction required or if correction has been applied to
+ *  source op.  Return true if correction is needed to dest operand after
+ *  operation.
+ */
+bool tms9900_correct_byte_order (rtx insn, rtx operands[])
+{
+  /*  If the source operand is not a register or does not have an offset then
+   *  no action required */
+  if (!REG_P (operands[1]) || REG_OFFSET (operands[1]) == 0)
+    return false;
+
+  /*  If the source register is not the original register, and the original is a
+   *  mem expression, then the offset refers to something else, so we can ignore
+   *  this case */
+  if (ORIGINAL_REGNO (operands[1]) != REGNO (operands[1]) && 
+      REG_EXPR (operands[1]))
+    return false;
+
+  /*  We have determined that the byte order in operands[1] is wrong.  If
+   *  the operands[1] register dies in this insn or if the target operands[0]
+   *  has the same register number, then we can emit swpb for the source */
+  if (REGNO (operands[1]) == REGNO (operands[0]) ||
+      find_regno_note (insn, REG_DEAD, REGNO (operands[1])))
+  {
+    output_asm_insn ("swpb %1", operands);
+    // printf ("swpb pre movb subreg offset correction");
+    return false;
+  }
+
+  /*  We need to swap after the operation but the destination is not a register.  We
+   *  don't know how to handle this, so just assert */
+  if (!REG_P (operands[0]))
+      gcc_unreachable();
+
+  /*  Correction is required but cannot be applied to source.  Return true so
+   *  caller can apply to dest */
+  return true;
+}
+
+/* Determine if it's legal to put X into the constant pool.  This
+   is not possible if X contains the address of a symbol that is
+   not constant (TLS) or not known at final link time (PIC).
+
+   MGB : This is probably overkill for us as we can't generate PIC code and
+   don't have threads but including it here for completeness 
+*/
+
+static bool
+tms9900_cannot_force_const_mem (rtx x)
+{
+  // printf("%s code=%s\n", __func__, GET_RTX_NAME(GET_CODE(x)));
+  switch (GET_CODE (x))
+    {
+    case CONST_INT:
+    case CONST_DOUBLE:
+    case CONST_VECTOR:
+    case LABEL_REF:
+    case SYMBOL_REF:
+      /* Accept all non-symbolic constants.  */
+      return false;
+#if 0
+    case LABEL_REF:
+      /* Labels are OK iff we are non-PIC.  */
+      return flag_pic != 0;
+
+    case SYMBOL_REF:
+      /* 'Naked' TLS symbol references are never OK,
+	 non-TLS symbols are OK iff we are non-PIC.  */
+      if (SYMBOL_REF_TLS_MODEL (x))
+	return true;
+      else
+	return flag_pic != 0;
+#endif
+    case CONST:
+      return tms9900_cannot_force_const_mem (XEXP (x, 0));
+    case PLUS:
+    case MINUS:
+      return tms9900_cannot_force_const_mem (XEXP (x, 0))
+         || tms9900_cannot_force_const_mem (XEXP (x, 1));
+    case UNSPEC:
+      return true;
+    default:
+      gcc_unreachable ();
+    }
+}
+
+/* Determine if a given RTX is a valid constant.  We already know this
+   satisfies CONSTANT_P.  */
+
+bool
+tms9900_legitimate_constant_p (rtx x)
+{
+  // printf ("%s x=%s\n", __func__, GET_RTX_NAME(GET_CODE(x)));
+  return true;
+}
+
+/* Determine if a given RTX is a valid constant address.  */
+
+bool
+tms9900_constant_address_p (rtx x)
+{
+  // printf ("%s x=%s\n", __func__, GET_RTX_NAME(GET_CODE(x)));
+  switch (GET_CODE (x))
+    {
+    case LABEL_REF:
+    case CONST_INT:
+    case HIGH:
+      return true;
+
+    case CONST:
+    case SYMBOL_REF:
+      return tms9900_legitimate_constant_p (x);
+
+    default:
+      return false;
+    }
+}
+
 #include <stdlib.h>
 #include <stdarg.h>
 
@@ -1309,7 +1474,7 @@ extern void tms9900_inline_debug (const char *fmt,...)
     va_end (ap);
 }
 
-extern void tms9900_debug_operands (const char *name, rtx ops[], int count)
+extern void tms9900_debug_operands (const char *name, rtx insn, rtx ops[], int count)
 {
 #ifndef TMS9900_INLINE_DEBUG
     return;
@@ -1321,7 +1486,14 @@ extern void tms9900_debug_operands (const char *name, rtx ops[], int count)
     FILE *file = outputFile?outputFile:stdout;
 
     static int refcount;
-    fprintf(file, "\n; %s-%d\n", name, ++refcount);
+    if (insn)
+    {
+        fprintf(file, "\n; %s-%d : ", name, INSN_UID(insn));
+        print_inline_rtx (file, insn, 0);
+        fprintf(file, "\n\n");
+    }
+    else
+        fprintf(file, "\n; %s-exp-%d\n", name, ++refcount);
     for (int i = 0; i < count; i++)
     {
         fprintf(file, "; OP%d : ", i);
@@ -1336,6 +1508,5 @@ extern void tms9900_debug_operands (const char *name, rtx ops[], int count)
         fprintf (file, "code=[%s:%s]\n", GET_RTX_NAME(GET_CODE(ops[i])),
                  GET_MODE_NAME (GET_MODE (ops[i])));
     }
-    fprintf (file, "\n");
 }
 
