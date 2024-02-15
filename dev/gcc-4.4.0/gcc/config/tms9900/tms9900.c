@@ -1380,13 +1380,13 @@ bool tms9900_correct_byte_order (rtx insn, rtx operands[], int opcount)
     if (REG_OFFSET (operands[1]) == 1)
     {
       printf("SUBR insert trunc\n");
-      output_asm_insn ("swpb %1", operands);
+      output_asm_insn ("swpb %1 ; SUBR", operands);
       // emit_insn_before(gen_trunchiqi2(operands[0],operands[1]), insn);
     }
     else
     {
       printf("SUBR insert extend - S or U ?\n");
-      output_asm_insn ("sra %1, 8", operands);
+      output_asm_insn ("sra %1, 8 ; SUBR", operands);
       // emit_insn_before(gen_extendqihi2(operands[0],operands[1]), insn);
     }
       #else
@@ -1525,20 +1525,22 @@ extern void tms9900_debug_operands (const char *name, rtx insn, rtx ops[], int c
         fprintf(file, "\n\n");
     }
     else
-        fprintf(file, "\n; %s-exp-%d\n", name, ++refcount);
-    for (int i = 0; i < count; i++)
     {
-        fprintf(file, "; OP%d : ", i);
+        fprintf(file, "\n; %s-exp-%d\n", name, ++refcount);
+        for (int i = 0; i < count; i++)
+        {
+            fprintf(file, "; OP%d : ", i);
 
-        /* For print_inline_rtx to prefix its output with a comment indicator.
-         * This is similar to passing -dP to gcc but more specific to our needs
-         */
-        extern const char *print_rtx_head;
-        print_rtx_head = "; ";
+            /* For print_inline_rtx to prefix its output with a comment indicator.
+             * This is similar to passing -dP to gcc but more specific to our needs
+             */
+            extern const char *print_rtx_head;
+            print_rtx_head = "; ";
 
-        print_inline_rtx (file, ops[i], 0);
-        fprintf (file, "code=[%s:%s]\n", GET_RTX_NAME(GET_CODE(ops[i])),
-                 GET_MODE_NAME (GET_MODE (ops[i])));
+            print_inline_rtx (file, ops[i], 0);
+            fprintf (file, "code=[%s:%s]\n", GET_RTX_NAME(GET_CODE(ops[i])),
+                     GET_MODE_NAME (GET_MODE (ops[i])));
+        }
     }
 }
 
