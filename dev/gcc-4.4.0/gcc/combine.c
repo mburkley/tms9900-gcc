@@ -673,6 +673,10 @@ do_SUBST (rtx *into, rtx newval)
     {
       /* Sanity check that we're replacing oldval with a CONST_INT
 	 that is a valid sign-extension for the original mode.  */
+      // printf("MGB oldmode=%s old=%x new=%x, trunc=%x\n", GET_MODE_NAME(GET_MODE(oldval)),
+      //     INTVAL(oldval), INTVAL(newval), trunc_int_for_mode (INTVAL (newval),
+      //     GET_MODE(oldval)));
+
       gcc_assert (INTVAL (newval)
 		  == trunc_int_for_mode (INTVAL (newval), GET_MODE (oldval)));
 

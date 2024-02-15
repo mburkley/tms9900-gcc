@@ -29,7 +29,7 @@ static void t_int32_div (void)
     int32_t z;
     z = x/y;
 
-    printf("# z=%s\n", ltoa (z));
+    dprintf("# z=%s\n", ltoa (z));
     test_execute (__func__, z==3);
 }
 
@@ -149,7 +149,7 @@ static void t_int32_srl_var()
 
     int z=4;
     y = x>>z;
-    printf("# y=%x\n",y);
+    dprintf("# y=%x\n",y);
     test_execute (__func__, y== 0x08734123);
 }
 

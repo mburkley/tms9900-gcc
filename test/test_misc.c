@@ -275,7 +275,11 @@ void t_peephole (void)
         peep_j = 0;
 }
 
-int f2(int x);
+int f2(int x)
+{
+    return 42;
+}
+
 char c;
 int d;
 long e;
@@ -297,6 +301,27 @@ void t_tbd_f3(void)
 e=1;
 }
 
+/*  Test for bug where constants are expanded signed and then verified unsigned
+ *  in combine.c:676 (do_SUBST)
+ */
+#if 0
+#define VDP_MODE1_16K			(unsigned char)0x80		// set 16k mode (4k mode if cleared)
+#define VDP_MODE1_UNBLANK		(unsigned char)0x40		// set to enable display, clear to blank it
+#define VDP_MODE1_INT			(unsigned char)0x20		// enable VDP interrupts
+#define VDP_MODE1_TEXT			(unsigned char)0x10		// set text mode
+#endif
+
+unsigned char test_set_text_raw() {
+	unsigned char unblank = VDP_MODE1_16K | VDP_MODE1_UNBLANK | VDP_MODE1_TEXT | VDP_MODE1_INT;
+
+	return unblank;
+}
+
+void t_subst (void)
+{
+    test_set_text_raw();
+}
+
 TESTFUNC tests[] = 
 {
     t_version,
@@ -307,7 +332,8 @@ TESTFUNC tests[] =
     t_var_byte_array,
     t_byte_array,
     t_inline_clobber,
-    t_distance
+    t_distance,
+    t_subst
 };
 
 #define TEST_COUNT (sizeof (tests) / sizeof (TESTFUNC))

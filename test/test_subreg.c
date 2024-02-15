@@ -30,7 +30,8 @@ void t_bitwise_replace()
     test_execute (__func__, color==0xa5);
 }
 
-int __attribute__ ((noinline)) test_mixed_params (unsigned char c, unsigned int len)
+// int __attribute__ ((noinline)) test_mixed_params (unsigned char c, unsigned int len)
+int __attribute__ ((noinline)) test_mixed_params (char c, unsigned int len)
 {
     return c+len;
 }
@@ -124,13 +125,48 @@ void t_fptr_mixed (void)
     test_execute (__func__, fptr_result == 64);
 }
 
+/*  Test for bug in addhi3 where subreg offset is passed */
+
+unsigned char gSaveIntCnt2;
+int haunted;
+
+void test_haunted (void) {
+    int toggleval = (haunted + gSaveIntCnt2) & 0x001f;
+    if (toggleval == 0x10)
+    {
+        haunted = 0;
+    }
+    else if (toggleval == 0)
+    {
+        haunted = 1;
+    }
+
+    test_execute (__func__, haunted == 0);
+}
+
+void t_add_subreg (void)
+{
+    haunted = 0x550;
+    gSaveIntCnt2 = 0x20;
+
+    test_haunted();
+}
+
+void t_add_mixed (void)
+{
+    unsigned char x = (gSaveIntCnt2 + haunted);
+    test_execute (__func__, x == 0x20);
+}
+
 TESTFUNC tests[] = 
 {
     t_bitwise_replace,
     t_mixed_params,
     t_cmp_sub,
     t_whoded,
-    t_fptr_mixed
+    t_fptr_mixed,
+    t_add_subreg,
+    t_add_mixed
 };
 
 #define TEST_COUNT (sizeof (tests) / sizeof (TESTFUNC))
