@@ -1338,12 +1338,10 @@ struct rtl_opt_pass pass_tms9900_postinc =
  *  extended from a QI.  We try to correct this in the source operand if we can.
  *  Return false if no correction required or if correction has been applied to
  *  source op.  Return true if correction is needed to dest operand after
- *  operation.
+ *  operation (e.g. movb from @label).
  */
 bool tms9900_correct_byte_order (rtx insn, rtx operands[], int opcount)
 {
-  printf("%s...\n",__func__);
-
   /*  Sanity check.  We have never seen a case where a subreg was provided for
    *  operand[2] but if there is a case, we will need to add a correction so
    *  assert for now so we know it exists */
@@ -1358,8 +1356,6 @@ bool tms9900_correct_byte_order (rtx insn, rtx operands[], int opcount)
    *  no action required */
   if (!REG_P (operands[1]) || REG_OFFSET (operands[1]) == 0)
     return false;
-
-  printf("SUBR op[1] has off %d\n", REG_OFFSET (operands[1]));
 
   /*  If the source register is not the original register, and the original is a
    *  mem expression, then the offset refers to something else, so we can ignore
@@ -1376,22 +1372,15 @@ bool tms9900_correct_byte_order (rtx insn, rtx operands[], int opcount)
   if (REGNO (operands[1]) == REGNO (operands[0]) ||
       find_regno_note (insn, REG_DEAD, REGNO (operands[1])))
   {
-    #if 1
     if (REG_OFFSET (operands[1]) == 1)
     {
-      printf("SUBR insert trunc\n");
-      output_asm_insn ("swpb %1 ; SUBR", operands);
-      // emit_insn_before(gen_trunchiqi2(operands[0],operands[1]), insn);
+      output_asm_insn ("swpb %1 ; subreg correction", operands);
     }
     else
     {
-      printf("SUBR insert extend - S or U ?\n");
-      output_asm_insn ("sra %1, 8 ; SUBR", operands);
-      // emit_insn_before(gen_extendqihi2(operands[0],operands[1]), insn);
+      output_asm_insn ("sra %1, 8 ; subreg correction", operands);
     }
-      #else
-      #endif
-    tms9900_inline_debug ("; %s pre extend/trunc subreg offset correction\n", __func__);
+
     return false;
   }
 
@@ -1402,7 +1391,6 @@ bool tms9900_correct_byte_order (rtx insn, rtx operands[], int opcount)
 
   /*  Correction is required but cannot be applied to source.  Return true so
    *  caller can apply to dest */
-  printf("SUBR post correct\n");
   tms9900_inline_debug ("; %s swpb post movb subreg offset correction\n", __func__);
   return true;
 }

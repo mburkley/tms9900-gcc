@@ -2,15 +2,12 @@ LIBTI99DIR?=../libti99
 
 # GCCDIR=/opt/tms9900-gcc/bin/
 GCCDIR=../tms9900-gcc/bin/
-# GCCDIR=../tmszap/bin/
 
 GAS=$(GCCDIR)tms9900-as
 LD=$(GCCDIR)tms9900-ld
 CC=$(GCCDIR)tms9900-gcc
 LIBGCC=$(GCCDIR)../lib/gcc/tms9900/4.4.0/libgcc.a
-ELF2CART=elf2cart
 
-FNAME=test
 
 # Uncomment one test file here.  Tests are split up so as to fit into an 8K bin file
 # to make a cartridge bin.  Note some tests will not fit into a cartridge
@@ -19,16 +16,24 @@ FNAME=test
 
 # TODO make these targets
 
-# TEST_SRC=test_char_short
+TEST_SRC=test_char_short
 # TEST_SRC=test_long
 # TEST_SRC=test_float
 # TEST_SRC=test_misc
-TEST_SRC=test_subreg
+# TEST_SRC=test_subreg
 # TEST_SRC=test_one
 # TEST_SRC=zap
 
-LDFLAGS=\
-  --section-start .text=6000 --section-start .data=2080
+ifdef EA5
+ELF2BIN=elf2ea5
+LDFLAGS=--section-start .text=a000 --section-start .data=2080 -M
+FNAME=test.ea5
+else
+ELF2BIN=elf2cart
+LDFLAGS=--section-start .text=6000 --section-start .data=2080
+OBJECT_LIST=header.o
+FNAME=test.bin
+endif
 
 CFLAGS=-std=c99 --save-temp -I$(LIBTI99DIR)
 
@@ -37,7 +42,9 @@ CFLAGS=-std=c99 --save-temp -I$(LIBTI99DIR)
 #  NOTE some tests are useless with -O2 as the compiler optimises away any
 #  arithmetic or comparisons with constants.
 # CFLAGS+=-O2
-CFLAGS+=-Os
+# CFLAGS+=-Os
+
+# Uncomment to dump gcc insns into assembly output file
 CFLAGS+=-minline_rtl
 
 # Uncomment to turn on unit test debug output
@@ -50,8 +57,6 @@ CRT0 = $(LIBTI99DIR)/crt0_ea5.o
 
 LIBTI99=-lti99
 
-OBJECT_LIST=header.o
-
 # OBJECT_LIST=temu_hdr.o
 
 OBJECT_LIST+=\
@@ -59,7 +64,7 @@ OBJECT_LIST+=\
   $(TEST_SRC).o \
   tap.o
 
-all: $(FNAME).bin
+all: $(FNAME)
 
 #  Build on host.  Used to verify tests
 host-test: test.c
@@ -69,9 +74,8 @@ host-test: test.c
 #	size=$(wc -c < $(FNAME).bin)
 #        if (size > 8191) $(error
 
-$(FNAME).bin: $(FNAME).elf
-	$(ELF2CART) $(FNAME).elf $(FNAME).bin
-
+$(FNAME): $(FNAME).elf
+	$(ELF2BIN) $(FNAME).elf $(FNAME)
 
 $(FNAME).elf: $(OBJECT_LIST)
 	$(LD) $(OBJECT_LIST) $(LDFLAGS) -L$(LIBTI99DIR) $(LIBTI99) -o $(FNAME).elf \
