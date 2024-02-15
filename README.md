@@ -45,6 +45,12 @@ binutils patch 1.10
 
 * No changes to 1.9 but includes the multi-def patch to avoid compile errors relating to "do_wide"
 
+gcc patch 1.30
+* Pass constants as wides to force_const_mem to avoid assert in combine.c:do_SUBST
+* Added calls to correct byte order on all byte and word arith and move
+* Changed inline debug to dump entire insn not just operands
+* Added more unit tests
+
 gcc patch 1.29
 * Add function to swpb before or after MOV[B] if subreg offset seen
 * Fix operand count for one_cmpl ops

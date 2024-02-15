@@ -45,7 +45,7 @@ CFLAGS=-std=c99 --save-temp -I$(LIBTI99DIR)
 # CFLAGS+=-Os
 
 # Uncomment to dump gcc insns into assembly output file
-CFLAGS+=-minline_rtl
+# CFLAGS+=-minline_rtl
 
 # Uncomment to turn on unit test debug output
 # CFLAGS+=-D_DEBUG=1

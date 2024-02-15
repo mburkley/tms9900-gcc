@@ -87,7 +87,7 @@ diff -ru gcc-4.4.0-orig/gcc/c-cppbuiltin.c gcc-4.4.0/gcc/c-cppbuiltin.c
      cpp_define (pfile, "__GNUC_GNU_INLINE__");
 diff -ru gcc-4.4.0-orig/gcc/combine.c gcc-4.4.0/gcc/combine.c
 --- gcc-4.4.0-orig/gcc/combine.c	2023-12-23 10:48:53.509244401 +0000
-+++ gcc-4.4.0/gcc/combine.c	2024-01-08 13:33:47.818397617 +0000
++++ gcc-4.4.0/gcc/combine.c	2024-02-15 14:09:41.485874410 +0000
 @@ -4466,6 +4466,7 @@
  		    return gen_rtx_CLOBBER (VOIDmode, const0_rtx);
  #endif
@@ -1378,8 +1378,8 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/lib1funcs.asm gcc-4.4.0/gcc/config/tm
 +
 +
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/longdivmod.c gcc-4.4.0/gcc/config/tms9900/longdivmod.c
---- gcc-4.4.0-orig/gcc/config/tms9900/longdivmod.c	2024-02-03 20:23:08.824855793 +0000
-+++ gcc-4.4.0/gcc/config/tms9900/longdivmod.c	2024-02-03 20:23:08.824855793 +0000
+--- gcc-4.4.0-orig/gcc/config/tms9900/longdivmod.c	2024-02-14 17:32:37.236912601 +0000
++++ gcc-4.4.0/gcc/config/tms9900/longdivmod.c	2024-02-14 17:32:37.244912643 +0000
 @@ -0,0 +1,64 @@
 +/* longdivmod.c
 +   These methods provide long division and moduls.
@@ -1474,8 +1474,8 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/math_private.h gcc-4.4.0/gcc/config/t
 +#endif
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms9900/tms9900.c
 --- gcc-4.4.0-orig/gcc/config/tms9900/tms9900.c	2023-12-23 10:48:53.513244386 +0000
-+++ gcc-4.4.0/gcc/config/tms9900/tms9900.c	2024-02-03 20:23:08.824855793 +0000
-@@ -0,0 +1,1512 @@
++++ gcc-4.4.0/gcc/config/tms9900/tms9900.c	2024-02-15 14:11:58.097420305 +0000
+@@ -0,0 +1,1534 @@
 +/* Subroutines for insn-output.c for TMS9900.
 +   Copyright (C) 1987, 1994, 1995, 1997, 1998, 1999, 2000, 2001, 2002,
 +   2004, 2005, 2006, 2007, 2008
@@ -2816,10 +2816,20 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms990
 + *  extended from a QI.  We try to correct this in the source operand if we can.
 + *  Return false if no correction required or if correction has been applied to
 + *  source op.  Return true if correction is needed to dest operand after
-+ *  operation.
++ *  operation (e.g. movb from @label).
 + */
-+bool tms9900_correct_byte_order (rtx insn, rtx operands[])
++bool tms9900_correct_byte_order (rtx insn, rtx operands[], int opcount)
 +{
++  /*  Sanity check.  We have never seen a case where a subreg was provided for
++   *  operand[2] but if there is a case, we will need to add a correction so
++   *  assert for now so we know it exists */
++  if (opcount > 2 && REG_P (operands[2]) && REG_OFFSET (operands[2]) != 0)
++  {
++    if (ORIGINAL_REGNO (operands[2]) == REGNO (operands[2]) || 
++        !REG_EXPR (operands[2]))
++      gcc_unreachable();
++  }
++
 +  /*  If the source operand is not a register or does not have an offset then
 +   *  no action required */
 +  if (!REG_P (operands[1]) || REG_OFFSET (operands[1]) == 0)
@@ -2834,12 +2844,21 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms990
 +
 +  /*  We have determined that the byte order in operands[1] is wrong.  If
 +   *  the operands[1] register dies in this insn or if the target operands[0]
-+   *  has the same register number, then we can emit swpb for the source */
++   *  has the same register number, then we need to extend or truncate the
++   *  source.  If offset is -1 then emit a SRA to extend else if it is +1 then
++   *  emit SWPB to truncate. */
 +  if (REGNO (operands[1]) == REGNO (operands[0]) ||
 +      find_regno_note (insn, REG_DEAD, REGNO (operands[1])))
 +  {
-+    output_asm_insn ("swpb %1", operands);
-+    // printf ("swpb pre movb subreg offset correction");
++    if (REG_OFFSET (operands[1]) == 1)
++    {
++      output_asm_insn ("swpb %1 ; subreg correction", operands);
++    }
++    else
++    {
++      output_asm_insn ("sra %1, 8 ; subreg correction", operands);
++    }
++
 +    return false;
 +  }
 +
@@ -2850,6 +2869,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms990
 +
 +  /*  Correction is required but cannot be applied to source.  Return true so
 +   *  caller can apply to dest */
++  tms9900_inline_debug ("; %s swpb post movb subreg offset correction\n", __func__);
 +  return true;
 +}
 +
@@ -2971,26 +2991,28 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms990
 +        fprintf(file, "\n\n");
 +    }
 +    else
-+        fprintf(file, "\n; %s-exp-%d\n", name, ++refcount);
-+    for (int i = 0; i < count; i++)
 +    {
-+        fprintf(file, "; OP%d : ", i);
++        fprintf(file, "\n; %s-exp-%d\n", name, ++refcount);
++        for (int i = 0; i < count; i++)
++        {
++            fprintf(file, "; OP%d : ", i);
 +
-+        /* For print_inline_rtx to prefix its output with a comment indicator.
-+         * This is similar to passing -dP to gcc but more specific to our needs
-+         */
-+        extern const char *print_rtx_head;
-+        print_rtx_head = "; ";
++            /* For print_inline_rtx to prefix its output with a comment indicator.
++             * This is similar to passing -dP to gcc but more specific to our needs
++             */
++            extern const char *print_rtx_head;
++            print_rtx_head = "; ";
 +
-+        print_inline_rtx (file, ops[i], 0);
-+        fprintf (file, "code=[%s:%s]\n", GET_RTX_NAME(GET_CODE(ops[i])),
-+                 GET_MODE_NAME (GET_MODE (ops[i])));
++            print_inline_rtx (file, ops[i], 0);
++            fprintf (file, "code=[%s:%s]\n", GET_RTX_NAME(GET_CODE(ops[i])),
++                     GET_MODE_NAME (GET_MODE (ops[i])));
++        }
 +    }
 +}
 +
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.h gcc-4.4.0/gcc/config/tms9900/tms9900.h
 --- gcc-4.4.0-orig/gcc/config/tms9900/tms9900.h	2023-12-23 10:48:53.513244386 +0000
-+++ gcc-4.4.0/gcc/config/tms9900/tms9900.h	2024-02-03 20:23:08.824855793 +0000
++++ gcc-4.4.0/gcc/config/tms9900/tms9900.h	2024-02-15 13:02:42.943137738 +0000
 @@ -0,0 +1,1241 @@
 +/* Definitions of target machine for GNU compiler.
 +   Texas Instruments TMS9900
@@ -4235,8 +4257,8 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.h gcc-4.4.0/gcc/config/tms990
 +
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms9900/tms9900.md
 --- gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md	2023-12-23 10:48:53.513244386 +0000
-+++ gcc-4.4.0/gcc/config/tms9900/tms9900.md	2024-02-03 21:06:19.510266537 +0000
-@@ -0,0 +1,3218 @@
++++ gcc-4.4.0/gcc/config/tms9900/tms9900.md	2024-02-15 14:14:28.096943499 +0000
+@@ -0,0 +1,3230 @@
 +;;- Machine description for the TMS9900 for GNU C compiler
 +;; Copyright (C) 1994, 1995, 1997, 1998, 1999, 2000, 2001, 2004, 2005
 +;; 2007, 2008 Free Software Foundation, Inc.
@@ -4490,6 +4512,8 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +		 (match_operand:HI 1 "general_operand"      "rR,Q,rR,Q,i")))]
 +  ""
 +  {
++    tms9900_debug_operands ("split_cmphi", insn, operands, 2);
++
 +    if (which_alternative < 4)
 +      return "c    %0, %1";
 +    else
@@ -4501,6 +4525,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +		 (match_dup 1)))]
 +  {
 +    tms9900_debug_operands ("split_cmphi", NULL_RTX, operands, 2);
++
 +    int val = INTVAL (operands[1]) & 0xffff;
 +    operands[1] = force_const_mem (HImode, GEN_INT (val));
 +  }
@@ -4655,7 +4680,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +      }
 +
 +      tms9900_inline_debug ("; movqi replace const with label\n");
-+      operands[1] = force_const_mem (QImode, GEN_INT(INTVAL (operands[1]) & 0xff));
++      operands[1] = force_const_mem (QImode, operands[1]);
 +    }
 +
 +    emit_insn (gen_tms9900_movqi (operands[0], operands[1]));
@@ -4675,23 +4700,21 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +  {
 +    tms9900_debug_operands ("tms9900_movqi", insn, operands, 2);
 +
-+    // Could this check be moved to the expand?  Probably not.  The trunc would
-+    // probably get eliminated before the code gets emitted
++    /* Could this check be moved to the expand?  Probably not.  The trunc would
++     * probably get eliminated before the code gets emitted */
 +
-+    bool postByteSwap = tms9900_correct_byte_order (insn, operands);
++    bool postByteSwap = tms9900_correct_byte_order (insn, operands, 2);
 +
 +    /*  If a byte swap is needed in the dest, then do mov instead of movb to
-+     *  copy the whole 16-bit value
-+     */
++     *  copy the whole 16-bit value */
 +    if (postByteSwap)
 +    {
 +      output_asm_insn ("mov  %1, %0", operands);
-+      output_asm_insn ("swpb %0", operands);
++      output_asm_insn ("swpb %0 ; movqi subreg truncate", operands);
 +    }
 +    else
 +      output_asm_insn ("movb %1, %0", operands);
 +
-+    tms9900_inline_debug ("; movqi done\n");
 +    return "";
 +  }
 +  [(set_attr "length" "2,4,4,6")]
@@ -4730,7 +4753,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +      if (!REG_P (operands[0]))
 +      {
 +        tms9900_inline_debug ("; movhi replace const with label\n");
-+        operands[1] = force_const_mem (HImode, GEN_INT(val));
++        operands[1] = force_const_mem (HImode, operands[1]);
 +      }
 +    }
 +
@@ -4745,6 +4768,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +  ""
 +  {
 +    tms9900_debug_operands ("movhi", insn, operands, 2);
++    bool postByteSwap = tms9900_correct_byte_order (insn, operands, 2);
 +    tms9900_inline_debug ("; movhi alt=%d\n", which_alternative);
 +
 +    if (which_alternative == 4)
@@ -5835,7 +5859,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +     * is a HI so the case where a post byte swap is required should never
 +     * arise.
 +     */
-+    tms9900_correct_byte_order (insn, operands);
++    tms9900_correct_byte_order (insn, operands, 3);
 +
 +    if(which_alternative == 4)
 +    {
@@ -5922,6 +5946,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +  ""
 +  {
 +    tms9900_debug_operands ("andqi3", insn, operands, 3);
++    tms9900_correct_byte_order (insn, operands, 3);
 +    if(which_alternative >= 4)
 +    {
 +      if (!CONST_INT_P (operands[2]))
@@ -5995,6 +6020,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +  ""
 +  {
 +    tms9900_debug_operands ("iorhi3", insn, operands, 3);
++    tms9900_correct_byte_order (insn, operands, 3);
 +
 +    if (which_alternative < 4)
 +      return("soc  %2, %0");
@@ -6023,6 +6049,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +  ""
 +  {
 +    tms9900_debug_operands ("iorqi3", insn, operands, 3);
++    tms9900_correct_byte_order (insn, operands, 3);
 +
 +    if (which_alternative < 4)
 +      return ("socb %2, %0");
@@ -6061,6 +6088,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +  ""
 +  {
 +    tms9900_debug_operands ("xorhi3", insn, operands, 3);
++    tms9900_correct_byte_order (insn, operands, 3);
 +    return "xor  %2, %0";
 +  }
 +  [(set_attr "length" "2,4")])
@@ -6076,6 +6104,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +  ""
 +  {
 +    tms9900_debug_operands ("xorqi3", insn, operands, 3);
++    tms9900_correct_byte_order (insn, operands, 3);
 +    return "xor  %2, %0";
 +  }
 +  [(set_attr "length" "2")])
@@ -6090,6 +6119,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +  ""
 +  {
 +    tms9900_debug_operands ("one_cmplhi2", insn, operands, 2);
++    tms9900_correct_byte_order (insn, operands, 2);
 +    return "inv  %0";
 +  }
 +  [(set_attr "length" "2,4")])
@@ -6124,6 +6154,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +  ""
 +  {
 +    tms9900_debug_operands ("addhi3", insn, operands, 3);
++    tms9900_correct_byte_order (insn, operands, 3);
 +    switch(GET_CODE(operands[2]))
 +    {
 +      case CONST_INT:
@@ -6160,6 +6191,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +  ""
 +  {
 +    tms9900_debug_operands ("tms9900_addqi3", insn, operands, 3);
++    tms9900_correct_byte_order (insn, operands, 3);
 +    return("ab   %2, %0");
 +  }
 +  [(set_attr "length" "2,4,4,6")])
@@ -6192,7 +6224,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +    if (CONST_INT_P (operands[2]))
 +    {
 +      tms9900_inline_debug ("; addqi3 replace const with label\n");
-+      operands[2] = force_const_mem (QImode, GEN_INT (INTVAL (operands[2]) & 0xff));
++      operands[2] = force_const_mem (QImode, operands[2]);
 +    }
 +
 +    emit_insn (gen_tms9900_addqi3 (operands[0], operands[1], operands[2]));
@@ -6210,6 +6242,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +  ""
 +  {
 +    tms9900_debug_operands ("subhi3", insn, operands, 3);
++    tms9900_correct_byte_order (insn, operands, 3);
 +    return "s    %2, %0";
 +  }
 +  [(set_attr "length" "2,4,4,6")])
@@ -6250,6 +6283,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +  ""
 +  {
 +    tms9900_debug_operands ("tms9900_subqi3", insn, operands, 3);
++    tms9900_correct_byte_order (insn, operands, 3);
 +    return "sb   %2, %0";
 +  }
 +  [(set_attr "length" "2,4,4,6")])
@@ -6284,7 +6318,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +    if (CONST_INT_P (operands[2]))
 +    {
 +      tms9900_inline_debug ("; subqi3 replace const with label\n");
-+      operands[2] = force_const_mem (QImode, GEN_INT (INTVAL (operands[2]) & 0xff));
++      operands[2] = force_const_mem (QImode, operands[2]);
 +    }
 +
 +    emit_insn (gen_tms9900_subqi3 (operands[0], operands[1], operands[2]));
@@ -7457,7 +7491,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.opt gcc-4.4.0/gcc/config/tms9900/tms9900.opt
 --- gcc-4.4.0-orig/gcc/config/tms9900/tms9900.opt	2023-12-23 10:48:53.513244386 +0000
-+++ gcc-4.4.0/gcc/config/tms9900/tms9900.opt	2024-02-03 20:23:08.828855782 +0000
++++ gcc-4.4.0/gcc/config/tms9900/tms9900.opt	2024-02-14 17:32:37.244912643 +0000
 @@ -0,0 +1,34 @@
 +; Options for the TMS9900 port of the compiler.
 +
@@ -7495,7 +7529,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.opt gcc-4.4.0/gcc/config/tms9
 +
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900-protos.h gcc-4.4.0/gcc/config/tms9900/tms9900-protos.h
 --- gcc-4.4.0-orig/gcc/config/tms9900/tms9900-protos.h	2023-12-23 10:48:53.513244386 +0000
-+++ gcc-4.4.0/gcc/config/tms9900/tms9900-protos.h	2024-02-03 20:23:08.824855793 +0000
++++ gcc-4.4.0/gcc/config/tms9900/tms9900-protos.h	2024-02-15 13:02:42.939137778 +0000
 @@ -0,0 +1,65 @@
 +/* Definitions of target machine for GNU compiler, for the TMS9900
 +
@@ -7559,12 +7593,12 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900-protos.h gcc-4.4.0/gcc/config
 +extern void tms9900_register_convert (rtx operand, int mode, int sign);
 +extern bool tms9900_legitimate_constant_p (rtx x);
 +extern bool tms9900_constant_address_p (rtx x);
-+extern bool tms9900_correct_byte_order (rtx insn, rtx operands[]);
++extern bool tms9900_correct_byte_order (rtx insn, rtx operands[], int opcount);
 +extern void tms9900_inline_debug (const char *fmt,...);
 +extern void tms9900_debug_operands (const char *name, rtx insn, rtx ops[], int count);
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/t-tms9900 gcc-4.4.0/gcc/config/tms9900/t-tms9900
 --- gcc-4.4.0-orig/gcc/config/tms9900/t-tms9900	2023-12-23 10:48:53.513244386 +0000
-+++ gcc-4.4.0/gcc/config/tms9900/t-tms9900	2024-02-03 20:23:08.824855793 +0000
++++ gcc-4.4.0/gcc/config/tms9900/t-tms9900	2024-02-14 17:32:37.244912643 +0000
 @@ -0,0 +1,42 @@
 +LIB1ASMSRC    = tms9900/lib1funcs.asm
 +LIB1ASMFUNCS  = _divsi3 _udivsi3 _modsi3 _umodsi3 _divmod_common
@@ -7609,8 +7643,8 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/t-tms9900 gcc-4.4.0/gcc/config/tms990
 +	-c -o $(T)crtn.o -x assembler-with-cpp $(srcdir)/config/tms9900/crtn.asm
 +
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/ulongdivmod.c gcc-4.4.0/gcc/config/tms9900/ulongdivmod.c
---- gcc-4.4.0-orig/gcc/config/tms9900/ulongdivmod.c	2024-02-03 20:23:08.824855793 +0000
-+++ gcc-4.4.0/gcc/config/tms9900/ulongdivmod.c	2024-02-03 20:23:08.828855782 +0000
+--- gcc-4.4.0-orig/gcc/config/tms9900/ulongdivmod.c	2024-02-14 17:32:37.236912601 +0000
++++ gcc-4.4.0/gcc/config/tms9900/ulongdivmod.c	2024-02-14 17:32:37.244912643 +0000
 @@ -0,0 +1,51 @@
 +/* ulongdivmod.c
 +   These methods provide unsigned long division and modulus.
@@ -7779,13 +7813,13 @@ diff -ru gcc-4.4.0-orig/gcc/cp/cfns.h gcc-4.4.0/gcc/cp/cfns.h
  }
 diff -ru gcc-4.4.0-orig/gcc/DATESTAMP gcc-4.4.0/gcc/DATESTAMP
 --- gcc-4.4.0-orig/gcc/DATESTAMP	2024-01-06 17:22:05.286873814 +0000
-+++ gcc-4.4.0/gcc/DATESTAMP	2024-02-07 11:46:27.107355700 +0000
++++ gcc-4.4.0/gcc/DATESTAMP	2024-02-15 14:18:20.136238137 +0000
 @@ -1 +1 @@
 -20090421
-+20240207
++20240215
 diff -ru gcc-4.4.0-orig/gcc/DEV-PHASE gcc-4.4.0/gcc/DEV-PHASE
 --- gcc-4.4.0-orig/gcc/DEV-PHASE	2023-12-23 10:48:53.509244401 +0000
-+++ gcc-4.4.0/gcc/DEV-PHASE	2024-02-07 11:46:27.111355685 +0000
++++ gcc-4.4.0/gcc/DEV-PHASE	2024-02-15 14:18:20.136238137 +0000
 @@ -0,0 +1 @@
 +TMS9900 patch
 diff -ru gcc-4.4.0-orig/gcc/dfp.c gcc-4.4.0/gcc/dfp.c
@@ -7903,9 +7937,9 @@ diff -ru gcc-4.4.0-orig/gcc/reload.c gcc-4.4.0/gcc/reload.c
  						      SUBREG_BYTE (*loc),
 diff -ru gcc-4.4.0-orig/gcc/REVISION gcc-4.4.0/gcc/REVISION
 --- gcc-4.4.0-orig/gcc/REVISION	2024-01-06 17:22:05.286873814 +0000
-+++ gcc-4.4.0/gcc/REVISION	2024-02-07 11:46:27.111355685 +0000
++++ gcc-4.4.0/gcc/REVISION	2024-02-15 14:18:20.136238137 +0000
 @@ -0,0 +1 @@
-+1.29
++1.30
 diff -ru gcc-4.4.0-orig/gcc/toplev.h gcc-4.4.0/gcc/toplev.h
 --- gcc-4.4.0-orig/gcc/toplev.h	2023-12-23 10:48:53.513244386 +0000
 +++ gcc-4.4.0/gcc/toplev.h	2023-12-23 10:48:53.529244319 +0000
