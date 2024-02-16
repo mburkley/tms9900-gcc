@@ -219,15 +219,11 @@ void override_options (void)
 }
 
 /* Non-volatile registers to be saved across function calls */
-#define MAX_SAVED_REGS 6
+#define MAX_SAVED_REGS 2
 
 static int nvolregs[]={
    HARD_LR_REGNUM,
-   HARD_BP_REGNUM,
-   HARD_R12_REGNUM,
-   HARD_R13_REGNUM,
-   HARD_R14_REGNUM,
-   HARD_R15_REGNUM};
+   HARD_BP_REGNUM};
 
 /* If defined, a C expression which determines whether, and in which direction,
    to pad out an argument with extra space.  The value should be of type
@@ -1332,57 +1328,82 @@ struct rtl_opt_pass pass_tms9900_postinc =
 
 // MGB additions start here - mostly for debug
 
+/*  Does a byte offset correction for one operand.  Returns true for sucess or
+ *  no action required */
+static bool tms9900_correct_operand (rtx insn, rtx operands[], int op, int *corrections)
+{
+  /*  If the source operand is not a register or does not have an offset then
+   *  no action required */
+  if (!REG_P (operands[op]) || REG_OFFSET (operands[op]) == 0)
+    return true;
+
+  /*  If the source register is not the original register, and the original is a
+   *  mem expression, then the offset refers to something else, so we can ignore
+   *  this case */
+  if (ORIGINAL_REGNO (operands[op]) != REGNO (operands[op]) && 
+      REG_EXPR (operands[op]))
+    return true;
+
+  /*  We have determined that the byte order in operands[op] is wrong.  If
+   *  the operands[op] register dies in this insn or if the target operands[0]
+   *  has the same register number, then we need to extend or truncate the
+   *  source.  If offset is -1 then emit a SRA to extend else if it is +1 then
+   *  emit SWPB to truncate. */
+  if (REGNO (operands[op]) == REGNO (operands[0]) ||
+      find_regno_note (insn, REG_DEAD, REGNO (operands[op])))
+  {
+    if (REG_OFFSET (operands[op]) == 1)
+    {
+      /*  Rebase the array to op and access param 0 as it could be really
+       *  operand[1] or operand[2] */
+      output_asm_insn ("swpb %0 ; subreg correction", &operands[op]);
+    }
+    else if (REG_OFFSET (operands[op]) == -1)
+    {
+      output_asm_insn ("sra %0, 8 ; subreg correction", &operands[op]);
+    }
+    else
+    {
+      printf ("offset=%d\n", REG_OFFSET (operands[op]));
+            print_inline_rtx (stdout, insn, 0);
+      gcc_unreachable();
+    }
+
+    (*corrections)++;
+    return true;
+  }
+
+  return false;
+}
+
 /*
- *  In the case that src operand is a reg and has an offset, then it is either a
+ *  In the case a src operand is a reg and has an offset, then it is either a
  *  QI that should have been truncated from a HI or a HI that should have been
  *  extended from a QI.  We try to correct this in the source operand if we can.
  *  Return false if no correction required or if correction has been applied to
  *  source op.  Return true if correction is needed to dest operand after
  *  operation (e.g. movb from @label).
+ *
+ *  Returns true for success or false if further action required by caller.
  */
 bool tms9900_correct_byte_order (rtx insn, rtx operands[], int opcount)
 {
-  /*  Sanity check.  We have never seen a case where a subreg was provided for
-   *  operand[2] but if there is a case, we will need to add a correction so
-   *  assert for now so we know it exists */
-  if (opcount > 2 && REG_P (operands[2]) && REG_OFFSET (operands[2]) != 0)
-  {
-    if (ORIGINAL_REGNO (operands[2]) == REGNO (operands[2]) || 
-        !REG_EXPR (operands[2]))
-      gcc_unreachable();
-  }
+  int ok = true;
+  int corrections = 0;
 
-  /*  If the source operand is not a register or does not have an offset then
-   *  no action required */
-  if (!REG_P (operands[1]) || REG_OFFSET (operands[1]) == 0)
-    return false;
+  /*  Operand[2] may not exist.  If it does, check it for a need for a byte swap */
+  if (opcount > 2)
+    ok = ok && tms9900_correct_operand (insn, operands, 2, &corrections);
 
-  /*  If the source register is not the original register, and the original is a
-   *  mem expression, then the offset refers to something else, so we can ignore
-   *  this case */
-  if (ORIGINAL_REGNO (operands[1]) != REGNO (operands[1]) && 
-      REG_EXPR (operands[1]))
-    return false;
+  ok = ok && tms9900_correct_operand (insn, operands, 1, &corrections);
 
-  /*  We have determined that the byte order in operands[1] is wrong.  If
-   *  the operands[1] register dies in this insn or if the target operands[0]
-   *  has the same register number, then we need to extend or truncate the
-   *  source.  If offset is -1 then emit a SRA to extend else if it is +1 then
-   *  emit SWPB to truncate. */
-  if (REGNO (operands[1]) == REGNO (operands[0]) ||
-      find_regno_note (insn, REG_DEAD, REGNO (operands[1])))
-  {
-    if (REG_OFFSET (operands[1]) == 1)
-    {
-      output_asm_insn ("swpb %1 ; subreg correction", operands);
-    }
-    else
-    {
-      output_asm_insn ("sra %1, 8 ; subreg correction", operands);
-    }
+  if (ok)
+    return ok;
 
-    return false;
-  }
+  /*  If we got this far then further action is required, but one of the
+   *  operands has already been corrected.  Don't know how to handle that */
+  if (corrections > 0)
+    gcc_unreachable();
 
   /*  We need to swap after the operation but the destination is not a register.  We
    *  don't know how to handle this, so just assert */
@@ -1392,7 +1413,7 @@ bool tms9900_correct_byte_order (rtx insn, rtx operands[], int opcount)
   /*  Correction is required but cannot be applied to source.  Return true so
    *  caller can apply to dest */
   tms9900_inline_debug ("; %s swpb post movb subreg offset correction\n", __func__);
-  return true;
+  return false;
 }
 
 /* Determine if it's legal to put X into the constant pool.  This
