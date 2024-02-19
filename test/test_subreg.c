@@ -129,9 +129,24 @@ void t_fptr_mixed (void)
 
 unsigned char gSaveIntCnt2;
 int haunted;
+int hauntedIntArray[2];
 
 void test_haunted (void) {
     int toggleval = (haunted + gSaveIntCnt2) & 0x001f;
+    if (toggleval == 0x10)
+    {
+        haunted = 0;
+    }
+    else if (toggleval == 0)
+    {
+        haunted = 1;
+    }
+
+    test_execute (__func__, haunted == 0);
+}
+
+void test_haunted_array (void) {
+    int toggleval = (hauntedIntArray[1] + gSaveIntCnt2) & 0x001f;
     if (toggleval == 0x10)
     {
         haunted = 0;

@@ -61,5 +61,6 @@ extern void tms9900_register_convert (rtx operand, int mode, int sign);
 extern bool tms9900_legitimate_constant_p (rtx x);
 extern bool tms9900_constant_address_p (rtx x);
 extern bool tms9900_correct_byte_order (rtx insn, rtx operands[], int opcount);
+extern bool tms9900_operand_subreg_offset (rtx operand);
 extern void tms9900_inline_debug (const char *fmt,...);
 extern void tms9900_debug_operands (const char *name, rtx insn, rtx ops[], int count);

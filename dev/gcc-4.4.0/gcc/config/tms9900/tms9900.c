@@ -1330,20 +1330,22 @@ struct rtl_opt_pass pass_tms9900_postinc =
 
 /*  Does a byte offset correction for one operand.  Returns true for sucess or
  *  no action required */
-static bool tms9900_correct_operand (rtx insn, rtx operands[], int op, int *corrections)
+extern bool tms9900_operand_subreg_offset (rtx operand)
 {
   /*  If the source operand is not a register or does not have an offset then
    *  no action required */
-  if (!REG_P (operands[op]) || REG_OFFSET (operands[op]) == 0)
-    return true;
+  if (!REG_P (operand) || REG_OFFSET (operand) == 0)
+    return false;
 
   /*  If the source register is not the original register, and the original is a
    *  mem expression, then the offset refers to something else, so we can ignore
    *  this case */
-  if (ORIGINAL_REGNO (operands[op]) != REGNO (operands[op]) && 
-      REG_EXPR (operands[op]))
-    return true;
+  if (ORIGINAL_REGNO (operand) != REGNO (operand) && 
+      REG_EXPR (operand))
+    return false;
 
+  return true;
+  #if 0
   /*  We have determined that the byte order in operands[op] is wrong.  If
    *  the operands[op] register dies in this insn or if the target operands[0]
    *  has the same register number, then we need to extend or truncate the
@@ -1374,6 +1376,7 @@ static bool tms9900_correct_operand (rtx insn, rtx operands[], int op, int *corr
   }
 
   return false;
+  #endif
 }
 
 /*
@@ -1386,6 +1389,7 @@ static bool tms9900_correct_operand (rtx insn, rtx operands[], int op, int *corr
  *
  *  Returns true for success or false if further action required by caller.
  */
+#if 0
 bool tms9900_correct_byte_order (rtx insn, rtx operands[], int opcount)
 {
   int ok = true;
@@ -1415,6 +1419,7 @@ bool tms9900_correct_byte_order (rtx insn, rtx operands[], int opcount)
   tms9900_inline_debug ("; %s swpb post movb subreg offset correction\n", __func__);
   return false;
 }
+#endif
 
 /* Determine if it's legal to put X into the constant pool.  This
    is not possible if X contains the address of a symbol that is
