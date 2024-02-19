@@ -300,10 +300,13 @@ extern short *reg_renumber;	/* def in local_alloc.c */
  *
  * It also seems counter-intuitive that LR should be identified as a call reg
  * but gcc/reginfo.c will assert if any register is fixed and not a call reg.
+ *
+ * MGB JAN-24 I'm adding back in R12 thru R15 as call used regs.  It actually
+ * seems to allow gcc to generate better code - why is that? TODO
  */
 /* 0 for registers which must be preserved across function call boundaries */
 #define CALL_USED_REGISTERS \
-  {1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1}
+  {1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0}
 /* SC 1  2  3  4  5  6  7  8  BP SP LR CB AP 14 15*/
 
 /* Define this macro to change register usage conditional on target flags. */

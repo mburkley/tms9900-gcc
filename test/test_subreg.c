@@ -169,7 +169,13 @@ void t_add_subreg (void)
 
 void t_add_mixed (void)
 {
-    unsigned char x = (gSaveIntCnt2 + haunted);
+    unsigned char x = (gSaveIntCnt2 + haunted) & 0x20;
+    test_execute (__func__, x == 0x20);
+}
+
+void t_sub_mixed (void)
+{
+    unsigned char x = (haunted - gSaveIntCnt2) & 0x20;
     test_execute (__func__, x == 0x20);
 }
 
@@ -181,7 +187,8 @@ TESTFUNC tests[] =
     t_whoded,
     t_fptr_mixed,
     t_add_subreg,
-    t_add_mixed
+    t_add_mixed,
+    t_sub_mixed
 };
 
 #define TEST_COUNT (sizeof (tests) / sizeof (TESTFUNC))
