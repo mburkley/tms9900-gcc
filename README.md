@@ -49,6 +49,8 @@ gcc patch 1.30
 * Pass constants as wides to force_const_mem to avoid assert in combine.c:do_SUBST
 * Added calls to correct byte order on all byte and word arith and move
 * Changed inline debug to dump entire insn not just operands
+* Removed wrongly associative constraints on subtract
+* Added separate reg constraints to addhi3, andhi3, subhi3 to allow longer lengths for subreg offset fixes
 * Added more unit tests
 
 gcc patch 1.29
