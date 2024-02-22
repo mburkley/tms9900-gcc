@@ -340,14 +340,10 @@ static void tms9900_output_addr_const(FILE *file, rtx addr)
     output_addr_const(file, addr);
 }
 
-static FILE *outputFile;
-
 /* Construct string expression matching an address operand */
 void print_operand_address (FILE *file,
                             register rtx addr)
 {
-  if (!outputFile) outputFile=file;
-
   retry:
   switch (GET_CODE (addr))
     {
@@ -1223,7 +1219,7 @@ tms9900_find_merge_insn(rtx insn, rtx parent, int argnum, rtx arg)
         {
           fprintf(dump_file,"\n\nPossible merge candidate:\n");
           print_rtl_single(dump_file, insn);
-          fprintf(dump_file,"\nLast use of reg %d was in insn %d:\n", regnum, INSN_UID(last->insn));
+          // fprintf(dump_file,"\nLast use of reg %d was in insn %d:\n", regnum, INSN_UID(last->insn));
           print_rtl_single(dump_file, last->insn);
         }
 
@@ -1332,21 +1328,45 @@ struct rtl_opt_pass pass_tms9900_postinc =
 
 // MGB additions start here - mostly for debug
 
-/*  Check if there is a byte offset correction needed for an operand. */
-extern bool tms9900_operand_subreg_offset (rtx operand)
+/*  Check if there is a byte offset correction needed for an operand.  If
+ *  operand is a register and REGNO matches ORIGINAL_REGNO and offset is non
+ *  zero then a correction is needed.  -1 indicates an extend is needed, +1
+ *  indicates a truncate is needed. */
+extern bool tms9900_operand_subreg_offset (rtx operand, int mode)
 {
-  /*  If the source operand is not a register or does not have an offset then
-   *  no action required */
+  /*  If the source operand is not a register or does not have an offset of
+   *  minus 1 byte then no action required */
+  // if (!REG_P (operand) || (REG_OFFSET (operand) % 2) == 0)
+  // if (!REG_P (operand) || REG_OFFSET (operand) != -1)
   if (!REG_P (operand) || REG_OFFSET (operand) == 0)
+    return false;
+
+  int offset = REG_OFFSET (operand);
+
+  // Bypass debug flag and put direct to file
+  // tms9900_inline_debug ("; reg/reg=%d/%d expr=%d\n", REGNO(operand),
+  fprintf (asm_out_file, "; SUBR off=%d mode=%s reg/reg=%d/%d\n",
+           REG_OFFSET (operand), GET_MODE_NAME (mode),
+           REGNO(operand), ORIGINAL_REGNO(operand));
+
+  if (mode == QImode && offset != 1)
+    return false;
+
+  if (mode == HImode && offset != -1)
     return false;
 
   /*  If the source register is not the original register, and the original is a
    *  mem expression, then the offset refers to something else, so we can ignore
    *  this case */
-  if (ORIGINAL_REGNO (operand) != REGNO (operand) && 
-      REG_EXPR (operand))
+  if (ORIGINAL_REGNO (operand) != REGNO (operand))
+      //  && REG_EXPR (operand))
+  {
+    tms9900_debug_operands ("REG_EXPR", operand, NULL, 0);
     return false;
+  }
 
+  // tms9900_inline_debug ("; correct required\n");
+  fprintf (asm_out_file, "; SUBR correction required\n");
   /*  Correction is needed */
   return true;
 }
@@ -1441,12 +1461,10 @@ extern void tms9900_inline_debug (const char *fmt,...)
     if (!TARGET_TI99_INLINE_RTL)
         return;
 
-    FILE *file = outputFile?outputFile:stdout;
-
     va_list ap;
 
     va_start (ap, fmt);
-    vfprintf (file, fmt, ap);
+    vfprintf (asm_out_file, fmt, ap);
     va_end (ap);
 }
 
@@ -1459,21 +1477,19 @@ extern void tms9900_debug_operands (const char *name, rtx insn, rtx ops[], int c
     if (!TARGET_TI99_INLINE_RTL)
         return;
 
-    FILE *file = outputFile?outputFile:stdout;
-
     static int refcount;
     if (insn)
     {
-        fprintf(file, "\n; %s-%d : ", name, INSN_UID(insn));
-        print_inline_rtx (file, insn, 0);
-        fprintf(file, "\n\n");
+        fprintf(asm_out_file, "\n; %s-%d : ", name, INSN_UID(insn));
+        print_inline_rtx (asm_out_file, insn, 0);
+        fprintf(asm_out_file, "\n\n");
     }
     else
     {
-        fprintf(file, "\n; %s-expand-%d\n", name, ++refcount);
+        fprintf(asm_out_file, "\n; %s-expand-%d\n", name, ++refcount);
         for (int i = 0; i < count; i++)
         {
-            fprintf(file, "; OP%d : ", i);
+            fprintf(asm_out_file, "; OP%d : ", i);
 
             /* For print_inline_rtx to prefix its output with a comment indicator.
              * This is similar to passing -dP to gcc but more specific to our needs
@@ -1481,8 +1497,8 @@ extern void tms9900_debug_operands (const char *name, rtx insn, rtx ops[], int c
             extern const char *print_rtx_head;
             print_rtx_head = "; ";
 
-            print_inline_rtx (file, ops[i], 0);
-            fprintf (file, "code=[%s:%s]\n", GET_RTX_NAME(GET_CODE(ops[i])),
+            print_inline_rtx (asm_out_file, ops[i], 0);
+            fprintf (asm_out_file, "code=[%s:%s]\n", GET_RTX_NAME(GET_CODE(ops[i])),
                      GET_MODE_NAME (GET_MODE (ops[i])));
         }
     }

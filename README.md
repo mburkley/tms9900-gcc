@@ -16,7 +16,7 @@ to create modified sources for gcc and binutils.
 
 The branch **main** in the repo contains The latest scripts and patch files. The patch files are:
 * binutils-2.19.1-tms9900-1.10.patch
-* gcc-4.4.0-tms9900-1.29.patch
+* gcc-4.4.0-tms9900-1.30.patch
 
 Patch files are cumulative.  The latest version of the patch file includes all
 previous updates as well.  Only the latest patch file is stored in the repo.
@@ -52,6 +52,7 @@ gcc patch 1.30
 * Removed wrongly associative constraints on subtract
 * Added separate reg constraints to addhi3, andhi3, subhi3 to allow longer lengths for subreg offset fixes
 * Added more unit tests
+* Removed constraints in movqi - causes assert in reload
 
 gcc patch 1.29
 * Add function to swpb before or after MOV[B] if subreg offset seen
@@ -107,6 +108,15 @@ gcc patch 1.23
 
 Implementation Notes
 ====================
+
+Compiler switches
+-----------------
+For optimised builds use -O2 for speed or -Os for size as normal
+
+Recommended to use -fno-function-cse to prevent loading label addresses in to
+registers before branch
+
+-minline_rtl will add debug comments into the assembly output
 
 Integer types supported
 -----------------------
@@ -205,12 +215,8 @@ add** since the **dev** directory is ignored by default to avoid listing all
 source files in gcc.
 
 Once you have finished your changes, commit the changed files (not the entire
-source tree) in dev/gcc-4.4.0 and recreate the patch files from within the build directory:
-
- * diff -ru gcc-4.4.0-orig gcc-4.4.0 | grep -v "Only in gcc-4.4.0" > ../gcc-4.4.0-tms9900-1.25.patch
- * diff -ru binutils-2.19.1-orig binutils-2.19.1 | grep -v "Only in binutils-2.19.1" > ../binutils-2.19.1-tms9900-1.10.patch
-
-Add the two new patches to git, push the branch and create a PR 
+source tree) in dev/gcc-4.4.0 and recreate the patch files from within the build
+directory using the command **./mkpatches.sh**:
 
 Open issues
 -----------

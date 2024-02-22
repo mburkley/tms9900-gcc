@@ -69,9 +69,9 @@
   {
     tms9900_debug_operands ("call", insn, operands, 2);
     if(SIBLING_CALL_P(insn))
-      output_asm_insn("b    %0 ; tail call", operands);
+      output_asm_insn("; tailcall %0 (HI:%1)", operands);
     else
-      output_asm_insn("; bl   %0 ; call", operands);
+      output_asm_insn("; call %0 (HI:%1)", operands);
     return("");
   }
 )
@@ -88,9 +88,9 @@
   {
     tms9900_debug_operands ("call_value", insn, operands, 3);
     if(SIBLING_CALL_P(insn))
-      output_asm_insn("b    %1 ; tail call val", operands);
+      output_asm_insn("; %0 = tailcall %1 (HI:%2)", operands);
     else
-      output_asm_insn("bl   %1 ; call val", operands);
+      output_asm_insn("; %0 = call %1 (%2)", operands);
     return("");
   }
 )
@@ -159,7 +159,7 @@
   ""
   {
     tms9900_debug_operands ("*rt", insn, operands, 1);
-    return("b    *r11");
+    return("; return");
   }
 )
 
@@ -199,7 +199,7 @@
   ""
   {
     tms9900_debug_operands ("cmphi", insn, operands, 2);
-    return("; HI:%0 == %1 ?");
+    return("; compare(HI:%0,HI:%1)");
   }
 )
 
@@ -235,7 +235,7 @@
   ""
   {
     tms9900_debug_operands ("cmpqi", insn, operands, 2);
-    return("; QI:%0 == %1 ?");
+    return("; compare(QI:%0,QI:%1)");
   }
 )
 
@@ -252,10 +252,9 @@
   ""
   {
     tms9900_debug_operands ("movqi", insn, operands, 2);
-    if (REG_P (operands[1]) && REG_OFFSET (operands[1]) != 0)
-      return ("; QI:%0 = %1 ; SUBR");
-    else
-      return ("; QI:%0 = %1");
+    tms9900_operand_subreg_offset (operands[1], QImode);
+
+    return ("; QI:%0 = QI:%1");
   }
 )
 
@@ -272,10 +271,9 @@
   ""
   {
     tms9900_debug_operands ("movhi", insn, operands, 2);
-    if (REG_P (operands[1]) && REG_OFFSET (operands[1]) != 0)
-      return ("; HI:%0 = %1 ; SUBR");
-    else
-      return ("; HI:%0 = %1");
+    tms9900_operand_subreg_offset (operands[1], HImode);
+
+    return ("; HI:%0 = HI:%1");
   }
 )
 
@@ -292,7 +290,7 @@
   ""
   {
     tms9900_debug_operands ("movsi", insn, operands, 2);
-    return ("; SI:%0 = %1");
+    return ("; SI:%0 = SI:%1");
   }
 )
 
@@ -313,7 +311,7 @@
   ""
   {
     tms9900_debug_operands ("zero_extendqihi2", NULL_RTX, operands, 2);
-    return ("; ZHI:%0 = QI:%1");
+    return ("; HI:%0 = zero_extend(QI:%1)");
   }
 )
 
@@ -326,7 +324,7 @@
   ""
   {
     tms9900_debug_operands ("zero_extendqisi2", NULL_RTX, operands, 2);
-    return ("; ZSI:%0 = QI:%1");
+    return ("; SI:%0 = zero_extend(QI:%1)");
   }
 )
 
@@ -336,7 +334,7 @@
   ""
   {
     tms9900_debug_operands ("zero_extendhisi2", insn, operands, 2);
-    return ("; ZSI:%0 = HI:%1");
+    return ("; SI:%0 = zero_extend(HI:%1)");
   }
 )
 
@@ -351,7 +349,7 @@
   ""
   {
     tms9900_debug_operands ("extendqihi2", insn, operands, 2);
-    return ("; HI:%0 = EXT-QI:%1");
+    return ("; HI:%0 = extend(QI:%1)");
   }
 )
 			 
@@ -362,7 +360,7 @@
   ""
   {
     tms9900_debug_operands ("extendqisi2", NULL_RTX, operands, 2);
-    return ("; SI:%0 = EXT-QI:%1");
+    return ("; SI:%0 = extend(QI:%1)");
   }
 )
 
@@ -373,7 +371,7 @@
   ""
   {
     tms9900_debug_operands ("extendhisi2", insn, operands, 2);
-    return ("; SI:%0 = HI:%1");
+    return ("; SI:%0 = extend(HI:%1)");
   }
 )
 
@@ -390,7 +388,7 @@
   ""
   {
     tms9900_debug_operands ("trunchiqi2", insn, operands, 2);
-    return ("; QI:%0 = TR-HI:%1");
+    return ("; QI:%0 = truncate(HI:%1)");
   }
 )
 
@@ -400,8 +398,7 @@
   ""
   {
     tms9900_debug_operands ("truncsihi2", insn, operands, 2);
-    return ("trsihi    %0, %1");
-    return ("; HI:%0 = SI:%1");
+    return ("; HI:%0 = truncate(SI:%1)");
   }
 )
 
@@ -411,7 +408,7 @@
   ""
   {
     tms9900_debug_operands ("truncsiqi2", NULL_RTX, operands, 2);
-    return ("; QI:%0 = TR-SI:%1");
+    return ("; QI:%0 = truncate(SI:%1)");
   }
 )
 
@@ -596,7 +593,7 @@
   ""
   {
     tms9900_debug_operands ("indirect_jump", insn, operands, 1);
-    return "b    %0 ; indirect jump";
+    return "; indirect jump %0";
   }
 )
 
@@ -766,26 +763,10 @@
   ""
   {
     tms9900_debug_operands ("andhi3", insn, operands, 3);
-    bool off1 = false;
-    bool off2 = false;
-    if (REG_P (operands[1]) && REG_OFFSET (operands[1]) != 0)
-    {
-      tms9900_inline_debug (";    [1] off = %d\n", REG_OFFSET (operands[1]));
-      off1=true;
-    }
-    if (REG_P (operands[2]) && REG_OFFSET (operands[2]) != 0)
-    {
-      tms9900_inline_debug (";    [2] off = %d\n", REG_OFFSET (operands[2]));
-      off2=true;
-    }
-    if (off1 && off2)
-      return("; HI:%0 = %1 & %2; SUBR BOTH"); 
-    else if (off1)
-      return("; HI:%0 = %1 & %2 ; SUBR P1"); 
-    else if (off2)
-      return("; HI:%0 = %1 & %2 ; SUBR P2"); 
-    else
-      return("; HI:%0 = %1 & %2"); 
+    tms9900_operand_subreg_offset (operands[1], HImode);
+    tms9900_operand_subreg_offset (operands[2], HImode);
+
+    return("; HI:%0 = HI:%1 & HI:%2"); 
   }
 )
 
@@ -804,11 +785,10 @@
   ""
   {
     tms9900_debug_operands ("andqi3", insn, operands, 3);
-    if (REG_P (operands[1]) && REG_OFFSET (operands[1]) != 0)
-      tms9900_inline_debug (";    [1] off = %d\n", REG_OFFSET (operands[1]));
-    if (REG_P (operands[2]) && REG_OFFSET (operands[2]) != 0)
-      tms9900_inline_debug (";    [2] off = %d\n", REG_OFFSET (operands[2]));
-    return("; QI:%0 = %1 & %2"); 
+    tms9900_operand_subreg_offset (operands[1], QImode);
+    tms9900_operand_subreg_offset (operands[2], QImode);
+
+    return("; QI:%0 = QI:%1 & QI:%2"); 
   }
 )
 
@@ -826,11 +806,10 @@
   ""
   {
     tms9900_debug_operands ("iorhi3", insn, operands, 3);
-    if (REG_P (operands[1]) && REG_OFFSET (operands[1]) != 0)
-      tms9900_inline_debug (";    [1] off = %d\n", REG_OFFSET (operands[1]));
-    if (REG_P (operands[2]) && REG_OFFSET (operands[2]) != 0)
-      tms9900_inline_debug (";    [2] off = %d\n", REG_OFFSET (operands[2]));
-    return("; HI:%0 = %1 | %2"); 
+    tms9900_operand_subreg_offset (operands[1], HImode);
+    tms9900_operand_subreg_offset (operands[2], HImode);
+
+    return("; HI:%0 = HI:%1 | HI:%2"); 
   }
 )
 
@@ -843,11 +822,10 @@
   ""
   {
     tms9900_debug_operands ("iorqi3", insn, operands, 3);
-    if (REG_P (operands[1]) && REG_OFFSET (operands[1]) != 0)
-      tms9900_inline_debug (";    [1] off = %d\n", REG_OFFSET (operands[1]));
-    if (REG_P (operands[2]) && REG_OFFSET (operands[2]) != 0)
-      tms9900_inline_debug (";    [2] off = %d\n", REG_OFFSET (operands[2]));
-    return("; QI:%0 = %1 | %2"); 
+    tms9900_operand_subreg_offset (operands[1], QImode);
+    tms9900_operand_subreg_offset (operands[2], QImode);
+
+    return("; QI:%0 = QI:%1 | QI:%2"); 
   }
 )
 
@@ -864,11 +842,10 @@
   ""
   {
     tms9900_debug_operands ("xorhi3", insn, operands, 3);
-    if (REG_P (operands[1]) && REG_OFFSET (operands[1]) != 0)
-      tms9900_inline_debug (";    [1] off = %d\n", REG_OFFSET (operands[1]));
-    if (REG_P (operands[2]) && REG_OFFSET (operands[2]) != 0)
-      tms9900_inline_debug (";    [2] off = %d\n", REG_OFFSET (operands[2]));
-    return "xor  %2, %0";
+    tms9900_operand_subreg_offset (operands[1], HImode);
+    tms9900_operand_subreg_offset (operands[2], HImode);
+
+    return "; HI:%0 = (HI:%1 ^ HI:%2)";
   }
 )
 
@@ -883,11 +860,10 @@
   ""
   {
     tms9900_debug_operands ("xorqi3", insn, operands, 3);
-    if (REG_P (operands[1]) && REG_OFFSET (operands[1]) != 0)
-      tms9900_inline_debug (";    [1] off = %d\n", REG_OFFSET (operands[1]));
-    if (REG_P (operands[2]) && REG_OFFSET (operands[2]) != 0)
-      tms9900_inline_debug (";    [2] off = %d\n", REG_OFFSET (operands[2]));
-    return("; QI:%0 = %1 ^ %2"); 
+    tms9900_operand_subreg_offset (operands[1], QImode);
+    tms9900_operand_subreg_offset (operands[2], QImode);
+
+    return("; QI:%0 = QI:%1 ^ QI:%2"); 
   }
 )
 
@@ -939,11 +915,10 @@
   ""
   {
     tms9900_debug_operands ("addhi3", insn, operands, 3);
-    if (REG_P (operands[1]) && REG_OFFSET (operands[1]) != 0)
-      tms9900_inline_debug (";    [1] off = %d\n", REG_OFFSET (operands[1]));
-    if (REG_P (operands[2]) && REG_OFFSET (operands[2]) != 0)
-      tms9900_inline_debug (";    [2] off = %d\n", REG_OFFSET (operands[2]));
-    return("; HI:%0 = %1 + %2"); 
+    tms9900_operand_subreg_offset (operands[1], HImode);
+    tms9900_operand_subreg_offset (operands[2], HImode);
+
+    return("; HI:%0 = HI:%1 + HI:%2"); 
   }
 )
 
@@ -956,11 +931,10 @@
   ""
   {
     tms9900_debug_operands ("addqi3", insn, operands, 3);
-    if (REG_P (operands[1]) && REG_OFFSET (operands[1]) != 0)
-      tms9900_inline_debug (";    [1] off = %d\n", REG_OFFSET (operands[1]));
-    if (REG_P (operands[2]) && REG_OFFSET (operands[2]) != 0)
-      tms9900_inline_debug (";    [2] off = %d\n", REG_OFFSET (operands[2]));
-    return("; QI:%0 = %1 + %2"); 
+    tms9900_operand_subreg_offset (operands[1], QImode);
+    tms9900_operand_subreg_offset (operands[2], QImode);
+
+    return("; QI:%0 = QI:%1 + QI:%2"); 
   }
 )
 
@@ -968,6 +942,17 @@
 ;;-------------------------------------------------------------------
 ;; Subtract
 ;;-------------------------------------
+(define_insn "*sub_extend"
+  [(set (match_operand:HI 0 "nonimmediate_operand" "=g")
+	(minus:HI (sign_extend:HI (match_operand:QI 1 "general_operand" "0"))
+		  (match_operand:HI 2 "general_operand" "g")))]
+  ""
+  {
+    tms9900_debug_operands ("subhextend", insn, operands, 3);
+    return("; HI:%0 = extend(QI:%1) - HI:%2"); 
+  }
+)
+
 (define_insn "subhi3"
   [(set (match_operand:HI 0 "nonimmediate_operand" "=g")
 	(minus:HI (match_operand:HI 1 "general_operand" "0")
@@ -975,11 +960,10 @@
   ""
   {
     tms9900_debug_operands ("subhi3", insn, operands, 3);
-    if (REG_P (operands[1]) && REG_OFFSET (operands[1]) != 0)
-      tms9900_inline_debug (";    [1] off = %d\n", REG_OFFSET (operands[1]));
-    if (REG_P (operands[2]) && REG_OFFSET (operands[2]) != 0)
-      tms9900_inline_debug (";    [2] off = %d\n", REG_OFFSET (operands[2]));
-    return("; HI:%0 = %1 - %2"); 
+    tms9900_operand_subreg_offset (operands[1], HImode);
+    tms9900_operand_subreg_offset (operands[2], HImode);
+
+    return("; HI:%0 = HI:%1 - HI:%2"); 
   }
 )
 
@@ -990,11 +974,10 @@
   ""
   {
     tms9900_debug_operands ("subqi3", insn, operands, 3);
-    if (REG_P (operands[1]) && REG_OFFSET (operands[1]) != 0)
-      tms9900_inline_debug (";    [1] off = %d\n", REG_OFFSET (operands[1]));
-    if (REG_P (operands[2]) && REG_OFFSET (operands[2]) != 0)
-      tms9900_inline_debug (";    [2] off = %d\n", REG_OFFSET (operands[2]));
-    return("; QI:%0 = %1 - %2"); 
+    tms9900_operand_subreg_offset (operands[1], QImode);
+    tms9900_operand_subreg_offset (operands[2], QImode);
+
+    return("; QI:%0 = QI:%1 - QI:%2"); 
   }
 )
 

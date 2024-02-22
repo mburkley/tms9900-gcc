@@ -130,6 +130,7 @@ void t_fptr_mixed (void)
 unsigned char gSaveIntCnt2;
 int haunted;
 int hauntedIntArray[2];
+char hauntedCharArray[4];
 
 void test_haunted (void) {
     int toggleval = (haunted + gSaveIntCnt2) & 0x001f;
@@ -145,8 +146,24 @@ void test_haunted (void) {
     test_execute (__func__, haunted == 0);
 }
 
-void test_haunted_array (void) {
+void t_int_array (void)
+{
     int toggleval = (hauntedIntArray[1] + gSaveIntCnt2) & 0x001f;
+    if (toggleval == 0x10)
+    {
+        haunted = 0;
+    }
+    else if (toggleval == 0)
+    {
+        haunted = 1;
+    }
+
+    test_execute (__func__, haunted == 0);
+}
+
+void t_char_array (void)
+{
+    int toggleval = (hauntedCharArray[2] + gSaveIntCnt2) & 0x001f;
     if (toggleval == 0x10)
     {
         haunted = 0;
@@ -167,6 +184,9 @@ void t_add_subreg (void)
     test_haunted();
 }
 
+/*  Do arith ops with the result & a const < 0x100.  This will cause the
+ *  optimiser to drop the truncate and we should detect that by seeing an offset
+ *  on the src or dst reg */
 void t_add_mixed (void)
 {
     unsigned char x = (gSaveIntCnt2 + haunted) & 0x20;
@@ -179,6 +199,42 @@ void t_sub_mixed (void)
     test_execute (__func__, x == 0x20);
 }
 
+/*  And with a larger mask should prevent the optimiser from dropping the extend
+ *  so we need to check we don't add one in error */
+void t_sub_mixed_large_mask (void)
+{
+    unsigned char x = (haunted - gSaveIntCnt2) & 0x120;
+    test_execute (__func__, x == 0x120);
+}
+
+void t_sub_mixed_r (void)
+{
+    unsigned char x = (gSaveIntCnt2 - haunted) & 0x60;
+    test_execute (__func__, x == 0x60);
+}
+
+void t_xor_mixed (void)
+{
+    unsigned char x = (gSaveIntCnt2 ^ haunted) & 0x20;
+    test_execute (__func__, x == 0x70);
+}
+
+/*  Add to a static long.  This will generate offsets of +/- 2 which are NOT
+ *  byte offsets that should be corrected */
+
+struct
+{
+    long l;
+    char c[3];
+    int i[2];
+} str = { 0x12345678, { 0x11,0x22,0x33 }, { 0x33, 0x55 }};
+
+void t_long_add(void)
+{
+    str.l += (str.c[2]+str.i[1]) & 0x10;
+    test_execute (__func__, str.l == 0x12345688);
+}
+
 TESTFUNC tests[] = 
 {
     t_bitwise_replace,
@@ -186,9 +242,15 @@ TESTFUNC tests[] =
     t_cmp_sub,
     t_whoded,
     t_fptr_mixed,
+    t_int_array,
+    t_char_array,
     t_add_subreg,
     t_add_mixed,
-    t_sub_mixed
+    t_sub_mixed,
+    t_sub_mixed_r,
+    t_sub_mixed_large_mask,
+    t_xor_mixed,
+    t_long_add
 };
 
 #define TEST_COUNT (sizeof (tests) / sizeof (TESTFUNC))
