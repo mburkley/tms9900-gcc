@@ -111,12 +111,17 @@ Implementation Notes
 
 Compiler switches
 -----------------
-For optimised builds use -O2 for speed or -Os for size as normal
+For optimised builds use **-O2** for speed or **-Os** for size as usual.
 
-Recommended to use -fno-function-cse to prevent loading label addresses in to
+**-fno-function-cse** is receommended to prevent loading label addresses in to
 registers before branch
 
--minline_rtl will add debug comments into the assembly output
+**-fomit-frame-pointer** is recommended if using inline assembly that uses all
+registers as otherwise gcc will complain that R9 is not available.  This
+shouldn't be needed if building optimised for size since gcc omits frame
+pointers anyway in that case.
+
+**-minline_rtl** will add RTL insn dumps into the assembly output.
 
 Integer types supported
 -----------------------

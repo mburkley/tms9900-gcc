@@ -87,8 +87,16 @@ diff -ru gcc-4.4.0-orig/gcc/c-cppbuiltin.c gcc-4.4.0/gcc/c-cppbuiltin.c
      cpp_define (pfile, "__GNUC_GNU_INLINE__");
 diff -ru gcc-4.4.0-orig/gcc/combine.c gcc-4.4.0/gcc/combine.c
 --- gcc-4.4.0-orig/gcc/combine.c	2023-12-23 10:48:53.509244401 +0000
-+++ gcc-4.4.0/gcc/combine.c	2024-02-15 14:09:41.485874410 +0000
-@@ -4466,6 +4466,7 @@
++++ gcc-4.4.0/gcc/combine.c	2024-02-22 15:33:34.165757860 +0000
+@@ -1381,6 +1381,7 @@
+           && uns1 == uns3
+ 	  && (mode1 == mode2 || strictly_local))
+         {
++          // printf("MGB elim extend mode=%s\n", GET_MODE_NAME(mode4));
+ 	  /* Record that the value was promoted from mode1 to mode3,
+ 	     so that any sign extension at the head of the current
+ 	     function may be eliminated.  */
+@@ -4466,6 +4467,7 @@
  		    return gen_rtx_CLOBBER (VOIDmode, const0_rtx);
  #endif
  
@@ -96,7 +104,18 @@ diff -ru gcc-4.4.0-orig/gcc/combine.c gcc-4.4.0/gcc/combine.c
  		  new_rtx = (unique_copy && n_occurrences ? copy_rtx (to) : to);
  		  n_occurrences++;
  		}
-@@ -9934,7 +9935,7 @@
+@@ -6147,7 +6149,10 @@
+ 	  && GET_MODE_BITSIZE (GET_MODE (x)) <= HOST_BITS_PER_WIDE_INT
+ 	  && (nonzero_bits (SUBREG_REG (XEXP (x, 0)), GET_MODE (x))
+ 	      & ~GET_MODE_MASK (GET_MODE (XEXP (x, 0)))) == 0)
++        {
++        // printf ("MGB reduce ext(subr)\n");
+ 	return SUBREG_REG (XEXP (x, 0));
++        }
+ 
+       /* (zero_extend:DI (truncate:SI foo:DI)) is just foo:DI when foo
+ 	 is a comparison and STORE_FLAG_VALUE permits.  This is like
+@@ -9934,7 +9939,7 @@
  	 generate a paradoxical subreg instead.  That will force a reload
  	 of the original memref X.  */
        if (isize < osize)
@@ -1474,8 +1493,8 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/math_private.h gcc-4.4.0/gcc/config/t
 +#endif
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms9900/tms9900.c
 --- gcc-4.4.0-orig/gcc/config/tms9900/tms9900.c	2023-12-23 10:48:53.513244386 +0000
-+++ gcc-4.4.0/gcc/config/tms9900/tms9900.c	2024-02-19 19:02:28.320364355 +0000
-@@ -0,0 +1,1490 @@
++++ gcc-4.4.0/gcc/config/tms9900/tms9900.c	2024-02-22 15:05:53.796277959 +0000
+@@ -0,0 +1,1506 @@
 +/* Subroutines for insn-output.c for TMS9900.
 +   Copyright (C) 1987, 1994, 1995, 1997, 1998, 1999, 2000, 2001, 2002,
 +   2004, 2005, 2006, 2007, 2008
@@ -1818,14 +1837,10 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms990
 +    output_addr_const(file, addr);
 +}
 +
-+static FILE *outputFile;
-+
 +/* Construct string expression matching an address operand */
 +void print_operand_address (FILE *file,
 +                            register rtx addr)
 +{
-+  if (!outputFile) outputFile=file;
-+
 +  retry:
 +  switch (GET_CODE (addr))
 +    {
@@ -2701,7 +2716,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms990
 +        {
 +          fprintf(dump_file,"\n\nPossible merge candidate:\n");
 +          print_rtl_single(dump_file, insn);
-+          fprintf(dump_file,"\nLast use of reg %d was in insn %d:\n", regnum, INSN_UID(last->insn));
++          // fprintf(dump_file,"\nLast use of reg %d was in insn %d:\n", regnum, INSN_UID(last->insn));
 +          print_rtl_single(dump_file, last->insn);
 +        }
 +
@@ -2810,21 +2825,45 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms990
 +
 +// MGB additions start here - mostly for debug
 +
-+/*  Check if there is a byte offset correction needed for an operand. */
-+extern bool tms9900_operand_subreg_offset (rtx operand)
++/*  Check if there is a byte offset correction needed for an operand.  If
++ *  operand is a register and REGNO matches ORIGINAL_REGNO and offset is non
++ *  zero then a correction is needed.  -1 indicates an extend is needed, +1
++ *  indicates a truncate is needed. */
++extern bool tms9900_operand_subreg_offset (rtx operand, int mode)
 +{
-+  /*  If the source operand is not a register or does not have an offset then
-+   *  no action required */
++  /*  If the source operand is not a register or does not have an offset of
++   *  minus 1 byte then no action required */
++  // if (!REG_P (operand) || (REG_OFFSET (operand) % 2) == 0)
++  // if (!REG_P (operand) || REG_OFFSET (operand) != -1)
 +  if (!REG_P (operand) || REG_OFFSET (operand) == 0)
++    return false;
++
++  int offset = REG_OFFSET (operand);
++
++  // Bypass debug flag and put direct to file
++  // tms9900_inline_debug ("; reg/reg=%d/%d expr=%d\n", REGNO(operand),
++  fprintf (asm_out_file, "; SUBR off=%d mode=%s reg/reg=%d/%d\n",
++           REG_OFFSET (operand), GET_MODE_NAME (mode),
++           REGNO(operand), ORIGINAL_REGNO(operand));
++
++  if (mode == QImode && offset != 1)
++    return false;
++
++  if (mode == HImode && offset != -1)
 +    return false;
 +
 +  /*  If the source register is not the original register, and the original is a
 +   *  mem expression, then the offset refers to something else, so we can ignore
 +   *  this case */
-+  if (ORIGINAL_REGNO (operand) != REGNO (operand) && 
-+      REG_EXPR (operand))
++  if (ORIGINAL_REGNO (operand) != REGNO (operand))
++      //  && REG_EXPR (operand))
++  {
++    tms9900_debug_operands ("REG_EXPR", operand, NULL, 0);
 +    return false;
++  }
 +
++  // tms9900_inline_debug ("; correct required\n");
++  fprintf (asm_out_file, "; SUBR correction required\n");
 +  /*  Correction is needed */
 +  return true;
 +}
@@ -2919,12 +2958,10 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms990
 +    if (!TARGET_TI99_INLINE_RTL)
 +        return;
 +
-+    FILE *file = outputFile?outputFile:stdout;
-+
 +    va_list ap;
 +
 +    va_start (ap, fmt);
-+    vfprintf (file, fmt, ap);
++    vfprintf (asm_out_file, fmt, ap);
 +    va_end (ap);
 +}
 +
@@ -2937,21 +2974,19 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms990
 +    if (!TARGET_TI99_INLINE_RTL)
 +        return;
 +
-+    FILE *file = outputFile?outputFile:stdout;
-+
 +    static int refcount;
 +    if (insn)
 +    {
-+        fprintf(file, "\n; %s-%d : ", name, INSN_UID(insn));
-+        print_inline_rtx (file, insn, 0);
-+        fprintf(file, "\n\n");
++        fprintf(asm_out_file, "\n; %s-%d : ", name, INSN_UID(insn));
++        print_inline_rtx (asm_out_file, insn, 0);
++        fprintf(asm_out_file, "\n\n");
 +    }
 +    else
 +    {
-+        fprintf(file, "\n; %s-expand-%d\n", name, ++refcount);
++        fprintf(asm_out_file, "\n; %s-expand-%d\n", name, ++refcount);
 +        for (int i = 0; i < count; i++)
 +        {
-+            fprintf(file, "; OP%d : ", i);
++            fprintf(asm_out_file, "; OP%d : ", i);
 +
 +            /* For print_inline_rtx to prefix its output with a comment indicator.
 +             * This is similar to passing -dP to gcc but more specific to our needs
@@ -2959,8 +2994,8 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms990
 +            extern const char *print_rtx_head;
 +            print_rtx_head = "; ";
 +
-+            print_inline_rtx (file, ops[i], 0);
-+            fprintf (file, "code=[%s:%s]\n", GET_RTX_NAME(GET_CODE(ops[i])),
++            print_inline_rtx (asm_out_file, ops[i], 0);
++            fprintf (asm_out_file, "code=[%s:%s]\n", GET_RTX_NAME(GET_CODE(ops[i])),
 +                     GET_MODE_NAME (GET_MODE (ops[i])));
 +        }
 +    }
@@ -4213,7 +4248,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.h gcc-4.4.0/gcc/config/tms990
 +
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms9900/tms9900.md
 --- gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md	2023-12-23 10:48:53.513244386 +0000
-+++ gcc-4.4.0/gcc/config/tms9900/tms9900.md	2024-02-20 14:17:40.681176151 +0000
++++ gcc-4.4.0/gcc/config/tms9900/tms9900.md	2024-02-22 15:39:36.716500047 +0000
 @@ -0,0 +1,3327 @@
 +;;- Machine description for the TMS9900 for GNU C compiler
 +;; Copyright (C) 1994, 1995, 1997, 1998, 1999, 2000, 2001, 2004, 2005
@@ -4556,7 +4591,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +;; This is a good candidate for define_insn_and_rewrite but this doesn't exist yet
 +;; in gcc4.4.0
 +;;
-+;; For some unknwon reason, adding specific constraints here causes a reload error.
++;; For some unknown reason, adding specific constraints here causes a reload error.
 +;; Making a general constraint with a worst-case length of 6 bytes avoid the issue.
 +
 +(define_insn_and_split "cmpqi"
@@ -5814,7 +5849,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +     *  into the LSB.  Check for offsets in the operands and emit shifts to get
 +     *  the bytes into the right place. */
 +
-+    if (tms9900_operand_subreg_offset (operands[1]))
++    if (tms9900_operand_subreg_offset (operands[1], HImode))
 +    {
 +      tms9900_inline_debug ("; andhi3, op[1] off %d\n", REG_OFFSET (operands[1]));
 +
@@ -6132,7 +6167,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +    /* Either op[1] or op[2] may be a subreg with an offset. Correct them
 +     * first.  Worst case length for these alternatives are 8 and 10 bytes */
 +
-+    if (tms9900_operand_subreg_offset (operands[2]))
++    if (tms9900_operand_subreg_offset (operands[2], HImode))
 +    {
 +      tms9900_inline_debug ("; addhi3, op[2] off %d\n", REG_OFFSET (operands[2]));
 +      if (!find_regno_note (insn, REG_DEAD, REGNO (operands[2])))
@@ -6154,7 +6189,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +    /* check for subreg in operand[1].  If the source register is the same as
 +     * the original register, or the original is a not mem expression, then
 +     * the offset refers to the register, so correction is needed */
-+    if (tms9900_operand_subreg_offset (operands[1]))
++    if (tms9900_operand_subreg_offset (operands[1], HImode))
 +    {
 +      tms9900_inline_debug ("; addhi3, op[1] off %d\n", REG_OFFSET (operands[1]));
 +      output_asm_insn ("sra  %1,8 ; addhi extend op1", operands);
@@ -6250,7 +6285,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +;; As with addhi3, the first two constraints break out op0 as a register to
 +;; allow a more conservative length when subreg offset corrections are applied.
 +;;
-+;; NOTE: no @ on constraints for op1 as subtract is not associative
++;; NOTE: no @ on constraints for op1 as subtract is not commutative
 +;;-------------------------------------
 +(define_insn "subhi3"
 +  [(set (match_operand:HI 0 "nonimmediate_operand"           "=r, r,R>, R>,Q,  Q")
@@ -6264,7 +6299,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +    /* Either op[1] or op[2] may be a subreg with an offset. Correct them
 +     * first.  Worst case length for these alternatives are 8 and 10 bytes */
 +
-+    if (tms9900_operand_subreg_offset (operands[2]))
++    if (tms9900_operand_subreg_offset (operands[2], HImode))
 +    {
 +      tms9900_inline_debug ("; subhi3, op[2] off %d\n", REG_OFFSET (operands[2]));
 +      if (!find_regno_note (insn, REG_DEAD, REGNO (operands[2])))
@@ -6284,7 +6319,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +    }
 +
 +    /* check for subreg in operand[1]. */
-+    if (tms9900_operand_subreg_offset (operands[1]))
++    if (tms9900_operand_subreg_offset (operands[1], HImode))
 +    {
 +      tms9900_inline_debug ("; subhi3, op[1] off %d\n", REG_OFFSET (operands[1]));
 +      output_asm_insn ("sra  %1,8 ; addhi extend op1", operands);
@@ -7582,7 +7617,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.opt gcc-4.4.0/gcc/config/tms9
 +
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900-protos.h gcc-4.4.0/gcc/config/tms9900/tms9900-protos.h
 --- gcc-4.4.0-orig/gcc/config/tms9900/tms9900-protos.h	2023-12-23 10:48:53.513244386 +0000
-+++ gcc-4.4.0/gcc/config/tms9900/tms9900-protos.h	2024-02-19 19:02:28.316364366 +0000
++++ gcc-4.4.0/gcc/config/tms9900/tms9900-protos.h	2024-02-22 15:06:06.608220569 +0000
 @@ -0,0 +1,65 @@
 +/* Definitions of target machine for GNU compiler, for the TMS9900
 +
@@ -7646,7 +7681,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900-protos.h gcc-4.4.0/gcc/config
 +extern void tms9900_register_convert (rtx operand, int mode, int sign);
 +extern bool tms9900_legitimate_constant_p (rtx x);
 +extern bool tms9900_constant_address_p (rtx x);
-+extern bool tms9900_operand_subreg_offset (rtx operand);
++extern bool tms9900_operand_subreg_offset (rtx operand, int mode);
 +extern void tms9900_inline_debug (const char *fmt,...);
 +extern void tms9900_debug_operands (const char *name, rtx insn, rtx ops[], int count);
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/t-tms9900 gcc-4.4.0/gcc/config/tms9900/t-tms9900
@@ -7866,13 +7901,13 @@ diff -ru gcc-4.4.0-orig/gcc/cp/cfns.h gcc-4.4.0/gcc/cp/cfns.h
  }
 diff -ru gcc-4.4.0-orig/gcc/DATESTAMP gcc-4.4.0/gcc/DATESTAMP
 --- gcc-4.4.0-orig/gcc/DATESTAMP	2024-01-06 17:22:05.286873814 +0000
-+++ gcc-4.4.0/gcc/DATESTAMP	2024-02-20 14:22:59.398474520 +0000
++++ gcc-4.4.0/gcc/DATESTAMP	2024-02-22 16:27:02.099672735 +0000
 @@ -1 +1 @@
 -20090421
-+20240220
++20240222
 diff -ru gcc-4.4.0-orig/gcc/DEV-PHASE gcc-4.4.0/gcc/DEV-PHASE
 --- gcc-4.4.0-orig/gcc/DEV-PHASE	2023-12-23 10:48:53.509244401 +0000
-+++ gcc-4.4.0/gcc/DEV-PHASE	2024-02-20 14:22:59.398474520 +0000
++++ gcc-4.4.0/gcc/DEV-PHASE	2024-02-22 16:27:02.103672723 +0000
 @@ -0,0 +1 @@
 +TMS9900 patch
 diff -ru gcc-4.4.0-orig/gcc/dfp.c gcc-4.4.0/gcc/dfp.c
@@ -7990,7 +8025,7 @@ diff -ru gcc-4.4.0-orig/gcc/reload.c gcc-4.4.0/gcc/reload.c
  						      SUBREG_BYTE (*loc),
 diff -ru gcc-4.4.0-orig/gcc/REVISION gcc-4.4.0/gcc/REVISION
 --- gcc-4.4.0-orig/gcc/REVISION	2024-01-06 17:22:05.286873814 +0000
-+++ gcc-4.4.0/gcc/REVISION	2024-02-20 14:22:59.398474520 +0000
++++ gcc-4.4.0/gcc/REVISION	2024-02-22 16:27:02.103672723 +0000
 @@ -0,0 +1 @@
 +1.30
 diff -ru gcc-4.4.0-orig/gcc/toplev.h gcc-4.4.0/gcc/toplev.h
