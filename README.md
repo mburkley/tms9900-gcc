@@ -16,7 +16,7 @@ to create modified sources for gcc and binutils.
 
 The branch **main** in the repo contains The latest scripts and patch files. The patch files are:
 * binutils-2.19.1-tms9900-1.10.patch
-* gcc-4.4.0-tms9900-1.29.patch
+* gcc-4.4.0-tms9900-1.30.patch
 
 Patch files are cumulative.  The latest version of the patch file includes all
 previous updates as well.  Only the latest patch file is stored in the repo.
@@ -44,6 +44,18 @@ Release Notes
 binutils patch 1.10
 
 * No changes to 1.9 but includes the multi-def patch to avoid compile errors relating to "do_wide"
+
+gcc patch 1.30
+* Pass constants as wides to force_const_mem to avoid assert in combine.c:do_SUBST
+* Added calls to correct byte order on all byte and word arith and move
+* Changed inline debug to dump entire insn not just operands
+* Removed wrongly associative constraints on subtract
+* Added separate reg constraints to addhi3, andhi3, subhi3 to allow longer lengths for subreg offset fixes
+* Added more unit tests
+* Removed constraints in movqi - causes assert in reload
+* Added 32 bit shift operations
+* Marked R0 as fixed so allocator won't use it
+* Added reg saves in lib1funcs as some regs were being trampled
 
 gcc patch 1.29
 * Add function to swpb before or after MOV[B] if subreg offset seen
@@ -99,6 +111,20 @@ gcc patch 1.23
 
 Implementation Notes
 ====================
+
+Compiler switches
+-----------------
+For optimised builds use **-O2** for speed or **-Os** for size as usual.
+
+**-fno-function-cse** is receommended to prevent loading label addresses in to
+registers before branch
+
+**-fomit-frame-pointer** is recommended if using inline assembly that uses all
+registers as otherwise gcc will complain that R9 is not available.  This
+shouldn't be needed if building optimised for size since gcc omits frame
+pointers anyway in that case.
+
+**-minline_rtl** will add RTL insn dumps into the assembly output.
 
 Integer types supported
 -----------------------
@@ -197,12 +223,8 @@ add** since the **dev** directory is ignored by default to avoid listing all
 source files in gcc.
 
 Once you have finished your changes, commit the changed files (not the entire
-source tree) in dev/gcc-4.4.0 and recreate the patch files from within the build directory:
-
- * diff -ru gcc-4.4.0-orig gcc-4.4.0 | grep -v "Only in gcc-4.4.0" > ../gcc-4.4.0-tms9900-1.25.patch
- * diff -ru binutils-2.19.1-orig binutils-2.19.1 | grep -v "Only in binutils-2.19.1" > ../binutils-2.19.1-tms9900-1.10.patch
-
-Add the two new patches to git, push the branch and create a PR 
+source tree) in dev/gcc-4.4.0 and recreate the patch files from within the build
+directory using the command **./mkpatches.sh**:
 
 Open issues
 -----------

@@ -1381,6 +1381,7 @@ setup_incoming_promotions (rtx first)
           && uns1 == uns3
 	  && (mode1 == mode2 || strictly_local))
         {
+          // printf("MGB elim extend mode=%s\n", GET_MODE_NAME(mode4));
 	  /* Record that the value was promoted from mode1 to mode3,
 	     so that any sign extension at the head of the current
 	     function may be eliminated.  */
@@ -6148,7 +6149,10 @@ expand_compound_operation (rtx x)
 	  && GET_MODE_BITSIZE (GET_MODE (x)) <= HOST_BITS_PER_WIDE_INT
 	  && (nonzero_bits (SUBREG_REG (XEXP (x, 0)), GET_MODE (x))
 	      & ~GET_MODE_MASK (GET_MODE (XEXP (x, 0)))) == 0)
+        {
+        // printf ("MGB reduce ext(subr)\n");
 	return SUBREG_REG (XEXP (x, 0));
+        }
 
       /* (zero_extend:DI (truncate:SI foo:DI)) is just foo:DI when foo
 	 is a comparison and STORE_FLAG_VALUE permits.  This is like

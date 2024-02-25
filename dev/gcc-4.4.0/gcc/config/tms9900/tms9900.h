@@ -289,7 +289,7 @@ extern short *reg_renumber;	/* def in local_alloc.c */
 /* 1 for registers that have pervasive standard uses and are not available
  * for the register allocator.  */
 #define FIXED_REGISTERS \
-  {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0}
+  {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0}
 /* SC 1  2  3  4  5  6  7  8  BP SP LR CB AP 14 15*/
 
 /* MGB It seemed excessive to always preserve R13,R14,R15 as these will only
