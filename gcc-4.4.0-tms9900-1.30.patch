@@ -568,11 +568,13 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/ledf2.c gcc-4.4.0/gcc/config/tms9900/
 +}  
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/lib1funcs.asm gcc-4.4.0/gcc/config/tms9900/lib1funcs.asm
 --- gcc-4.4.0-orig/gcc/config/tms9900/lib1funcs.asm	2023-12-23 10:48:53.513244386 +0000
-+++ gcc-4.4.0/gcc/config/tms9900/lib1funcs.asm	2024-01-08 13:34:14.986278985 +0000
-@@ -0,0 +1,826 @@
++++ gcc-4.4.0/gcc/config/tms9900/lib1funcs.asm	2024-02-25 11:51:00.286405896 +0000
+@@ -0,0 +1,1058 @@
 +/*
 + *  MGB 32-bit arithmetic functions never seem to be used.  The compiler emits
-+ *  sequences of 16-bit ops to perform 32-bit ops
++ *  sequences of 16-bit ops to perform 32-bit ops.  An exception is it does look
++ *  for __ashlsi3 and __ashrsi3 when built to optimise for size (-Os) so these
++ *  have been added here.
 + */
 +
 +/******************************************************************************
@@ -592,12 +594,14 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/lib1funcs.asm gcc-4.4.0/gcc/config/tm
 +/*********************************************************/
 +  def __clzqi2
 +__clzqi2:
++  mov  r2, @-2(r10)     /* Scratch reg */
 +  movb r1, r2  /* Move value into position, set condition flags */
 +  clr  r1      /* Set minimum bit count, flags unchanged */
 +  jgt  do_clz  /* If val==0, return undefined, if val<0, MSB set, return 0*/
++  mov  @-2(r10), r2
 +  b    *r11
 +do_clz:
-+  b    @__clz
++  b    @__clz_nosave
 +#endif
 +
 +
@@ -607,12 +611,14 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/lib1funcs.asm gcc-4.4.0/gcc/config/tm
 +/*********************************************************/
 +  def __clzhi2
 +__clzhi2:
++  mov  r2, @-2(r10)     /* Scratch reg */
 +  mov  r1, r2  /* Move value into position, set condition flags */
 +  clr  r1      /* Set minimum bit count, flags unchanged */
 +  jgt  do_clz  /* If val==0, return undefined, if val<0, MSB set, return 0*/
++  mov  @-2(r10), r2
 +  b *r11
 +do_clz:
-+  b    @__clz
++  b    @__clz_nosave
 +#endif
 +
 +
@@ -622,6 +628,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/lib1funcs.asm gcc-4.4.0/gcc/config/tm
 +/*********************************************************/
 +  def __clzsi2
 +__clzsi2:
++  mov  r2, @-2(r10)     /* Scratch reg */
 +  mov  r1, r1   /* Test MSW for set bits */
 +  jlt  ret_0    /* Upper bit of MSW set, return zero */
 +  jgt  clz_msw  /* Count leading zeroes in MSW */
@@ -635,13 +642,14 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/lib1funcs.asm gcc-4.4.0/gcc/config/tm
 +ret_0:
 +  clr  r1
 +ret_16:
++  mov  @-2(r10), r2
 +  b    *r11
 +
 +clz_msw:
 +  mov  r1, r2  /* Move MSW into test position */
 +  clr  r1      /* Initialize count to zero */
 +do_clz:
-+  b    @__clz
++  b    @__clz_nosave
 +#endif
 +
 +
@@ -681,6 +689,8 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/lib1funcs.asm gcc-4.4.0/gcc/config/tm
 +* If we got here, there is at least one bit set in supplied value
 +*/
 +__clz:
++  mov  r2, @-2(r10)     /* Scratch reg */
++__clz_nosave:
 +  inct r1      /* Assume two zero bits, double count implied bit */
 +  sla  r2, 2   /* Move next two bits into test position, set flags */
 +  joc  bottom  /* Upper test bit set, exit */
@@ -692,6 +702,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/lib1funcs.asm gcc-4.4.0/gcc/config/tm
 +  dec r1       /* No cleared bits in last test set, decrement count */
 +
 +  /* Bit count is in R1, exit */
++  mov  @-2(r10), r2
 +  b *r11
 +#endif
 +
@@ -719,6 +730,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/lib1funcs.asm gcc-4.4.0/gcc/config/tm
 +  li   r1, 8   /* Max possible zero bits */
 +  b    @__ctz  /* Examine provided value */
 +bottom:
++  mov  @-2(r10), r2
 +  b *r11
 +#endif
 +
@@ -729,11 +741,13 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/lib1funcs.asm gcc-4.4.0/gcc/config/tm
 +/*********************************************************/
 +  def __ctzhi2
 +__ctzhi2:
++  mov  r2, @-2(r10)     /* Scratch reg */
 +  mov r1, r2  /* Move value to R2, set condition flags */
 +  jeq bottom  /* If all bits clear, stop now, return zero */
 +  li  r1, 16  /* Max possible zero bits */
-+  b   @__ctz  /* Examine provided value */
++  b   @__ctz_nosave  /* Examine provided value */
 +bottom:
++  mov  @-2(r10), r2
 +  b *r11
 +#endif
 +
@@ -744,21 +758,23 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/lib1funcs.asm gcc-4.4.0/gcc/config/tm
 +/*********************************************************/
 +  def __ctzsi2
 +__ctzsi2:
++  mov  r2, @-2(r10)     /* Scratch reg */
 +  mov  r2, r2     /* Check low word for set bits */
 +  jeq  lsw_clear 
 +
 +  /* There are set bits in the low word */
 +  li   r1, 16     /* Maximum number of possible zero bits */
-+  b    @__ctz     /* Examine provided value */
++  b    @__ctz_nosave     /* Examine provided value */
 +
 +  /* All bits clear in the low word, no need to test them */
 +lsw_clear:
 +  mov  r1, r2     /* Move high word into test position */
 +  jeq  bottom     /* If all bits clear, stop now, return zero */
 +  li   r1, 32     /* Maximum number of possible zero bits */
-+  b    @__ctz     /* Examine provided value */
++  b    @__ctz_nosave     /* Examine provided value */
 +
 +bottom:
++  mov  @-2(r10), r2
 +  b *r11
 +#endif
 +
@@ -803,14 +819,17 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/lib1funcs.asm gcc-4.4.0/gcc/config/tm
 +
 +  /* Test loop, check two uppermost bits at a time */
 +__ctz:
++  mov  r2, @-2(r10)     /* Scratch reg */
++__ctz_nosave:
 +  dect r1      /* Assume both bits are set */
 +  sla  r2, 2   /* Shift two bits into test position */
-+  jne  __ctz   /* Still have set bits, keep looping */
++  jne  __ctz_nosave   /* Still have set bits, keep looping */
 +
 +  /* Correct for last two test bits */
 +  joc  bottom  /* If carry bit set, lower test bit was set */
 +  inc  r1      /* lower test bit was clear, increment bit count */
 +bottom:
++  mov  @-2(r10), r2
 +  b *r11
 +#endif
 +
@@ -833,14 +852,17 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/lib1funcs.asm gcc-4.4.0/gcc/config/tm
 +/*********************************************************/
 +  def __ffsqi2
 +__ffsqi2:
++  dect r10
++  mov  r11,*r10
 +  movb r1, r1     /* Check for zero value */
 +  jeq  done       /* If so, exit now */
-+  mov  r11, r3    /* Move return pointer, it won't be affected by next call */
 +  bl   @__ctzqi2  /* Count trailing zero bits */
 +  inc  r1         /* Least sig. bit is in position trailing_count +1 */
-+  b    *r3        /* Return to caller */
++  jmp  ffsqi2_ret
 +done:
 +  clr  r1         /* Return zero value */
++ffsqi2_ret:
++  mov  *r10+, r11
 +  b    *r11
 +#endif
 +
@@ -851,13 +873,15 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/lib1funcs.asm gcc-4.4.0/gcc/config/tm
 +/*********************************************************/
 +  def __ffshi2
 +__ffshi2:
-+  mov r11, r3     /* Move return pointer, it won't be affected by next call */
++  dect r10
++  mov  r11,*r10
 +  mov r1, r1      /* Check for zero value */
 +  jeq done        /* If so, exit now */
 +  bl  @__ctzhi2   /* Count trailing zero bits */
 +  inc r1          /* Least sig. bit is in position trailing_count +1 */
 +done:
-+  b   *r3         /* Return to caller */
++  mov  *r10+, r11
++  b    *r11
 +#endif
 +
 +
@@ -867,15 +891,17 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/lib1funcs.asm gcc-4.4.0/gcc/config/tm
 +/*********************************************************/
 +  def __ffssi2
 +__ffssi2:
-+  mov r11, r3     /* Move return pointer, it won't be affected by next call */
-+  mov r1, r4
-+  soc r2, r4      /* Check for zero value */
++  dect r10
++  mov  r11,*r10
++  mov r1, r0
++  soc r2, r0      /* Check for zero value */
 +  jeq done        /* If so, exit now */
 +  bl  @__ctzsi2   /* Count trailing zero bits */
 +  inc r1          /* Least sig. bit is in position trailing_count +1 */
 +done:
-+  b   *r3         /* Return to caller */
-+  def __modsi3
++  mov  *r10+, r11
++  b    *r11
++  ; def __modsi3 ; ???
 +#endif
 +
 +
@@ -894,18 +920,24 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/lib1funcs.asm gcc-4.4.0/gcc/config/tm
 +/* Test an 8-bit value */
 +  def __parityqi2
 +__parityqi2:
++  dect r10
++  mov  r3,*r10  ; save r3
 +  seto r3
 +  jmp byte1
 +
 +/* Test a 16-bit value */
 +  def __parityhi2
 +__parityhi2:
++  dect r10
++  mov  r3,*r10  ; save r3
 +  clr r3
 +  jmp byte2
 +
 +/* Test a 32-bit value */
 +  def __paritysi2
 +__paritysi2:
++  dect r10
++  mov  r3,*r10  ; save r3
 +  clr  r3
 +  movb r2, r2
 +  jop pre_byte3
@@ -929,6 +961,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/lib1funcs.asm gcc-4.4.0/gcc/config/tm
 +done:
 +  neg r3
 +  mov r3, r1
++  mov  *r10+, r3
 +  bl *r11
 +#endif
 +
@@ -950,10 +983,17 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/lib1funcs.asm gcc-4.4.0/gcc/config/tm
 +/*********************************************************/
 +  def __popcountqi2
 +__popcountqi2:
++  dect r10
++  mov  r2,*r10  ; save r2
++  dect r10
++  mov  r11,*r10  ; save r11
 +  clr  r2           /* Clear lower unused bits */
 +  movb r1, r2       /* Move value into test position */
 +  clr  r1           /* Clear bit count */
-+  b    @__popcount  /* Find set bit count */
++  bl   @__popcount  /* Find set bit count */
++  mov  *r10+, r11
++  mov  *r10+, r3
++  b    *r11
 +#endif
 +
 +
@@ -963,9 +1003,16 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/lib1funcs.asm gcc-4.4.0/gcc/config/tm
 +/*********************************************************/
 +  def __popcounthi2
 +__popcounthi2:
++  dect r10
++  mov  r2,*r10  ; save r2
++  dect r10
++  mov  r11,*r10  ; save r11
 +  mov  r1, r2       /* Move value into test position */
 +  clr  r1           /* Clear bit count */
-+  b    @__popcount  /* Find set bit count */
++  bl   @__popcount  /* Find set bit count */
++  mov  *r10+, r11
++  mov  *r10+, r3
++  b    *r11
 +#endif
 +
 +
@@ -975,13 +1022,18 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/lib1funcs.asm gcc-4.4.0/gcc/config/tm
 +/*********************************************************/
 +  def __popcountsi2
 +__popcountsi2:
-+  mov  r11, r4      /* Move Return value where it will be safe */
++  dect r10
++  mov  r3,*r10  ; save r3
++  dect r10
++  mov  r11,*r10  ; save r11
 +  mov  r1, r3       /* Move MSW to safe position */
 +  clr  r1           /* Clear bit count */
 +  bl   @__popcount  /* Find LSW set bit count */
 +  mov  r3, r2       /* Move MSW into test position */
 +  bl   @__popcount  /* Find MSW set bit count */
-+  b    *r4          /* Return to caller */
++  mov  *r10+, r11
++  mov  *r10+, r3
++  b    *r11
 +#endif
 +
 +
@@ -1022,14 +1074,17 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/lib1funcs.asm gcc-4.4.0/gcc/config/tm
 +*           R5     - Address for modulus
 +*
 +* Returns: [R1,R2] - 32-bit quotient
++*
++* TODO - is this a library function?  Why pointer in r5?  Disabled for now
 +******************************************************************************/
 +  def __divmodsi3
 +__divmodsi3:
-+  /* Save modulo addess */
-+  mov  r5, @-6(r10)
++  /* Save return register and r6 */
++  dect r10
++  mov  r11,*r10
++  dect r10
++  mov  r5,*r10
 +
-+  /* Save return register */
-+  mov  r11, @-2(r10)
 +  bl   @__divmodstart
 +
 +  /* Caclulate result */
@@ -1037,7 +1092,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/lib1funcs.asm gcc-4.4.0/gcc/config/tm
 +  bl   @__udivmod32
 +
 +  /* Negate modulus if needed */
-+  mov  @-4(r10), r0
++  mov  r5, r0
 +  jlt  savemod
 +  inv  r3
 +  neg  r4
@@ -1046,9 +1101,13 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/lib1funcs.asm gcc-4.4.0/gcc/config/tm
 +  
 +  /* Save modulus */
 +savemod:
-+  mov  @-6(r10), r0
-+  mov  r3, *r0
-+  mov  r4, *r0+
++  mov  *r10, r0
++  mov  r3, *r0+
++  mov  r4, *r0
++
++  /* Restore from stack */
++  mov  *r10+, r5
++  mov  *r10+, r11
 +
 +  /* Complete operatons */
 +  b    @__divmodend
@@ -1069,12 +1128,20 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/lib1funcs.asm gcc-4.4.0/gcc/config/tm
 +  def __divsi3
 +__divsi3:
 +  /* Save return register */
-+  mov  r11, @-2(r10)
++  dect r10
++  mov  r11,*r10  ; save r11
++  dect r10
++  mov  r5,*r10  ; save r5
 +  bl   @__divmodstart
 +
 +  /* Caclulate result */
 +calc:
 +  bl   @__udivmod32
++
++  /* Restore from stack */
++  mov  *r10+, r5
++  mov  *r10+, r11
++
 +  b    @__divmodend
 +#endif
 +
@@ -1093,7 +1160,10 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/lib1funcs.asm gcc-4.4.0/gcc/config/tm
 +  def __modsi3
 +__modsi3:
 +  /* Save return register */
-+  mov  r11, @-2(r10)
++  dect r10
++  mov  r11,*r10  ; save r11
++  dect r10
++  mov  r5,*r10  ; save r5
 +  bl   @__divmodstart
 +
 +  /* Caclulate result */
@@ -1101,6 +1171,11 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/lib1funcs.asm gcc-4.4.0/gcc/config/tm
 +  bl   @__udivmod32
 +  mov  r3, r1
 +  mov  r4, r2
++
++  /* Restore from stack */
++  mov  *r10+, r5
++  mov  *r10+, r11
++
 +  b    @__divmodend
 +#endif
 +
@@ -1116,7 +1191,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/lib1funcs.asm gcc-4.4.0/gcc/config/tm
 +*
 +* Returns: [R1,R2] - Positive 32-bit quotient
 +*          [R3,R4] - Positive 32-bit denominator
-+*          sp-4    - Sign of result
++*          [R5]    - Sign of result
 +******************************************************************************/
 +  def __divmodstart
 +__divmodstart:
@@ -1133,7 +1208,6 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/lib1funcs.asm gcc-4.4.0/gcc/config/tm
 +  /* Make denominator positive */
 +testden:
 +  xor  r3, r5
-+  mov  r5, @-4(r10)
 +  mov  r3, r3
 +  jlt  negden
 +  jmp  done
@@ -1153,18 +1227,15 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/lib1funcs.asm gcc-4.4.0/gcc/config/tm
 +*
 +* Inputs:  [R1,R2] - Positive 32-bit quotient
 +*          [R3,R4] - Positive 32-bit denominator
-+*          sp-2    - Return pointer
-+*          sp-4    - Sign of result
++*          [R5]    - Sign of result
 +*          
 +* Returns: [R1,R2] - Signed 32-bit result
 +******************************************************************************/
 +  def __divmodend
 +__divmodend:
-+  /* Restore return register */
-+  mov  @-2(r10), r11
 +
 +  /* Do we need to negate the result? */
-+  mov  @-4(r10), r0
++  mov  r5, r0
 +  jlt  makeneg  
 +  b    *r11        # Nope, exit now
 +
@@ -1194,17 +1265,21 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/lib1funcs.asm gcc-4.4.0/gcc/config/tm
 +  def __udivmodsi3
 +__udivmodsi3:
 +  /* Save pointer and return address */
-+  mov  r5,  @-2(r10)
-+  mov  r11, @-4(r10)
++  dect r10
++  mov  r11,*r10  ; save r11
++  dect r10
++  mov  r5,*r10  ; save r5
 +
 +  /* Do some math */
 +  bl   @__udivmodsi
 +  
 +  /* Save remainder */
-+  mov  @-2(r10), r0
++  mov  *r10, r0
 +  mov  r3, *r0+
 +  mov  r4, *r0
-+  mov  @-4(r10), r11
++
++  mov  *r10+, r5
++  mov  *r10+, r11
 +  b    *r11
 +#endif
 +
@@ -1239,6 +1314,14 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/lib1funcs.asm gcc-4.4.0/gcc/config/tm
 +******************************************************************************/
 +  def __udivmod32
 +__udivmod32:
++  ai   r10, -10
++  mov  r10, r0
++  mov  r5, *r0+
++  mov  r6, *r0+
++  mov  r7, *r0+
++  mov  r8, *r0+
++  mov  r12, *r0+
++
 +  /* Check size of denominator */
 +  mov  r3, r3      /* Is the upper word of denominator used? */
 +  jne  den32       /* If so, jump to 32-bit code */
@@ -1356,7 +1439,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/lib1funcs.asm gcc-4.4.0/gcc/config/tm
 +  clr  r1          /* Set upper word of quotient, we know it will be zero */
 +  mov  r3, r3      /* if(remainder >= 0) P is correct */
 +  jlt  jmp3
-+  b    *r11
++  jmp  jmp4
 +jmp3:
 +
 +  /* Correct result for rounding error */
@@ -1370,6 +1453,11 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/lib1funcs.asm gcc-4.4.0/gcc/config/tm
 +jmp4:
 +
 +  /* Return value */
++  mov  *r10+, r5
++  mov  *r10+, r6
++  mov  *r10+, r7
++  mov  *r10+, r8
++  mov  *r10+, r12
 +  b    *r11
 +#endif
 +
@@ -1387,11 +1475,155 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/lib1funcs.asm gcc-4.4.0/gcc/config/tm
 +******************************************************************************/
 +  def __umodsi3
 +__umodsi3:
-+  mov  r11, @-2(r10)
++  dect r10
++  mov  r11,*r10  ; save r11
 +  bl   @__udivmod32
 +  mov  r3, r1
 +  mov  r4, r2
-+  mov  @-2(r10), r11
++  mov  *r10+, r11
++  b    *r11
++#endif
++
++
++#ifdef L_ashlsi3
++/******************************************************************************
++*                               __ashlsi3
++*******************************************************************************
++* Arithmetic left shift of 32 bit value
++*
++* Inputs:  [R1,R2] - 32-bit value
++*          [R3]    - Shift count
++*
++* Returns: [R1,R2] - 32-bit result
++******************************************************************************/
++  def __ashlsi3
++__ashlsi3:
++  mov  r15, @-2(r10)     /* Scratch reg. No need to modify SP, not used and no siblings */
++
++  /* Variable shift */
++  mov  r3, r0
++  ci   r0, 16
++  jlt  ashllt16
++  jeq  ashleq16
++     
++  /* Shift count greater than 16 */
++  sla  r2, 0 
++
++  /* eq_16: Shift count equals 16 */
++ashleq16:
++  mov  r2, r1
++  clr  r2
++  jmp  ashldone
++
++  /* lt_16: Shift count less than 16 */
++ashllt16:      
++  abs  r0
++  jeq  ashldone
++  mov  r2, r15
++  sla  r1, 0
++  sla  r2, 0
++  neg  r0
++  srl  r15, 0
++  soc  r15, r1
++
++ashldone:
++  mov  @-2(r10), r15
++  b    *r11
++#endif
++
++
++#ifdef L_ashrsi3
++/******************************************************************************
++*                               __ashrsi3
++*******************************************************************************
++* Arithmetic left shift of 32 bit value
++*
++* Inputs:  [R1,R2] - 32-bit value
++*          [R3]    - Shift count
++*
++* Returns: [R1,R2] - 32-bit result
++******************************************************************************/
++  def __ashrsi3
++__ashrsi3:
++  mov  r15, @-2(r10)     /* Scratch reg */
++
++  /* Variable shift */
++  mov  r3, r0
++  ci   r0, 16
++  jlt  ashrlt16
++  jeq  ashreq16
++
++  /* Shift count greater than 16 */
++  sra  r1, 0
++
++ashreq16:
++  /* eq_16: Shift count equals 16 */
++  mov  r1, r2
++  seto r1
++  jlt  ashrdone
++  clr  r1
++  jmp  ashrdone
++
++ashrlt16:
++  /* lt_16: Shift count less than 16 */
++  abs  r0
++  jeq  ashrdone
++  mov  r2, r15
++  sra  r1, 0
++  srl  r2, 0
++  neg  r0
++  sla  r15, 0
++  soc  r15, r2
++
++ashrdone:
++  mov  @-2(r10), r15
++  b    *r11
++#endif
++
++
++#ifdef L_lshrsi3
++/******************************************************************************
++*                               __lshrsi3
++*******************************************************************************
++* Arithmetic left shift of 32 bit value
++*
++* Inputs:  [R1,R2] - 32-bit value
++*          [R3]    - Shift count
++*
++* Returns: [R1,R2] - 32-bit result
++******************************************************************************/
++  def __lshrsi3
++__lshrsi3:
++  mov  r15, @-2(r10)     /* Scratch reg */
++
++  /* Variable shift */
++  mov  r3, r0
++  ci   r0, 16
++  jlt  lshrlt16
++  jeq  lshreq16
++
++  /* Shift count greater than 16 */
++  srl  r1, 0
++
++lshreq16:
++  /* eq_16: Shift count equals 16 */
++  mov  r1, r2
++  clr  r1
++  jmp  lshrdone
++
++lshrlt16:
++  /* lt_16: Shift count less than 16 */
++  abs  r0
++  jeq  lshrdone
++  mov  r2, r15
++  srl  r1, 0
++  srl  r2, 0
++  neg  r0
++  sla  r15, 0
++  soc  r15, r2
++
++lshrdone:
++  mov  @-2(r10), r15
 +  b    *r11
 +#endif
 +
@@ -3003,7 +3235,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms990
 +
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.h gcc-4.4.0/gcc/config/tms9900/tms9900.h
 --- gcc-4.4.0-orig/gcc/config/tms9900/tms9900.h	2023-12-23 10:48:53.513244386 +0000
-+++ gcc-4.4.0/gcc/config/tms9900/tms9900.h	2024-02-19 19:02:28.320364355 +0000
++++ gcc-4.4.0/gcc/config/tms9900/tms9900.h	2024-02-23 10:24:17.493321623 +0000
 @@ -0,0 +1,1241 @@
 +/* Definitions of target machine for GNU compiler.
 +   Texas Instruments TMS9900
@@ -3296,7 +3528,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.h gcc-4.4.0/gcc/config/tms990
 +/* 1 for registers that have pervasive standard uses and are not available
 + * for the register allocator.  */
 +#define FIXED_REGISTERS \
-+  {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0}
++  {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0}
 +/* SC 1  2  3  4  5  6  7  8  BP SP LR CB AP 14 15*/
 +
 +/* MGB It seemed excessive to always preserve R13,R14,R15 as these will only
@@ -7686,10 +7918,11 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900-protos.h gcc-4.4.0/gcc/config
 +extern void tms9900_debug_operands (const char *name, rtx insn, rtx ops[], int count);
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/t-tms9900 gcc-4.4.0/gcc/config/tms9900/t-tms9900
 --- gcc-4.4.0-orig/gcc/config/tms9900/t-tms9900	2023-12-23 10:48:53.513244386 +0000
-+++ gcc-4.4.0/gcc/config/tms9900/t-tms9900	2024-02-14 17:32:37.244912643 +0000
-@@ -0,0 +1,42 @@
++++ gcc-4.4.0/gcc/config/tms9900/t-tms9900	2024-02-24 13:49:12.881677822 +0000
+@@ -0,0 +1,43 @@
 +LIB1ASMSRC    = tms9900/lib1funcs.asm
-+LIB1ASMFUNCS  = _divsi3 _udivsi3 _modsi3 _umodsi3 _divmod_common
++LIB1ASMFUNCS  = _divsi3 _udivsi3 _modsi3 _umodsi3 _divmod_common \
++_ashrsi3 _ashlsi3 _lshrsi3
 +
 +# Exclude funcs from libgcc2.c that we implement using calls to TI99/4A console
 +# ROM
@@ -7901,13 +8134,13 @@ diff -ru gcc-4.4.0-orig/gcc/cp/cfns.h gcc-4.4.0/gcc/cp/cfns.h
  }
 diff -ru gcc-4.4.0-orig/gcc/DATESTAMP gcc-4.4.0/gcc/DATESTAMP
 --- gcc-4.4.0-orig/gcc/DATESTAMP	2024-01-06 17:22:05.286873814 +0000
-+++ gcc-4.4.0/gcc/DATESTAMP	2024-02-22 16:27:02.099672735 +0000
++++ gcc-4.4.0/gcc/DATESTAMP	2024-02-25 12:08:46.158931184 +0000
 @@ -1 +1 @@
 -20090421
-+20240222
++20240225
 diff -ru gcc-4.4.0-orig/gcc/DEV-PHASE gcc-4.4.0/gcc/DEV-PHASE
 --- gcc-4.4.0-orig/gcc/DEV-PHASE	2023-12-23 10:48:53.509244401 +0000
-+++ gcc-4.4.0/gcc/DEV-PHASE	2024-02-22 16:27:02.103672723 +0000
++++ gcc-4.4.0/gcc/DEV-PHASE	2024-02-25 12:08:46.158931184 +0000
 @@ -0,0 +1 @@
 +TMS9900 patch
 diff -ru gcc-4.4.0-orig/gcc/dfp.c gcc-4.4.0/gcc/dfp.c
@@ -8025,7 +8258,7 @@ diff -ru gcc-4.4.0-orig/gcc/reload.c gcc-4.4.0/gcc/reload.c
  						      SUBREG_BYTE (*loc),
 diff -ru gcc-4.4.0-orig/gcc/REVISION gcc-4.4.0/gcc/REVISION
 --- gcc-4.4.0-orig/gcc/REVISION	2024-01-06 17:22:05.286873814 +0000
-+++ gcc-4.4.0/gcc/REVISION	2024-02-22 16:27:02.103672723 +0000
++++ gcc-4.4.0/gcc/REVISION	2024-02-25 12:08:46.158931184 +0000
 @@ -0,0 +1 @@
 +1.30
 diff -ru gcc-4.4.0-orig/gcc/toplev.h gcc-4.4.0/gcc/toplev.h

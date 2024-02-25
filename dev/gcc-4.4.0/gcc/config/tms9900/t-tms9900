@@ -1,5 +1,6 @@
 LIB1ASMSRC    = tms9900/lib1funcs.asm
-LIB1ASMFUNCS  = _divsi3 _udivsi3 _modsi3 _umodsi3 _divmod_common
+LIB1ASMFUNCS  = _divsi3 _udivsi3 _modsi3 _umodsi3 _divmod_common \
+_ashrsi3 _ashlsi3 _lshrsi3
 
 # Exclude funcs from libgcc2.c that we implement using calls to TI99/4A console
 # ROM

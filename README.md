@@ -53,6 +53,9 @@ gcc patch 1.30
 * Added separate reg constraints to addhi3, andhi3, subhi3 to allow longer lengths for subreg offset fixes
 * Added more unit tests
 * Removed constraints in movqi - causes assert in reload
+* Added 32 bit shift operations
+* Marked R0 as fixed so allocator won't use it
+* Added reg saves in lib1funcs as some regs were being trampled
 
 gcc patch 1.29
 * Add function to swpb before or after MOV[B] if subreg offset seen

@@ -16,8 +16,8 @@ LIBGCC=$(GCCDIR)../lib/gcc/tms9900/4.4.0/libgcc.a
 
 # TODO make these targets
 
-TEST_SRC=test_char_short
-# TEST_SRC=test_long
+# TEST_SRC=test_char_short
+TEST_SRC=test_long
 # TEST_SRC=test_float
 # TEST_SRC=test_misc
 # TEST_SRC=test_subreg
