@@ -18,7 +18,7 @@ to create modified sources for gcc and binutils.
 
 The branch **main** in the repo contains The latest scripts and patch files. The patch files are:
 * binutils-2.19.1-tms9900-1.10.patch
-* gcc-4.4.0-tms9900-1.30.patch
+* gcc-4.4.0-tms9900-1.31.patch
 
 Patch files are cumulative.  The latest version of the patch file includes all
 previous updates as well.  Only the latest patch file is stored in the repo.
@@ -46,6 +46,9 @@ Release Notes
 binutils patch 1.10
 
 * No changes to 1.9 but includes the multi-def patch to avoid compile errors relating to "do_wide"
+
+gcc patch 1.31
+* TBD
 
 gcc patch 1.30
 * Pass constants as wides to force_const_mem to avoid assert in combine.c:do_SUBST
