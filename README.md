@@ -4,6 +4,8 @@ This repo for the **gcc cross-compiler for TMS9900** was created from files post
 by insomnia and others to atariage [here][1].  It is based on [gcc-4.4.0][2] and
 [binutils-2.19.1][3].
 
+The development blog is [here][7].
+
 There have been a number of patches posted to the gcc-for-the-ti thread and this
 repo consolidates these patches into one consistent package.
 
@@ -237,3 +239,4 @@ Open issues are tracked [here][6]
 [4]: https://www.unige.ch/medecine/nouspikel/ti99/reals.htm
 [5]: git@github.com:mburkley/tms9900-gcc.git
 [6]: https://github.com/mburkley/tms9900-gcc/issues
+[7]: https://tms9900-gcc.blogspot.com/2023/12/scope-gcc-versions-one-aspect-of.html
