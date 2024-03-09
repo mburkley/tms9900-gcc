@@ -218,8 +218,11 @@ void override_options (void)
     REAL_MODE_FORMAT (DFmode) = &tms9900_real_format;
 }
 
-/* Non-volatile registers to be saved across function calls */
-#define MAX_SAVED_REGS 6
+/* Non-volatile registers to be saved across function calls 
+   HARD_R5_REGNUM,
+   HARD_R6_REGNUM,
+   HARD_R7_REGNUM,
+   HARD_R8_REGNUM, */
 
 static int nvolregs[]={
    HARD_LR_REGNUM,
@@ -228,6 +231,8 @@ static int nvolregs[]={
    HARD_R13_REGNUM,
    HARD_R14_REGNUM,
    HARD_R15_REGNUM};
+
+#define MAX_SAVED_REGS (sizeof (nvolregs) / sizeof (int))
 
 /* If defined, a C expression which determines whether, and in which direction,
    to pad out an argument with extra space.  The value should be of type
@@ -1184,9 +1189,11 @@ gate_tms9900_postinc(void)
 static void
 tms9900_find_merge_insn(rtx insn, rtx parent, int argnum, rtx arg)
 {
+    // printf ("%s code=%s \n", __func__, GET_RTX_NAME(GET_CODE(arg)));
   if(MEM_P(arg))
   {
     rtx expr = XEXP(arg,0);
+   //  printf ("%s expr=%s \n", __func__, GET_RTX_NAME(GET_CODE(expr)));
     if(GET_CODE(expr) == PLUS)
     {
       rtx val1 = XEXP(expr,0);
@@ -1209,19 +1216,22 @@ tms9900_find_merge_insn(rtx insn, rtx parent, int argnum, rtx arg)
          reg = val1;
       }
 
+   //  printf ("%s reg=%d off=%d dead=%s\n", __func__, regnum, offset,
+   //  find_regno_note(insn, REG_DEAD, regnum)?"yes":"no");
+
       if((regnum >= 0) && 
          (offset == 2 || offset == 1) &&
          (find_regno_note(insn, REG_DEAD, regnum)))
       {
         /* Found an indexed address with a small offset, investigate further */
         struct reg_last_used *last = &reg_last_insn[regnum];
-        if(dump_file)
-        {
-          fprintf(dump_file,"\n\nPossible merge candidate:\n");
-          print_rtl_single(dump_file, insn);
-          // fprintf(dump_file,"\nLast use of reg %d was in insn %d:\n", regnum, INSN_UID(last->insn));
-          print_rtl_single(dump_file, last->insn);
-        }
+        // if(dump_file)
+        // {
+         //  printf("POSTINC Possible merge candidate insn %d:\n", INSN_UID(insn));
+          // print_rtl_single(dump_file, insn);
+          // printf("POSTINC Last use of reg %d was in insn %d:\n", regnum, INSN_UID(last->insn));
+          // print_rtl_single(dump_file, last->insn);
+       // }
 
         if((last->is_deref) && (GET_MODE_SIZE(last->mode) == offset))
         {
@@ -1234,13 +1244,13 @@ tms9900_find_merge_insn(rtx insn, rtx parent, int argnum, rtx arg)
           temp_arg = gen_rtx_MEM(last->mode,reg); 
           memcpy(XEXP(parent, argnum), temp_arg, rtx_size(temp_arg));
 
-          if(dump_file) 
-          {
-            fprintf(dump_file,"\nModified instruction %d:\n",INSN_UID(last->insn));
-            print_rtl_single(dump_file,last->insn);
-          }
+          // if(dump_file) 
+          // {
+            fprintf(stdout,"; POSTINC Modified instruction %d:\n",INSN_UID(last->insn));
+            // print_rtl_single(dump_file,last->insn);
+          // }
         }
-        else if(dump_file) fprintf(dump_file, "\nCannot merge\n");
+        else fprintf(stdout, "; POSTINC Cannot merge\n");
         return;
       }
     }
@@ -1288,7 +1298,7 @@ tms9900_postinc (void)
     memset(reg_last_insn, 0, sizeof(reg_last_insn));
     FOR_BB_INSNS (bb, insn)
     {
-  dbgprintf("%s loop\n", __func__);
+  // fprintf(asm_out_file, "; %s loop\n", __func__);
       if (INSN_P (insn))
       {
         rtx set=single_set (insn);

@@ -305,8 +305,10 @@ extern short *reg_renumber;	/* def in local_alloc.c */
  * seems to allow gcc to generate better code - why is that? TODO
  */
 /* 0 for registers which must be preserved across function call boundaries */
+  // {1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0}
+  // {1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0}
 #define CALL_USED_REGISTERS \
-  {1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0}
+  {1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1}
 /* SC 1  2  3  4  5  6  7  8  BP SP LR CB AP 14 15*/
 
 /* Define this macro to change register usage conditional on target flags. */
@@ -596,7 +598,8 @@ enum reg_class
 
 /* Passing Arguments in Registers.  */
 
-/* The number of argument registers we can use (R1..R8) */
+/* The number of argument registers we can use (R1..R4) */
+// #define TMS9900_ARG_REGS (HARD_R4_REGNUM - HARD_R1_REGNUM + 1)
 #define TMS9900_ARG_REGS (HARD_R8_REGNUM - HARD_R1_REGNUM + 1)
 
 /* Define a data type for recording info about an argument list
@@ -672,6 +675,7 @@ typedef struct tms9900_args
 #define CALLER_SAVE_PROFITABLE(REFS,CALLS) 0
 
 /* 1 if N is a possible register number for function argument passing. */
+     // MGBREGS (((N) >= HARD_R1_REGNUM) && ((N) <= HARD_R4_REGNUM))
 #define FUNCTION_ARG_REGNO_P(N)	\
      (((N) >= HARD_R1_REGNUM) && ((N) <= HARD_R8_REGNUM))
 
