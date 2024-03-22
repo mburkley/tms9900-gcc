@@ -4,30 +4,26 @@
    08/14/2023 mrvan removed methods not associated with the FAC and ARG to separate files
 */
 
-#include "math_private.h"
-
 #define FAC 0x834A
-#define ARG 0x835C;
+#define ARG 0x835C
+#define FAC_PTR ((volatile double*)FAC)
+#define ARG_PTR ((volatile double*)ARG)
 
-double *FADD_AUGEND       = (double *)FAC;
-double *FADD_ADDEND       = (double *)ARG;
-double *FADD_SUM          = (double *)FAC;
+#define FADD_AUGEND FAC_PTR
+#define FADD_ADDEND ARG_PTR
+#define FADD_SUM    FAC_PTR
 
-double *FSUB_MINUEND      = (double *)ARG;
-double *FSUB_SUBTRAHEND   = (double *)FAC;
-double *FSUB_DIFFERENCE   = (double *)FAC;
+#define FSUB_MINUEND    ARG_PTR
+#define FSUB_SUBTRAHEND FAC_PTR
+#define FSUB_DIFFERENCE FAC_PTR
 
-double *FMUL_MULTIPLICAND = (double *)ARG;
-double *FMUL_MULTIPLIER   = (double *)FAC;
-double *FMUL_PRODUCT      = (double *)FAC;
+#define FMUL_MULTIPLICAND ARG_PTR
+#define FMUL_MULTIPLIER   FAC_PTR
+#define FMUL_PRODUCT      FAC_PTR
 
-double *FDIV_DIVIDEND     = (double *)FAC;
-double *FDIV_DIVISOR      = (double *)ARG;
-double *FDIV_QUOTIENT     = (double *)FAC;
-
-char *EXP                 = (char *)0x8376;
-unsigned char *SIGN       = (unsigned char *)0x8375; // >00 = positive, >FF = negative
-unsigned char *OVFL       = (unsigned char *)0x8354; // >01 if overflow
+#define FDIV_DIVIDEND FAC_PTR
+#define FDIV_DIVISOR  ARG_PTR
+#define FDIV_QUOTIENT FAC_PTR
 
 // double addition -- method normally included in GCC lib
 double __adddf3 (double a, double b) {
