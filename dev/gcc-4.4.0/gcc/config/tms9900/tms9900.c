@@ -720,7 +720,7 @@ void tms9900_output_ascii(FILE* stream, const char* ptr, int len)
       if (ISPRINT(c))
       {
          /* End TEXT statement */
-         if (count==64)
+         if (in_text && count==64)
          {
             fprintf (stream, "'\n");
             in_text = 0;
