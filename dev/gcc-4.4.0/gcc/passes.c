@@ -102,7 +102,7 @@ along with GCC; see the file COPYING3.  If not see
 				   declarations for e.g. AIX 4.x.  */
 #endif
 
-#ifdef TMS9900
+#ifdef TMS9900xx
 extern struct rtl_opt_pass pass_tms9900_subreg;
 extern struct rtl_opt_pass pass_tms9900_postinc;
 #endif
@@ -772,7 +772,7 @@ init_optimization_passes (void)
       NEXT_PASS (pass_match_asm_constraints);
       NEXT_PASS (pass_sms);
       NEXT_PASS (pass_sched);
-#ifdef TMS9900
+#ifdef TMS9900xx
       NEXT_PASS (pass_tms9900_subreg);
       NEXT_PASS (pass_tms9900_postinc);
 #endif
