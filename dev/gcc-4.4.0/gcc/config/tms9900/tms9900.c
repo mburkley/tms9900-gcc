@@ -1246,11 +1246,11 @@ tms9900_find_merge_insn(rtx insn, rtx parent, int argnum, rtx arg)
 
           // if(dump_file) 
           // {
-            fprintf(stdout,"; POSTINC Modified instruction %d:\n",INSN_UID(last->insn));
+            // fprintf(stdout,"; POSTINC Modified instruction %d:\n",INSN_UID(last->insn));
             // print_rtl_single(dump_file,last->insn);
           // }
         }
-        else fprintf(stdout, "; POSTINC Cannot merge\n");
+        // else fprintf(stdout, "; POSTINC Cannot merge\n");
         return;
       }
     }
