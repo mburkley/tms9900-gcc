@@ -1,0 +1,7 @@
+#!/bin/bash
+
+set -e
+
+echo "Installing tms9900-gcc ..."
+
+chown "root:root" -R /opt/tms9900-gcc
