@@ -163,7 +163,14 @@ if [ ! -f .libgcc_built ] ; then
    touch .libgcc_built
 fi
 
-# TODO built elf2ea5 and elf2cart
+echo "=== Building utils ==="
+if [ ! -f .utils_built ] ; then
+   cd ../utils
+   make
+   cd ../build
+   touch .utils_built
+fi
+
 echo "=== Installation complete ==="
 cd $START
 
