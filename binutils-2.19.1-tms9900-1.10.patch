@@ -371,8 +371,8 @@ diff -ru binutils-2.19.1-orig/binutils/readelf.c binutils-2.19.1/binutils/readel
        snprintf (buff, sizeof (buff), _("<unknown>: 0x%x"), e_machine);
        return buff;
 diff -ru binutils-2.19.1-orig/config.guess binutils-2.19.1/config.guess
---- binutils-2.19.1-orig/config.guess	2008-04-14 10:28:35.000000000 +0100
-+++ binutils-2.19.1/config.guess	2024-07-29 09:03:52.114971680 +0100
+--- binutils-2.19.1-orig/config.guess	2024-08-17 09:15:47.311207817 +0100
++++ binutils-2.19.1/config.guess	2024-08-17 09:15:47.339207632 +0100
 @@ -1,14 +1,14 @@
  #! /bin/sh
  # Attempt to guess a canonical system name.
@@ -2932,7 +2932,7 @@ diff -ru binutils-2.19.1-orig/config.guess binutils-2.19.1/config.guess
  # time-stamp-end: "'"
 diff -ru binutils-2.19.1-orig/config.sub binutils-2.19.1/config.sub
 --- binutils-2.19.1-orig/config.sub	2008-04-14 10:28:35.000000000 +0100
-+++ binutils-2.19.1/config.sub	2024-07-29 13:36:30.297097599 +0100
++++ binutils-2.19.1/config.sub	2024-08-17 09:15:47.391207287 +0100
 @@ -1,44 +1,42 @@
  #! /bin/sh
  # Configuration validation subroutine script.
