@@ -17,7 +17,7 @@ Patch files are archived in the main branch which are used by an install script
 to create modified sources for gcc and binutils.
 
 The branch **main** in the repo contains The latest scripts and patch files. The patch files are:
-* binutils-2.19.1-tms9900-1.10.patch
+* binutils-2.19.1-tms9900-1.11.patch
 * gcc-4.4.0-tms9900-1.31.patch
 
 Patch files are cumulative.  The latest version of the patch file includes all
@@ -30,25 +30,38 @@ For users that just want to use the compiler, please follow these steps to clone
 the main branch and install build tools. You will need a recent version of gcc
 installed.
 
-> git clone [git@github.com:mburkley/tms9900-gcc.git][5]
-
-> sudo apt install build-essential libgmp-dev libmpfr-dev
-
-> cd tms900-gcc
-
-> ./install.sh <target>
+```git clone [git@github.com:mburkley/tms9900-gcc.git][5]
+sudo apt install build-essential libgmp-dev libmpfr-dev
+cd tms900-gcc
+./install.sh <target>
+```
 
  where <target> is your desired install directory
 (/usr/local/tms9900-gcc for example)
 
-Release Notes
--------------
-binutils patch 1.10
-
-* No changes to 1.9 but includes the multi-def patch to avoid compile errors relating to "do_wide"
+Release Notes - current
+-----------------------
+binutils patch 1.11
+* Updates to .texi files
+* Added __attribute(fallthrough) in switches where compiler was issuing an error
 
 gcc patch 1.31
-* TBD
+* Changed movsi to expand - improves 32-bit word moves
+* Fixed unaligned 16-bit fetches
+* Added reg dead check to peephole
+* Fixed ashri (arith shift right)
+* Removed all tms9900 specific passes in compiler (more portable)
+* Updated config.guess to detect arm64 architecture (for raspberry-pi 5)
+* Updated several .texi files (newer TEXinfo is stricter)
+* Renamed common to util and added Makefile
+* Updated patches to 1.31 for gcc and 1.11 for binutils
+* Added separate ARM and AMD64 architectures in debian package build
+
+Release Notes - historical
+--------------------------
+
+binutils patch 1.10
+* No changes to 1.9 but includes the multi-def patch to avoid compile errors relating to "do_wide"
 
 gcc patch 1.30
 * Pass constants as wides to force_const_mem to avoid assert in combine.c:do_SUBST

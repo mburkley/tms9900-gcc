@@ -87,8 +87,40 @@ diff -ru gcc-4.4.0-orig/gcc/c-cppbuiltin.c gcc-4.4.0/gcc/c-cppbuiltin.c
      cpp_define (pfile, "__GNUC_GNU_INLINE__");
 diff -ru gcc-4.4.0-orig/gcc/combine.c gcc-4.4.0/gcc/combine.c
 --- gcc-4.4.0-orig/gcc/combine.c	2009-04-01 21:47:37.000000000 +0100
-+++ gcc-4.4.0/gcc/combine.c	2024-05-28 17:33:30.748573520 +0100
-@@ -1381,6 +1381,7 @@
++++ gcc-4.4.0/gcc/combine.c	2024-08-17 15:31:54.650698542 +0100
+@@ -672,9 +672,29 @@
+       && GET_CODE (newval) == CONST_INT)
+     {
+       /* Sanity check that we're replacing oldval with a CONST_INT
+-	 that is a valid sign-extension for the original mode.  */
++	 that is a valid sign-extension for the original mode. */
++
++      /*  MGB: There is a false assert for TMS9900 if converting an int to a void.
++       *  trunc_int_for_mode() returns 0xffffffff but INTVAL() is 0xffff.
++       *  Disable the assert unless this is not the case */
++      if (GET_MODE(oldval) != HImode || INTVAL(newval) != 0xffff)
++      {
++      if (INTVAL(newval)!=trunc_int_for_mode(INTVAL (newval), GET_MODE (oldval)))
++      {
++          printf ("MGB old=%s(%d) new=%s(%d)\n",
++            GET_MODE_NAME(GET_MODE(oldval)),
++            GET_MODE_BITSIZE(GET_MODE(oldval)),
++            GET_MODE_NAME(GET_MODE(newval)),
++            GET_MODE_BITSIZE(GET_MODE(newval)));
++
++          printf ("MGB i(new)=%x t(new,old)=%x\n",
++              INTVAL(newval),
++              trunc_int_for_mode(INTVAL (newval), GET_MODE (oldval)));
++      }
++
+       gcc_assert (INTVAL (newval)
+-		  == trunc_int_for_mode (INTVAL (newval), GET_MODE (oldval)));
++        == trunc_int_for_mode (INTVAL (newval), GET_MODE (oldval)));
++      }
+ 
+       /* Replacing the operand of a SUBREG or a ZERO_EXTEND with a
+ 	 CONST_INT is not valid, because after the replacement, the
+@@ -1381,6 +1401,7 @@
            && uns1 == uns3
  	  && (mode1 == mode2 || strictly_local))
          {
@@ -96,7 +128,7 @@ diff -ru gcc-4.4.0-orig/gcc/combine.c gcc-4.4.0/gcc/combine.c
  	  /* Record that the value was promoted from mode1 to mode3,
  	     so that any sign extension at the head of the current
  	     function may be eliminated.  */
-@@ -4466,6 +4467,7 @@
+@@ -4466,6 +4487,7 @@
  		    return gen_rtx_CLOBBER (VOIDmode, const0_rtx);
  #endif
  
@@ -104,7 +136,7 @@ diff -ru gcc-4.4.0-orig/gcc/combine.c gcc-4.4.0/gcc/combine.c
  		  new_rtx = (unique_copy && n_occurrences ? copy_rtx (to) : to);
  		  n_occurrences++;
  		}
-@@ -6147,7 +6149,10 @@
+@@ -6147,7 +6169,10 @@
  	  && GET_MODE_BITSIZE (GET_MODE (x)) <= HOST_BITS_PER_WIDE_INT
  	  && (nonzero_bits (SUBREG_REG (XEXP (x, 0)), GET_MODE (x))
  	      & ~GET_MODE_MASK (GET_MODE (XEXP (x, 0)))) == 0)
@@ -115,7 +147,7 @@ diff -ru gcc-4.4.0-orig/gcc/combine.c gcc-4.4.0/gcc/combine.c
  
        /* (zero_extend:DI (truncate:SI foo:DI)) is just foo:DI when foo
  	 is a comparison and STORE_FLAG_VALUE permits.  This is like
-@@ -9934,7 +9939,7 @@
+@@ -9934,7 +9959,7 @@
  	 generate a paradoxical subreg instead.  That will force a reload
  	 of the original memref X.  */
        if (isize < osize)
@@ -8197,13 +8229,13 @@ diff -ru gcc-4.4.0-orig/gcc/cp/cfns.h gcc-4.4.0/gcc/cp/cfns.h
  }
 diff -ru gcc-4.4.0-orig/gcc/DATESTAMP gcc-4.4.0/gcc/DATESTAMP
 --- gcc-4.4.0-orig/gcc/DATESTAMP	2009-04-21 01:16:42.000000000 +0100
-+++ gcc-4.4.0/gcc/DATESTAMP	2024-08-17 11:09:43.251611526 +0100
++++ gcc-4.4.0/gcc/DATESTAMP	2024-08-17 15:35:35.113166653 +0100
 @@ -1 +1 @@
 -20090421
 +20240817
 diff -ru gcc-4.4.0-orig/gcc/DEV-PHASE gcc-4.4.0/gcc/DEV-PHASE
 --- gcc-4.4.0-orig/gcc/DEV-PHASE	2009-04-21 09:48:37.000000000 +0100
-+++ gcc-4.4.0/gcc/DEV-PHASE	2024-08-17 11:09:43.255611498 +0100
++++ gcc-4.4.0/gcc/DEV-PHASE	2024-08-17 15:35:35.117166625 +0100
 @@ -0,0 +1 @@
 +TMS9900 patch
 diff -ru gcc-4.4.0-orig/gcc/df-core.c gcc-4.4.0/gcc/df-core.c
@@ -8994,13 +9026,8 @@ diff -ru gcc-4.4.0-orig/gcc/emit-rtl.c gcc-4.4.0/gcc/emit-rtl.c
      return false;
 diff -ru gcc-4.4.0-orig/gcc/explow.c gcc-4.4.0/gcc/explow.c
 --- gcc-4.4.0-orig/gcc/explow.c	2009-02-20 15:20:38.000000000 +0000
-+++ gcc-4.4.0/gcc/explow.c	2024-07-28 15:21:42.479992784 +0100
-@@ -61,10 +61,12 @@
- 
-   /* Sign-extend for the requested mode.  */
- 
-+  // printf("MGB %s width=%d/%d\n", __func__, width, HOST_BITS_PER_WIDE_INT);
-   if (width < HOST_BITS_PER_WIDE_INT)
++++ gcc-4.4.0/gcc/explow.c	2024-08-17 15:31:11.770996457 +0100
+@@ -65,6 +65,7 @@
      {
        HOST_WIDE_INT sign = 1;
        sign <<= width - 1;
@@ -9008,7 +9035,7 @@ diff -ru gcc-4.4.0-orig/gcc/explow.c gcc-4.4.0/gcc/explow.c
        c &= (sign << 1) - 1;
        c ^= sign;
        c -= sign;
-@@ -323,6 +325,12 @@
+@@ -323,6 +324,12 @@
  			rtx x)
  {
  #ifndef POINTERS_EXTEND_UNSIGNED
@@ -9152,7 +9179,7 @@ diff -ru gcc-4.4.0-orig/gcc/ira-costs.c gcc-4.4.0/gcc/ira-costs.c
    ira_free (total_costs);
 diff -ru gcc-4.4.0-orig/gcc/libgcc2.c gcc-4.4.0/gcc/libgcc2.c
 --- gcc-4.4.0-orig/gcc/libgcc2.c	2009-04-10 00:23:07.000000000 +0100
-+++ gcc-4.4.0/gcc/libgcc2.c	2023-12-23 10:48:53.525244337 +0000
++++ gcc-4.4.0/gcc/libgcc2.c	2024-08-17 15:21:13.987147637 +0100
 @@ -4,6 +4,7 @@
     2000, 2001, 2002, 2003, 2004, 2005, 2007, 2008, 2009
     Free Software Foundation, Inc.
@@ -9171,11 +9198,12 @@ diff -ru gcc-4.4.0-orig/gcc/libgcc2.c gcc-4.4.0/gcc/libgcc2.c
  	      if (m1 > n1 || (m1 == n1 && m0 > n0))
  		{
  		  q0--;
-@@ -1065,6 +1069,7 @@
+@@ -1065,6 +1069,8 @@
  		  rr.s.high = n1 >> bm;
  		  *rp = rr.ll;
  		}
 +#endif
++              q1 = 0;
  	    }
  	}
      }
@@ -9262,7 +9290,7 @@ diff -ru gcc-4.4.0-orig/gcc/reload.c gcc-4.4.0/gcc/reload.c
  						      SUBREG_BYTE (*loc),
 diff -ru gcc-4.4.0-orig/gcc/REVISION gcc-4.4.0/gcc/REVISION
 --- gcc-4.4.0-orig/gcc/REVISION	2024-07-28 14:42:12.593793006 +0100
-+++ gcc-4.4.0/gcc/REVISION	2024-08-17 11:09:43.255611498 +0100
++++ gcc-4.4.0/gcc/REVISION	2024-08-17 15:35:35.121166597 +0100
 @@ -0,0 +1 @@
 +1.31
 diff -ru gcc-4.4.0-orig/gcc/targhooks.c gcc-4.4.0/gcc/targhooks.c

@@ -672,9 +672,29 @@ do_SUBST (rtx *into, rtx newval)
       && GET_CODE (newval) == CONST_INT)
     {
       /* Sanity check that we're replacing oldval with a CONST_INT
-	 that is a valid sign-extension for the original mode.  */
+	 that is a valid sign-extension for the original mode. */
+
+      /*  MGB: There is a false assert for TMS9900 if converting an int to a void.
+       *  trunc_int_for_mode() returns 0xffffffff but INTVAL() is 0xffff.
+       *  Disable the assert unless this is not the case */
+      if (GET_MODE(oldval) != HImode || INTVAL(newval) != 0xffff)
+      {
+      if (INTVAL(newval)!=trunc_int_for_mode(INTVAL (newval), GET_MODE (oldval)))
+      {
+          printf ("MGB old=%s(%d) new=%s(%d)\n",
+            GET_MODE_NAME(GET_MODE(oldval)),
+            GET_MODE_BITSIZE(GET_MODE(oldval)),
+            GET_MODE_NAME(GET_MODE(newval)),
+            GET_MODE_BITSIZE(GET_MODE(newval)));
+
+          printf ("MGB i(new)=%x t(new,old)=%x\n",
+              INTVAL(newval),
+              trunc_int_for_mode(INTVAL (newval), GET_MODE (oldval)));
+      }
+
       gcc_assert (INTVAL (newval)
-		  == trunc_int_for_mode (INTVAL (newval), GET_MODE (oldval)));
+                == trunc_int_for_mode (INTVAL (newval), GET_MODE (oldval)));
+      }
 
       /* Replacing the operand of a SUBREG or a ZERO_EXTEND with a
 	 CONST_INT is not valid, because after the replacement, the
