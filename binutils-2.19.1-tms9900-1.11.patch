@@ -40,12 +40,12 @@ diff -ru binutils-2.19.1-orig/bfd/bfd-in2.h binutils-2.19.1/bfd/bfd-in2.h
  
 diff -ru binutils-2.19.1-orig/bfd/coffgen.c binutils-2.19.1/bfd/coffgen.c
 --- binutils-2.19.1-orig/bfd/coffgen.c	2008-08-14 03:38:22.000000000 +0100
-+++ binutils-2.19.1/bfd/coffgen.c	2024-07-29 13:53:42.601871835 +0100
++++ binutils-2.19.1/bfd/coffgen.c	2024-08-17 10:26:02.290055708 +0100
 @@ -1959,6 +1959,7 @@
  		      break;
  		    }
  		    /* Otherwise fall through.  */
-+                    __atribute((fallthrough));
++                    __attribute((fallthrough));
  		case C_EXT:
  		  if (ISFCN (combined->u.syment.n_type))
  		    {
@@ -155,6 +155,18 @@ diff -ru binutils-2.19.1-orig/bfd/doc/archures.texi binutils-2.19.1/bfd/doc/arch
    bfd_arch_last
    @};
  @end example
+diff -ru binutils-2.19.1-orig/bfd/doc/elf.texi binutils-2.19.1/bfd/doc/elf.texi
+--- binutils-2.19.1-orig/bfd/doc/elf.texi	2009-01-14 10:11:32.000000000 +0000
++++ binutils-2.19.1/bfd/doc/elf.texi	2024-08-17 10:04:36.818845294 +0100
+@@ -8,7 +8,7 @@
+ haven't bothered yet.
+ 
+ @findex bfd_elf_find_section
+-@subsubsection @code{bfd_elf_find_section}
++@subsection @code{bfd_elf_find_section}
+ @strong{Synopsis}
+ @example
+ struct elf_internal_shdr *bfd_elf_find_section (bfd *abfd, char *name);
 diff -ru binutils-2.19.1-orig/bfd/elf32-tms9900.c binutils-2.19.1/bfd/elf32-tms9900.c
 --- binutils-2.19.1-orig/bfd/elf32-tms9900.c	2024-07-29 07:17:02.825482280 +0100
 +++ binutils-2.19.1/bfd/elf32-tms9900.c	2023-12-23 10:48:53.505244417 +0000

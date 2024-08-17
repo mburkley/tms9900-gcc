@@ -8197,13 +8197,13 @@ diff -ru gcc-4.4.0-orig/gcc/cp/cfns.h gcc-4.4.0/gcc/cp/cfns.h
  }
 diff -ru gcc-4.4.0-orig/gcc/DATESTAMP gcc-4.4.0/gcc/DATESTAMP
 --- gcc-4.4.0-orig/gcc/DATESTAMP	2009-04-21 01:16:42.000000000 +0100
-+++ gcc-4.4.0/gcc/DATESTAMP	2024-08-17 09:48:05.429654605 +0100
++++ gcc-4.4.0/gcc/DATESTAMP	2024-08-17 11:09:43.251611526 +0100
 @@ -1 +1 @@
 -20090421
 +20240817
 diff -ru gcc-4.4.0-orig/gcc/DEV-PHASE gcc-4.4.0/gcc/DEV-PHASE
 --- gcc-4.4.0-orig/gcc/DEV-PHASE	2009-04-21 09:48:37.000000000 +0100
-+++ gcc-4.4.0/gcc/DEV-PHASE	2024-08-17 09:48:05.433654577 +0100
++++ gcc-4.4.0/gcc/DEV-PHASE	2024-08-17 11:09:43.255611498 +0100
 @@ -0,0 +1 @@
 +TMS9900 patch
 diff -ru gcc-4.4.0-orig/gcc/df-core.c gcc-4.4.0/gcc/df-core.c
@@ -9262,7 +9262,7 @@ diff -ru gcc-4.4.0-orig/gcc/reload.c gcc-4.4.0/gcc/reload.c
  						      SUBREG_BYTE (*loc),
 diff -ru gcc-4.4.0-orig/gcc/REVISION gcc-4.4.0/gcc/REVISION
 --- gcc-4.4.0-orig/gcc/REVISION	2024-07-28 14:42:12.593793006 +0100
-+++ gcc-4.4.0/gcc/REVISION	2024-08-17 09:48:05.437654550 +0100
++++ gcc-4.4.0/gcc/REVISION	2024-08-17 11:09:43.255611498 +0100
 @@ -0,0 +1 @@
 +1.31
 diff -ru gcc-4.4.0-orig/gcc/targhooks.c gcc-4.4.0/gcc/targhooks.c
