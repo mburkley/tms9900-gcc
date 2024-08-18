@@ -1355,7 +1355,7 @@ extern bool tms9900_operand_subreg_offset (rtx operand, int mode)
 
   // Bypass debug flag and put direct to file
   // tms9900_inline_debug ("; reg/reg=%d/%d expr=%d\n", REGNO(operand),
-  fprintf (asm_out_file, "; SUBR off=%d mode=%s reg/reg=%d/%d\n",
+  fprintf (asm_out_file, "; SUBR off=%ld mode=%s reg/reg=%d/%d\n",
            REG_OFFSET (operand), GET_MODE_NAME (mode),
            REGNO(operand), ORIGINAL_REGNO(operand));
 

@@ -46,7 +46,9 @@ binutils patch 1.11
 * Added __attribute(fallthrough) in switches where compiler was issuing an error
 
 gcc patch 1.31
-* Changed movsi to expand - improves 32-bit word moves
+* Fix stack cleanup in lib1funcs:div32
+* Changed movsi (32-bit word move) from insn to expand and corrected word order, 
+* Fixed mul32 unit test
 * Fixed unaligned 16-bit fetches
 * Added reg dead check to peephole
 * Fixed ashri (arith shift right)
@@ -55,7 +57,7 @@ gcc patch 1.31
 * Updated several .texi files (newer TEXinfo is stricter)
 * Renamed common to util and added Makefile
 * Updated patches to 1.31 for gcc and 1.11 for binutils
-* Added separate ARM and AMD64 architectures in debian package build
+* Added separate ARM64 and AMD64 architectures in debian package build
 
 Release Notes - historical
 --------------------------

@@ -770,7 +770,7 @@ num16:
                    /* MSW of remainder still zero */
   mov  r1, r2      /* LSW of result */
   mov  r0, r1      /* MSW of result */
-  b    *r11
+  jmp  jmp4
 
 den32:
   /*
