@@ -163,12 +163,12 @@ if [ ! -f .libgcc_built ] ; then
    touch .libgcc_built
 fi
 
-echo "=== Building utils ==="
-if [ ! -f .utils_built ] ; then
-   cd ../utils
-   make
+echo "=== Building elfutils ==="
+if [ ! -f .elfutils_built ] ; then
+   cd ../elfutils
+   make install PREFIX=$PREFIX
    cd ../build
-   touch .utils_built
+   touch .elfutils_built
 fi
 
 echo "=== Installation complete ==="

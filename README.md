@@ -46,6 +46,7 @@ binutils patch 1.11
 * Added __attribute(fallthrough) in switches where compiler was issuing an error
 
 gcc patch 1.31
+* Added build and install of elfutils (elf2cart, elf2ea5 and ea5split) to install.sh
 * Fix stack cleanup in lib1funcs:div32
 * Changed movsi (32-bit word move) from insn to expand and corrected word order, 
 * Fixed mul32 unit test
@@ -55,7 +56,6 @@ gcc patch 1.31
 * Removed all tms9900 specific passes in compiler (more portable)
 * Updated config.guess to detect arm64 architecture (for raspberry-pi 5)
 * Updated several .texi files (newer TEXinfo is stricter)
-* Renamed common to util and added Makefile
 * Updated patches to 1.31 for gcc and 1.11 for binutils
 * Added separate ARM64 and AMD64 architectures in debian package build
 

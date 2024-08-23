@@ -1,4 +1,5 @@
 UTILS=elf2ea5 elf2cart ea5split
+
 all: $(UTILS)
 
 $(UTILS): %: %.c
@@ -7,3 +8,5 @@ $(UTILS): %: %.c
 clean:
 	rm $(UTILS)
 
+install: $(UTILS)
+	install $(UTILS) $(PREFIX)/bin
