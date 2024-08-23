@@ -6,7 +6,7 @@
 
 #define LFACTOR1 25973 // mult res fits in 32 bits
 #define LFACTOR2 47315
-#define LMULRES (IFACTOR1*IFACTOR2)
+#define LMULRES (LFACTOR1*LFACTOR2)
 
 #define BIN1 0x56784321;
 #define BIN2 0x3a913c48;
@@ -161,7 +161,7 @@ void t_int32_sla_gt16()
     int32_t x = linp;
     int32_t y;
 
-    y=x<<17;
+    y=x<<shc17;
     dprintf("# y=%lx\n",y);
     test_execute (__func__, y== LLSH_SLA17);
 }
@@ -173,7 +173,7 @@ void t_int32_sla_16()
 
     // Use a var or optimiser will reduce
     y=x<<shc16;
-    printf("# y=%d\n",y);
+    dprintf("# y=%d\n",y);
     test_execute (__func__, y== LLSH_SLA16);
 }
 

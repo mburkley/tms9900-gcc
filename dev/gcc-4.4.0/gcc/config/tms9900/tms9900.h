@@ -301,10 +301,12 @@ extern short *reg_renumber;	/* def in local_alloc.c */
  * It also seems counter-intuitive that LR should be identified as a call reg
  * but gcc/reginfo.c will assert if any register is fixed and not a call reg.
  *
- * MGB JAN-24 I'm adding back in R12 thru R15 as call used regs.  It actually
- * seems to allow gcc to generate better code - why is that? TODO
+ * MGB JAN-24 I'm adding back in R12 thru R15 as preserved.  It actually
+ * seems to allow gcc to generate smaller code since leaf functions do not need
+ * to save them.  More testing needed to see which is actually more efficient.
  */
 /* 0 for registers which must be preserved across function call boundaries */
+  // {1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1}
 #define CALL_USED_REGISTERS \
   {1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0}
 /* SC 1  2  3  4  5  6  7  8  BP SP LR CB AP 14 15*/
@@ -597,6 +599,9 @@ enum reg_class
 /* Passing Arguments in Registers.  */
 
 /* The number of argument registers we can use (R1..R8) */
+/* Limiting this to 4 regs would appear to make more regs available for general
+ * use, but the improvement didn't seem to be worth it */
+// #define TMS9900_ARG_REGS (HARD_R4_REGNUM - HARD_R1_REGNUM + 1)
 #define TMS9900_ARG_REGS (HARD_R8_REGNUM - HARD_R1_REGNUM + 1)
 
 /* Define a data type for recording info about an argument list
@@ -672,6 +677,7 @@ typedef struct tms9900_args
 #define CALLER_SAVE_PROFITABLE(REFS,CALLS) 0
 
 /* 1 if N is a possible register number for function argument passing. */
+     // MGBREGS (((N) >= HARD_R1_REGNUM) && ((N) <= HARD_R4_REGNUM))
 #define FUNCTION_ARG_REGNO_P(N)	\
      (((N) >= HARD_R1_REGNUM) && ((N) <= HARD_R8_REGNUM))
 

@@ -1070,6 +1070,7 @@ __udivmoddi4 (UDWtype n, UDWtype d, UDWtype *rp)
 		  *rp = rr.ll;
 		}
 #endif
+              q1 = 0;
 	    }
 	}
     }

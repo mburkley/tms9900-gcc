@@ -1,0 +1,15 @@
+Origin: ti99ers.com/tigcc
+Label: ti99ers.com/tigcc
+Codename: bookworm
+Architectures: amd64 arm64
+Components: main
+Description: Apt repository for gcc and binutils for the TMS9900
+SignWith: 3BCB45FA6D471C6759DDD0833F3CB45EF87C257D
+
+Origin: ti99ers.com/tigcc
+Label: ti99ers.com/tigcc
+Codename: bullseye
+Architectures: amd64 arm64
+Components: contrib
+Description: Apt repository for gcc and binutils for the TMS9900
+SignWith: 3BCB45FA6D471C6759DDD0833F3CB45EF87C257D

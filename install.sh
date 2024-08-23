@@ -163,7 +163,14 @@ if [ ! -f .libgcc_built ] ; then
    touch .libgcc_built
 fi
 
-# TODO built elf2ea5 and elf2cart
+echo "=== Building elfutils ==="
+if [ ! -f .elfutils_built ] ; then
+   cd ../elfutils
+   make install PREFIX=$PREFIX
+   cd ../build
+   touch .elfutils_built
+fi
+
 echo "=== Installation complete ==="
 cd $START
 
