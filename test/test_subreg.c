@@ -220,7 +220,6 @@ void t_char_array (void)
     test_execute (__func__, haunted == 0);
 }
 
-
 /*  Add to a static long.  This will generate offsets of +/- 2 which are NOT
  *  byte offsets that should be corrected */
 

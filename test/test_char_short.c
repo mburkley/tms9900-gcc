@@ -407,6 +407,24 @@ static void t_us_char_sub ()
     #endif
 }
 
+static void t_byte_imm_sub (void)
+{
+    unsigned char x = 0x49;
+    unsigned char y;
+    y = x - 0x27;
+    dprintf("y=%x\n", y);
+    test_execute (__func__, y==0x22);
+}
+
+static void t_byte_sub_imm (void)
+{
+    unsigned char x = 0x27;
+    unsigned char y;
+    y = 0x49 - x;
+    dprintf("y=%x\n", y);
+    test_execute (__func__, y==0x22);
+}
+
 static void t_s_short_sub ()
 {
     short x = 0x4934;
@@ -485,6 +503,8 @@ TESTFUNC tests[] =
     t_us_short_add,
     t_s_char_sub,
     t_us_char_sub,
+    t_byte_imm_sub,
+    t_byte_sub_imm,
     t_s_short_sub,
     t_us_short_sub,
     t_cmp_s_char,
