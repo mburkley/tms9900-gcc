@@ -520,9 +520,9 @@ void t_cmp_ss()
 
 TESTFUNC tests[] = 
 {
+    #if 1
     t_uc_divmod,
     t_sc_divmod,
-    #if 1
     t_uc_mpy,
     t_sc_mpy,
     t_sc_extend_ss,
@@ -542,7 +542,6 @@ TESTFUNC tests[] =
     t_ss_and,
     t_us_and,
     t_sc_sra,
-    #endif
     t_sc_sra_var,
     t_uc_srl,
     t_sc_sla,
@@ -553,12 +552,12 @@ TESTFUNC tests[] =
     t_us_srl,
     t_ss_sla,
     t_ss_sla_var,
-    #if 1
     t_us_sla,
     t_sc_add,
     t_uc_add,
     t_ss_add,
     t_us_add,
+    #endif
     t_sc_sub,
     t_uc_sub,
     t_sc_imm_sub,
@@ -566,7 +565,6 @@ TESTFUNC tests[] =
     t_ss_sub,
     t_us_sub,
     t_cmp_sc,
-    #endif
     t_cmp_ss
 };
 
