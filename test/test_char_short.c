@@ -1,7 +1,7 @@
 #include "tap.h"
 #include "params.h"
 
-static void t_uc_divmod()
+void t_uc_divmod()
 {
     set_uc_x (-7); // should be interpreted as 249
     set_uc_y (5);
@@ -17,10 +17,10 @@ static void t_uc_divmod()
     test_execute (__func__, uc_z==4);
 }
 
-static void t_sc_divmod()
+void t_sc_divmod()
 {
-    set_uc_x (13);
-    set_uc_y (-5);
+    set_sc_x (13);
+    set_sc_y (-5);
 
     sc_z = sc_x / sc_y;
 
@@ -33,7 +33,7 @@ static void t_sc_divmod()
     test_execute (__func__, sc_z==3);
 }
 
-static void t_uc_mpy()
+void t_uc_mpy()
 {
     set_uc_x (7);
     set_uc_y (-9); //  should interpret as 247
@@ -44,7 +44,7 @@ static void t_uc_mpy()
     test_execute (__func__, uc_z==193);
 }
 
-static void t_sc_mpy()
+void t_sc_mpy()
 {
     set_sc_x (7);
     set_sc_y (-9);
@@ -55,7 +55,7 @@ static void t_sc_mpy()
     test_execute (__func__, sc_z==-63);
 }
 
-static void t_sc_extend_ss()
+void t_sc_extend_ss()
 {
     set_sc_x (-7);
 
@@ -65,7 +65,7 @@ static void t_sc_extend_ss()
     test_execute (__func__, ss_y==-7);
 }
 
-static void t_uc_extend_us()
+void t_uc_extend_us()
 {
     set_uc_x (-7);
 
@@ -75,7 +75,7 @@ static void t_uc_extend_us()
     test_execute (__func__, us_y==249);
 }
 
-static void t_sc_extend_sl()
+void t_sc_extend_sl()
 {
     set_sc_x (-7);
 
@@ -85,7 +85,7 @@ static void t_sc_extend_sl()
     test_execute (__func__, sl_y==-7);
 }
 
-static void t_uc_extend_ul()
+void t_uc_extend_ul()
 {
     set_uc_x (-7);
 
@@ -95,7 +95,7 @@ static void t_uc_extend_ul()
     test_execute (__func__, ul_y==249);
 }
 
-static void t_ss_trunc_sc()
+void t_ss_trunc_sc()
 {
     set_ss_x (-7);
 
@@ -105,7 +105,7 @@ static void t_ss_trunc_sc()
     test_execute (__func__, sc_y==-7);
 }
 
-static void t_us_trunc_uc()
+void t_us_trunc_uc()
 {
     set_us_x (-7);
 
@@ -115,7 +115,7 @@ static void t_us_trunc_uc()
     test_execute (__func__, uc_y==249);
 }
 
-static void t_sl_trunc_sc()
+void t_sl_trunc_sc()
 {
     set_sl_x (-7);
 
@@ -125,7 +125,7 @@ static void t_sl_trunc_sc()
     test_execute (__func__, sc_y==-7);
 }
 
-static void t_ul_trunc_uc()
+void t_ul_trunc_uc()
 {
     unsigned long x = -7;
     // set_ul_x (-7);
@@ -150,7 +150,7 @@ void test_ss_add()
     test_execute (__func__, ss_z==32701);
 }
 
-static void test_us_add()
+void test_us_add()
 {
     set_us_x (32760);
     set_us_y (42);
@@ -161,7 +161,7 @@ static void test_us_add()
     test_execute (__func__, us_z==32802);
 }
 
-static void t_sc_or()
+void t_sc_or()
 {
     set_sc_x (0x32);
     set_sc_y (0x48);
@@ -174,7 +174,7 @@ static void t_sc_or()
     test_execute (__func__, z==0x7a && a==sc_x && b==-1);
 }
 
-static void t_uc_or()
+void t_uc_or()
 {
     set_uc_x (0x32);
     set_uc_y (0x48);
@@ -187,7 +187,7 @@ static void t_uc_or()
     test_execute (__func__, z==0x7a && a==uc_x && b==0xff);
 }
 
-static void t_ss_or()
+void t_ss_or()
 {
     set_ss_x (0x4321);
     set_ss_y (0x3c48);
@@ -200,7 +200,7 @@ static void t_ss_or()
     test_execute (__func__, z==0x7f69 && a==ss_x && b==-1);
 }
 
-static void t_us_or()
+void t_us_or()
 {
     set_us_x (0x4321);
     set_us_y (0x3c48);
@@ -212,7 +212,7 @@ static void t_us_or()
     dprintf("# z=%x a=%x b=%x\n", z, a, b);
     test_execute (__func__, z==0x7f69 && a==us_x && b==0xffff);
 }
-static void t_sc_and()
+void t_sc_and()
 {
     set_sc_x (0x57);
     set_sc_y (0x46);
@@ -225,7 +225,7 @@ static void t_sc_and()
     test_execute (__func__, z==0x46 && a==0 && b==sc_x);
 }
 
-static void t_uc_and()
+void t_uc_and()
 {
     set_uc_x (0x57);
     set_uc_y (0x46);
@@ -237,7 +237,7 @@ static void t_uc_and()
     test_execute (__func__, z==0x46 && a==0 && b==uc_x);
 }
 
-static void t_ss_and()
+void t_ss_and()
 {
     set_ss_x (0x5735);
     set_ss_y (0x4669);
@@ -250,7 +250,7 @@ static void t_ss_and()
     test_execute (__func__, z==0x4621 && a==0 && b==ss_x);
 }
 
-static void t_us_and()
+void t_us_and()
 {
     set_us_x (0x5735);
     set_us_y (0x4669);
@@ -262,7 +262,7 @@ static void t_us_and()
     test_execute (__func__, z==0x4621 && a==0 && b==us_x);
 }
 
-static void t_sc_sra ()
+void t_sc_sra ()
 {
     set_sc_x (0x80);
 
@@ -272,18 +272,18 @@ static void t_sc_sra ()
     test_execute (__func__, (unsigned char)sc_x==0xc0);
 }
 
-static void t_sc_sra_var ()
+void t_sc_sra_var ()
 {
     set_sc_x (0x80);
     set_sc_y (1);
 
     sc_x >>= sc_y;
 
-    dprintf("# x=%X\n", sc_x);
+    printf("# x=%X\n", sc_x);
     test_execute (__func__, (unsigned char)sc_x==0xc0);
 }
 
-static void t_uc_srl ()
+void t_uc_srl ()
 {
     set_uc_x (0x80);
 
@@ -293,7 +293,7 @@ static void t_uc_srl ()
     test_execute (__func__, uc_x==0x40);
 }
 
-static void t_sc_sla ()
+void t_sc_sla ()
 {
     set_sc_x (0x81);
 
@@ -303,18 +303,18 @@ static void t_sc_sla ()
     test_execute (__func__, sc_x==0x02);
 }
 
-static void t_sc_sla_var ()
+void t_sc_sla_var ()
 {
     set_sc_x (0x81);
     set_sc_y (1);
 
     sc_x <<= sc_y;
 
-    dprintf("# x=%X\n", sc_x);
+    printf("# x=%X\n", sc_x);
     test_execute (__func__, sc_x==0x02);
 }
 
-static void t_uc_sla ()
+void t_uc_sla ()
 {
     set_uc_x (0x81);
 
@@ -324,7 +324,7 @@ static void t_uc_sla ()
     test_execute (__func__, uc_x==0x02);
 }
 
-static void t_ss_sra ()
+void t_ss_sra ()
 {
     set_ss_x (0x8040);
 
@@ -334,7 +334,7 @@ static void t_ss_sra ()
     test_execute (__func__, (unsigned short)ss_x==0xc020);
 }
 
-static void t_ss_sra_var ()
+void t_ss_sra_var ()
 {
     set_ss_x (0x8040);
     set_ss_y (1);
@@ -345,7 +345,7 @@ static void t_ss_sra_var ()
     test_execute (__func__, (unsigned short)ss_x==0xc020);
 }
 
-static void t_us_srl ()
+void t_us_srl ()
 {
     set_us_x (0x8040);
 
@@ -355,7 +355,7 @@ static void t_us_srl ()
     test_execute (__func__, us_x==0x4020);
 }
 
-static void t_ss_sla ()
+void t_ss_sla ()
 {
     set_ss_x (0x8124);
 
@@ -365,7 +365,7 @@ static void t_ss_sla ()
     test_execute (__func__, ss_x==0x0248);
 }
 
-static void t_ss_sla_var ()
+void t_ss_sla_var ()
 {
     set_ss_x (0x8124);
     set_ss_y (1);
@@ -376,7 +376,7 @@ static void t_ss_sla_var ()
     test_execute (__func__, ss_x==0x0248);
 }
 
-static void t_us_sla ()
+void t_us_sla ()
 {
     set_us_x (0x8124);
 
@@ -386,7 +386,7 @@ static void t_us_sla ()
     test_execute (__func__, us_x==0x0248);
 }
 
-static void t_sc_add()
+void t_sc_add()
 {
     set_sc_x (7);
     set_sc_y (-9);
@@ -397,7 +397,7 @@ static void t_sc_add()
     test_execute (__func__, sc_z==-2);
 }
 
-static void t_uc_add()
+void t_uc_add()
 {
     set_uc_x (7);
     set_uc_y (-9); //  should interpret as 247
@@ -408,7 +408,7 @@ static void t_uc_add()
     test_execute (__func__, uc_z==254);
 }
 
-static void t_ss_add ()
+void t_ss_add ()
 {
     set_ss_x (0x4934);
     set_ss_y (0x2723);
@@ -419,7 +419,7 @@ static void t_ss_add ()
     test_execute (__func__, ss_y==0x7057);
 }
 
-static void t_us_add ()
+void t_us_add ()
 {
     set_us_x (0x4934);
     set_us_y (0x2723);
@@ -430,7 +430,7 @@ static void t_us_add ()
     test_execute (__func__, us_y==0x7057);
 }
 
-static void t_sc_sub ()
+void t_sc_sub ()
 {
     set_sc_x (0x49);
     set_sc_y (0x27);
@@ -441,7 +441,7 @@ static void t_sc_sub ()
     test_execute (__func__, (unsigned char) sc_y==0xde);
 }
 
-static void t_uc_sub ()
+void t_uc_sub ()
 {
     set_uc_x (0x49);
     set_uc_y (0x27);
@@ -452,7 +452,7 @@ static void t_uc_sub ()
     test_execute (__func__, uc_y==0xde);
 }
 
-static void t_sc_imm_sub (void)
+void t_sc_imm_sub (void)
 {
     set_sc_x (0x49);
 
@@ -462,7 +462,7 @@ static void t_sc_imm_sub (void)
     test_execute (__func__, sc_y==0x22);
 }
 
-static void t_sc_sub_imm (void)
+void t_sc_sub_imm (void)
 {
     set_sc_x (0x27);
 
@@ -472,7 +472,7 @@ static void t_sc_sub_imm (void)
     test_execute (__func__, sc_y==0x22);
 }
 
-static void t_ss_sub ()
+void t_ss_sub ()
 {
     set_ss_x (0x4934);
     set_ss_y (0x2723);
@@ -483,7 +483,7 @@ static void t_ss_sub ()
     test_execute (__func__, (unsigned short)ss_y==0xddef);
 }
 
-static void t_us_sub ()
+void t_us_sub ()
 {
     set_us_x (0x4934);
     set_us_y (0x2723);
@@ -522,6 +522,7 @@ TESTFUNC tests[] =
 {
     t_uc_divmod,
     t_sc_divmod,
+    #if 1
     t_uc_mpy,
     t_sc_mpy,
     t_sc_extend_ss,
@@ -541,6 +542,7 @@ TESTFUNC tests[] =
     t_ss_and,
     t_us_and,
     t_sc_sra,
+    #endif
     t_sc_sra_var,
     t_uc_srl,
     t_sc_sla,
@@ -551,6 +553,7 @@ TESTFUNC tests[] =
     t_us_srl,
     t_ss_sla,
     t_ss_sla_var,
+    #if 1
     t_us_sla,
     t_sc_add,
     t_uc_add,
@@ -563,6 +566,7 @@ TESTFUNC tests[] =
     t_ss_sub,
     t_us_sub,
     t_cmp_sc,
+    #endif
     t_cmp_ss
 };
 

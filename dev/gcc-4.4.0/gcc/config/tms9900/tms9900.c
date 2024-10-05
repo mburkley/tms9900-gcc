@@ -672,7 +672,6 @@ const char* output_jump (int length)
     }
 }
 
-
 /* Determine if an instruction will update the conditional
    flag as a side effect. This is used to eliminate unnneded
    comparison instructions */
