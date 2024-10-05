@@ -15,12 +15,12 @@ LIBGCC=$(GCCDIR)../lib/gcc/tms9900/4.4.0/libgcc.a
 
 # TODO make these targets
 
-TEST_SRC=test_char_short
+# TEST_SRC=test_char_short
 # TEST_SRC=test_long
 # TEST_SRC=test_float
 # TEST_SRC=test_misc
 # TEST_SRC=test_subreg
-# TEST_SRC=test_one
+TEST_SRC=test_one
 # TEST_SRC=zap
 
 ifdef EA5
@@ -40,8 +40,8 @@ CFLAGS=-std=c99 --save-temp -I$(LIBTI99DIR)
 #
 #  NOTE some tests are useless with -O2 as the compiler optimises away any
 #  arithmetic or comparisons with constants.
-CFLAGS+=-O2
-# CFLAGS+=-Os
+# CFLAGS+=-O2
+CFLAGS+=-Os
 
 # Uncomment to dump gcc insns into assembly output file
 # CFLAGS+=-minline_rtl
