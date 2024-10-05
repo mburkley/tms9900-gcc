@@ -61,7 +61,7 @@ LIBTI99=-lti99
 OBJECT_LIST+=\
   $(CRT0)\
   $(TEST_SRC).o \
-  tap.o
+  tap.o params.o
 
 all: $(FNAME)
 
