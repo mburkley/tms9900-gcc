@@ -1,6 +1,7 @@
 LIBTI99DIR?=../libti99
 
-GCCDIR=/opt/tms9900-gcc/bin/
+# GCCDIR=/opt/tms9900-gcc/bin/
+GCCDIR=../dev/gcc-4.4.0/build/gcc/
 
 GAS=$(GCCDIR)tms9900-as
 LD=$(GCCDIR)tms9900-ld
@@ -23,11 +24,11 @@ TEST_SRC=test_char_short
 # TEST_SRC=zap
 
 ifdef EA5
-ELF2BIN=../utils/elf2ea5
+ELF2BIN=../elfutils/elf2ea5
 LDFLAGS=--section-start .text=a000 --section-start .data=2080 -M
 FNAME=test.ea5
 else
-ELF2BIN=../utils/elf2cart
+ELF2BIN=../elfutils/elf2cart
 LDFLAGS=--section-start .text=6000 --section-start .data=2080
 OBJECT_LIST=header.o
 FNAME=test.bin
@@ -39,7 +40,7 @@ CFLAGS=-std=c99 --save-temp -I$(LIBTI99DIR)
 #
 #  NOTE some tests are useless with -O2 as the compiler optimises away any
 #  arithmetic or comparisons with constants.
-# CFLAGS+=-O2
+CFLAGS+=-O2
 # CFLAGS+=-Os
 
 # Uncomment to dump gcc insns into assembly output file
