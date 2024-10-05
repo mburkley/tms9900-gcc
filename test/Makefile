@@ -1,7 +1,7 @@
 LIBTI99DIR?=../libti99
 
 # GCCDIR=/opt/tms9900-gcc/bin/
-GCCDIR=../dev/gcc-4.4.0/build/gcc/
+GCCDIR=../gcc4/bin/
 
 GAS=$(GCCDIR)tms9900-as
 LD=$(GCCDIR)tms9900-ld

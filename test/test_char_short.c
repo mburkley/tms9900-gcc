@@ -1,514 +1,569 @@
 #include "tap.h"
+#include "params.h"
 
-static void t_us_char_divmod()
+static void t_uc_divmod()
 {
-    unsigned char x = -7; // should be interpreted as 249
-    unsigned char y = 5;
-    unsigned char z;
+    set_uc_x (-7); // should be interpreted as 249
+    set_uc_y (5);
 
-    z= x / y;
-    dprintf("# div res=%d\n", (int)z);
-    test_execute (__func__, z==49);
+    uc_z = uc_x / uc_y;
 
-    z= x % y;
-    dprintf("# mod res=%d\n", (int)z);
-    test_execute (__func__, z==4);
+    dprintf("# div res=%d\n", (int)uc_z);
+    test_execute (__func__, uc_z==49);
+
+    uc_z = uc_x % uc_y;
+
+    dprintf("# mod res=%d\n", (int)uc_z);
+    test_execute (__func__, uc_z==4);
 }
 
-#if 1
-static void t_s_char_divmod()
+static void t_sc_divmod()
 {
-    char x = 13;
-    char y = -5;
-    char z;
+    set_uc_x (13);
+    set_uc_y (-5);
 
-    z= x / y;
-    dprintf("# div res=%d\n", (int)z);
-    test_execute (__func__, z==-2);
+    sc_z = sc_x / sc_y;
 
-    z= x % y;
-    dprintf("# mod res=%d\n", (int)z);
-    test_execute (__func__, z==3);
+    dprintf("# div res=%d\n", (int)sc_z);
+    test_execute (__func__, sc_z==-2);
+
+    sc_z = sc_x % sc_y;
+
+    dprintf("# mod res=%d\n", (int)sc_z);
+    test_execute (__func__, sc_z==3);
 }
 
-static void t_us_char_mpy()
+static void t_uc_mpy()
 {
-    unsigned char x = 7;
-    unsigned char y = -9; //  should interpret as 247
-    unsigned char z;
+    set_uc_x (7);
+    set_uc_y (-9); //  should interpret as 247
 
-    z= x * y;
-    dprintf("# res=%d\n", (int)z);
-    test_execute (__func__, z==193);
+    uc_z = uc_x * uc_y;
+
+    dprintf("# res=%d\n", (int)uc_z);
+    test_execute (__func__, uc_z==193);
 }
 
-static void t_s_char_mpy()
+static void t_sc_mpy()
 {
-    char x = 7;
-    char y = -9;
-    char z;
+    set_sc_x (7);
+    set_sc_y (-9);
 
-    z= x * y;
-    dprintf("# res=%d\n", (int)z);
-    test_execute (__func__, z==-63);
+    sc_z = sc_x * sc_y;
+
+    dprintf("# res=%d\n", (int)sc_z);
+    test_execute (__func__, sc_z==-63);
 }
 
-static void t_s_char_ext_short()
+static void t_sc_extend_ss()
 {
-    char x = -7;
-    short y = x;
+    set_sc_x (-7);
 
-    dprintf("# res=%d\n", (int)y);
-    test_execute (__func__, y==-7);
+    ss_y = sc_x;
+
+    dprintf("# res=%d\n", (int)ss_y);
+    test_execute (__func__, ss_y==-7);
 }
 
-static void t_us_char_ext_short()
+static void t_uc_extend_us()
 {
-    unsigned char x = -7;
-    unsigned short y = x;
+    set_uc_x (-7);
 
-    dprintf("# res=%d\n", (int)y);
-    test_execute (__func__, y==249);
+    us_y = uc_x;
+
+    dprintf("# res=%d\n", (int)us_y);
+    test_execute (__func__, us_y==249);
 }
 
-static void t_s_char_ext_long()
+static void t_sc_extend_sl()
 {
-    char x = -7;
-    long y = x;
+    set_sc_x (-7);
 
-    dprintf("# res=%d\n", (int)y);
-    test_execute (__func__, y==-7);
+    sl_y = sc_x;
+
+    dprintf("# res=%d\n", (int)sl_y);
+    test_execute (__func__, sl_y==-7);
 }
 
-static void t_us_char_ext_long()
+static void t_uc_extend_ul()
 {
-    unsigned char x = -7;
-    unsigned long y = x;
+    set_uc_x (-7);
 
-    dprintf("# res=%d\n", (int)y);
-    test_execute (__func__, y==249);
+    ul_y = uc_x;
+
+    dprintf("# res=%d\n", (int)ul_y);
+    test_execute (__func__, ul_y==249);
 }
 
-static void t_s_short_tr_char()
+static void t_ss_trunc_sc()
 {
-    short x = -7;
-    char y = x;
+    set_ss_x (-7);
 
-    dprintf("# res=%d\n", (int)y);
-    test_execute (__func__, y==-7);
+    sc_y = ss_x;
+
+    dprintf("# res=%d\n", (int)sc_y);
+    test_execute (__func__, sc_y==-7);
 }
 
-static void t_us_short_tr_char()
+static void t_us_trunc_uc()
 {
-    unsigned short x = -7;
-    unsigned char y = x;
+    set_us_x (-7);
 
-    dprintf("# res=%d\n", (int)y);
-    test_execute (__func__, y==249);
+    uc_y = us_x;
+
+    dprintf("# res=%d\n", (int)uc_y);
+    test_execute (__func__, uc_y==249);
 }
 
-static void t_s_long_tr_char()
+static void t_sl_trunc_sc()
 {
-    long x = -7;
-    char y = x;
+    set_sl_x (-7);
 
-    dprintf("# res=%d\n", (int)y);
-    test_execute (__func__, y==-7);
+    sc_y = sl_x;
+
+    dprintf("# res=%d\n", (int)sc_y);
+    test_execute (__func__, sc_y==-7);
 }
 
-static void t_us_long_tr_char()
+static void t_ul_trunc_uc()
 {
     unsigned long x = -7;
+    // set_ul_x (-7);
+    set_ul_x (x);
     // unsigned long x = 65529;
     // unsigned long x = 32767;
-    unsigned char y = x;
 
-    dprintf("# res=%d\n", (int)y);
-    test_execute (__func__, y==249);
+    uc_y = ul_x;
+
+    dprintf("# res=%d\n", (int)uc_y);
+    test_execute (__func__, uc_y==249);
 }
 
-static void test_s_short_add()
+void test_ss_add()
 {
-    short x = -42;
-    short y = 32743;
-    short z;
+    set_ss_x (-42);
+    set_ss_y (32743);
 
-    z = x + y;
-    // printf("# res=%d\n", (int)z);
-    test_execute (__func__, z==32701);
+    ss_z = ss_x + ss_y;
+
+    // printf("# res=%d\n", (int)ss_z);
+    test_execute (__func__, ss_z==32701);
 }
 
-static void test_us_short_add()
+static void test_us_add()
 {
-    unsigned short x = 32760;
-    unsigned short y = 42;
-    unsigned short z;
+    set_us_x (32760);
+    set_us_y (42);
 
-    z = x + y;
-    printf("# res=%d\n", (int)z);
-    test_execute (__func__, z==32802);
+    us_z = us_x + us_y;
+
+    printf("# res=%d\n", (int)us_z);
+    test_execute (__func__, us_z==32802);
 }
 
-#endif
-
-static void t_s_char_or()
+static void t_sc_or()
 {
-    char x = 0x32;
-    char y = 0x48;
-    char z = x | y;
-    char a = x | 0;
-    char b = x | -1;
+    set_sc_x (0x32);
+    set_sc_y (0x48);
+
+    char z = sc_x | sc_y;
+    char a = sc_x | 0;
+    char b = sc_x | -1;
 
     dprintf("# z=%x a=%x b=%x\n", z, a, b);
-    test_execute (__func__, z==0x7a && a==x && b==-1);
+    test_execute (__func__, z==0x7a && a==sc_x && b==-1);
 }
 
-static void t_us_char_or()
+static void t_uc_or()
 {
-    unsigned char x = 0x32;
-    unsigned char y = 0x48;
-    unsigned char z = x | y;
-    unsigned char a = x | 0;
-    unsigned char b = x | 0xff;
+    set_uc_x (0x32);
+    set_uc_y (0x48);
+
+    unsigned char z = uc_x | uc_y;
+    unsigned char a = uc_x | 0;
+    unsigned char b = uc_x | 0xff;
 
     dprintf("# z=%x a=%x b=%x\n", z, a, b);
-    test_execute (__func__, z==0x7a && a==x && b==0xff);
+    test_execute (__func__, z==0x7a && a==uc_x && b==0xff);
 }
 
-static void t_s_short_or()
+static void t_ss_or()
 {
-    short x = 0x4321;
-    short y = 0x3c48;
-    short z = x | y;
-    short a = x | 0;
-    short b = x | -1;
+    set_ss_x (0x4321);
+    set_ss_y (0x3c48);
+
+    short z = ss_x | ss_y;
+    short a = ss_x | 0;
+    short b = ss_x | -1;
 
     dprintf("# z=%x a=%x b=%x\n", z, a, b);
-    test_execute (__func__, z==0x7f69 && a==x && b==-1);
+    test_execute (__func__, z==0x7f69 && a==ss_x && b==-1);
 }
 
-static void t_us_short_or()
+static void t_us_or()
 {
-    unsigned short x = 0x4321;
-    unsigned short y = 0x3c48;
-    unsigned short z = x | y;
-    unsigned short a = x | 0;
-    unsigned short b = x | 0xffff;
+    set_us_x (0x4321);
+    set_us_y (0x3c48);
+
+    unsigned short z = us_x | us_y;
+    unsigned short a = us_x | 0;
+    unsigned short b = us_x | 0xffff;
 
     dprintf("# z=%x a=%x b=%x\n", z, a, b);
-    test_execute (__func__, z==0x7f69 && a==x && b==0xffff);
+    test_execute (__func__, z==0x7f69 && a==us_x && b==0xffff);
 }
-static void t_s_char_and()
+static void t_sc_and()
 {
-    char x = 0x57;
-    char y = 0x46;
-    char z = x & y;
-    char a = x & 0;
-    char b = x & -1;
+    set_sc_x (0x57);
+    set_sc_y (0x46);
+
+    char z = sc_x & sc_y;
+    char a = sc_x & 0;
+    char b = sc_x & -1;
 
     dprintf("# z=%x a=%x b=%x\n", z, a, b);
-    test_execute (__func__, z==0x46 && a==0 && b==x);
+    test_execute (__func__, z==0x46 && a==0 && b==sc_x);
 }
 
-static void t_us_char_and()
+static void t_uc_and()
 {
-    unsigned char x = 0x57;
-    unsigned char y = 0x46;
-    unsigned char z = x & y;
-    unsigned char a = x & 0;
-    unsigned char b = x & 0xff;
+    set_uc_x (0x57);
+    set_uc_y (0x46);
 
-    test_execute (__func__, z==0x46 && a==0 && b==x);
+    unsigned char z = uc_x & uc_y;
+    unsigned char a = uc_x & 0;
+    unsigned char b = uc_x & 0xff;
+
+    test_execute (__func__, z==0x46 && a==0 && b==uc_x);
 }
 
-static void t_s_short_and()
+static void t_ss_and()
 {
-    short x = 0x5735;
-    short y = 0x4669;
-    short z = x & y;
-    short a = x & 0;
-    short b = x & -1;
+    set_ss_x (0x5735);
+    set_ss_y (0x4669);
+
+    short z = ss_x & ss_y;
+    short a = ss_x & 0;
+    short b = ss_x & -1;
 
     dprintf("# z=%x a=%x b=%x\n", z, a, b);
-    test_execute (__func__, z==0x4621 && a==0 && b==x);
+    test_execute (__func__, z==0x4621 && a==0 && b==ss_x);
 }
 
-static void t_us_short_and()
+static void t_us_and()
 {
-    unsigned short x = 0x5735;
-    unsigned short y = 0x4669;
-    unsigned short z = x & y;
-    unsigned short a = x & 0;
-    unsigned short b = x & 0xffff;
+    set_us_x (0x5735);
+    set_us_y (0x4669);
 
-    test_execute (__func__, z==0x4621 && a==0 && b==x);
+    unsigned short z = us_x & us_y;
+    unsigned short a = us_x & 0;
+    unsigned short b = us_x & 0xffff;
+
+    test_execute (__func__, z==0x4621 && a==0 && b==us_x);
 }
 
-static void t_s_char_sra ()
+static void t_sc_sra ()
 {
-    char x = 0x80;
-    x >>= 1;
-    dprintf("# x=%X\n", x);
-    test_execute (__func__, (unsigned char)x==0xc0);
+    set_sc_x (0x80);
+
+    sc_x >>= 1;
+
+    dprintf("# x=%X\n", sc_x);
+    test_execute (__func__, (unsigned char)sc_x==0xc0);
 }
 
-static void t_s_char_sra_var ()
+static void t_sc_sra_var ()
 {
-    char x = 0x80;
-    int y=1;
-    x >>= y;
-    dprintf("# x=%X\n", x);
-    test_execute (__func__, (unsigned char)x==0xc0);
+    set_sc_x (0x80);
+    set_sc_y (1);
+
+    sc_x >>= sc_y;
+
+    dprintf("# x=%X\n", sc_x);
+    test_execute (__func__, (unsigned char)sc_x==0xc0);
 }
 
-static void t_us_char_srl ()
+static void t_uc_srl ()
 {
-    unsigned char x = 0x80;
-    x >>= 1;
-    dprintf("# x=%X\n", x);
-    test_execute (__func__, x==0x40);
+    set_uc_x (0x80);
+
+    uc_x >>= 1;
+
+    dprintf("# x=%X\n", uc_x);
+    test_execute (__func__, uc_x==0x40);
 }
 
-static void t_s_char_sla ()
+static void t_sc_sla ()
 {
-    char x = 0x81;
-    x <<= 1;
-    dprintf("# x=%X\n", x);
-    test_execute (__func__, x==0x02);
+    set_sc_x (0x81);
+
+    sc_x <<= 1;
+
+    dprintf("# x=%X\n", sc_x);
+    test_execute (__func__, sc_x==0x02);
 }
 
-static void t_s_char_sla_var ()
+static void t_sc_sla_var ()
 {
-    char x = 0x81;
-    int y = 1;
-    x <<= y;
-    dprintf("# x=%X\n", x);
-    test_execute (__func__, x==0x02);
+    set_sc_x (0x81);
+    set_sc_y (1);
+
+    sc_x <<= sc_y;
+
+    dprintf("# x=%X\n", sc_x);
+    test_execute (__func__, sc_x==0x02);
 }
 
-static void t_us_char_sla ()
+static void t_uc_sla ()
 {
-    unsigned char x = 0x81;
-    x <<= 1;
-    dprintf("# x=%X\n", x);
-    test_execute (__func__, x==0x02);
+    set_uc_x (0x81);
+
+    uc_x <<= 1;
+
+    dprintf("# x=%X\n", uc_x);
+    test_execute (__func__, uc_x==0x02);
 }
 
-static void t_s_short_sra ()
+static void t_ss_sra ()
 {
-    short x = 0x8040;
-    x >>= 1;
-    dprintf("# x=%X\n", x);
-    test_execute (__func__, (unsigned short)x==0xc020);
+    set_ss_x (0x8040);
+
+    ss_x >>= 1;
+
+    dprintf("# x=%X\n", ss_x);
+    test_execute (__func__, (unsigned short)ss_x==0xc020);
 }
 
-static void t_s_short_sra_var ()
+static void t_ss_sra_var ()
 {
-    short x = 0x8040;
-    int y =1;
-    x >>= y;
-    dprintf("# x=%X\n", x);
-    test_execute (__func__, (unsigned short)x==0xc020);
+    set_ss_x (0x8040);
+    set_ss_y (1);
+
+    ss_x >>= ss_y;
+
+    dprintf("# x=%X\n", ss_x);
+    test_execute (__func__, (unsigned short)ss_x==0xc020);
 }
 
-static void t_us_short_srl ()
+static void t_us_srl ()
 {
-    unsigned short x = 0x8040;
-    x >>= 1;
-    dprintf("# x=%X\n", x);
-    test_execute (__func__, x==0x4020);
+    set_us_x (0x8040);
+
+    us_x >>= 1;
+
+    dprintf("# x=%X\n", us_x);
+    test_execute (__func__, us_x==0x4020);
 }
 
-static void t_s_short_sla ()
+static void t_ss_sla ()
 {
-    short x = 0x8124;
-    x <<= 1;
-    dprintf("# x=%X\n", x);
-    test_execute (__func__, x==0x0248);
+    set_ss_x (0x8124);
+
+    ss_x <<= 1;
+
+    dprintf("# x=%X\n", ss_x);
+    test_execute (__func__, ss_x==0x0248);
 }
 
-static void t_s_short_sla_var ()
+static void t_ss_sla_var ()
 {
-    short x = 0x8124;
-    int y = 1;
-    x <<= y;
-    dprintf("# x=%X\n", x);
-    test_execute (__func__, x==0x0248);
+    set_ss_x (0x8124);
+    set_ss_y (1);
+
+    ss_x <<= ss_y;
+
+    dprintf("# x=%X\n", ss_x);
+    test_execute (__func__, ss_x==0x0248);
 }
 
-static void t_us_short_sla ()
+static void t_us_sla ()
 {
-    unsigned short x = 0x8124;
-    x <<= 1;
-    dprintf("# x=%X\n", x);
-    test_execute (__func__, x==0x0248);
+    set_us_x (0x8124);
+
+    us_x <<= 1;
+
+    dprintf("# x=%X\n", us_x);
+    test_execute (__func__, us_x==0x0248);
 }
 
-static void t_s_char_add()
+static void t_sc_add()
 {
-    char x = 7;
-    char y = -9;
-    char z;
+    set_sc_x (7);
+    set_sc_y (-9);
 
-    z= x + y;
-    dprintf("# res=%d\n", (int)z);
-    test_execute (__func__, z==-2);
-}
-static void t_us_char_add()
-{
-    unsigned char x = 7;
-    unsigned char y = -9; //  should interpret as 247
-    unsigned char z;
+    sc_z = sc_x + sc_y;
 
-    z= x + y;
-    dprintf("# res=%d\n", (int)z);
-    test_execute (__func__, z==254);
+    dprintf("# res=%d\n", (int)sc_z);
+    test_execute (__func__, sc_z==-2);
 }
 
-static void t_s_short_add ()
+static void t_uc_add()
 {
-    short x = 0x4934;
-    short y = 0x2723;
-    y += x;
-    dprintf("# y=%X\n", y);
-    test_execute (__func__, y==0x7057);
+    set_uc_x (7);
+    set_uc_y (-9); //  should interpret as 247
+
+    uc_z = uc_x + uc_y;
+
+    dprintf("# res=%d\n", (int)uc_z);
+    test_execute (__func__, uc_z==254);
 }
 
-static void t_us_short_add ()
+static void t_ss_add ()
 {
-    // temporarily disabled to fit into cart
-    #if 1
-    unsigned short x = 0x4934;
-    unsigned short y = 0x2723;
-    y += x;
-    dprintf("# y=%X\n", y);
-    test_execute (__func__, y==0x7057);
-    #endif
+    set_ss_x (0x4934);
+    set_ss_y (0x2723);
+
+    ss_y += ss_x;
+
+    dprintf("# y=%X\n", ss_y);
+    test_execute (__func__, ss_y==0x7057);
 }
 
-static void t_s_char_sub ()
+static void t_us_add ()
 {
-    char x = 0x49;
-    char y = 0x27;
-    y -= x;
-    dprintf("y=%x\n", y);
-    test_execute (__func__, (unsigned char) y==0xde);
+    set_us_x (0x4934);
+    set_us_y (0x2723);
+
+    us_y += us_x;
+
+    dprintf("# y=%X\n", us_y);
+    test_execute (__func__, us_y==0x7057);
 }
 
-static void t_us_char_sub ()
+static void t_sc_sub ()
 {
-    // temporarily disabled to fit into cart
-    #if 1
-    unsigned char x = 0x49;
-    unsigned char y = 0x27;
-    y -= x;
-    dprintf("y=%x\n", y);
-    test_execute (__func__, y==0xde);
-    #endif
+    set_sc_x (0x49);
+    set_sc_y (0x27);
+
+    sc_y -= sc_x;
+
+    dprintf("y=%x\n", sc_y);
+    test_execute (__func__, (unsigned char) sc_y==0xde);
 }
 
-static void t_byte_imm_sub (void)
+static void t_uc_sub ()
 {
-    unsigned char x = 0x49;
-    unsigned char y;
-    y = x - 0x27;
-    dprintf("y=%x\n", y);
-    test_execute (__func__, y==0x22);
+    set_uc_x (0x49);
+    set_uc_y (0x27);
+
+    uc_y -= uc_x;
+
+    dprintf("y=%x\n", uc_y);
+    test_execute (__func__, uc_y==0xde);
 }
 
-static void t_byte_sub_imm (void)
+static void t_sc_imm_sub (void)
 {
-    unsigned char x = 0x27;
-    unsigned char y;
-    y = 0x49 - x;
-    dprintf("y=%x\n", y);
-    test_execute (__func__, y==0x22);
+    set_sc_x (0x49);
+
+    sc_y = sc_x - 0x27;
+
+    dprintf("y=%x\n", sc_y);
+    test_execute (__func__, sc_y==0x22);
 }
 
-static void t_s_short_sub ()
+static void t_sc_sub_imm (void)
 {
-    short x = 0x4934;
-    short y = 0x2723;
-    y -= x;
-    dprintf("y=%x\n", y);
-    test_execute (__func__, (unsigned short)y==0xddef);
+    set_sc_x (0x27);
+
+    sc_y = 0x49 - sc_x;
+
+    dprintf("y=%x\n", sc_y);
+    test_execute (__func__, sc_y==0x22);
 }
 
-static void t_us_short_sub ()
+static void t_ss_sub ()
 {
-    unsigned short x = 0x4934;
-    unsigned short y = 0x2723;
-    y -= x;
-    dprintf("y=%x\n", y);
-    test_execute (__func__, y==0xddef);
+    set_ss_x (0x4934);
+    set_ss_y (0x2723);
+
+    ss_y -= ss_x;
+
+    dprintf("y=%x\n", ss_y);
+    test_execute (__func__, (unsigned short)ss_y==0xddef);
 }
 
-void t_cmp_s_char()
+static void t_us_sub ()
 {
-    char x=3;
-    char y=4;
-    char lt=(x<y);
-    char gt=(x>y);
-    char eq=(x==y);
+    set_us_x (0x4934);
+    set_us_y (0x2723);
+
+    us_y -= us_x;
+
+    dprintf("y=%x\n", us_y);
+    test_execute (__func__, us_y==0xddef);
+}
+
+void t_cmp_sc()
+{
+    set_sc_x (3);
+    set_sc_y (4);
+
+    char lt=(sc_x<sc_y);
+    char gt=(sc_x>sc_y);
+    char eq=(sc_x==sc_y);
+
     test_execute (__func__, lt&&!eq&&!gt);
 }
 
-void t_cmp_s_short()
+void t_cmp_ss()
 {
-    int x=3;
-    int y=4;
-    int lt=(x<y);
-    int gt=(x>y);
-    int eq=(x==y);
+    set_ss_x (3);
+    set_ss_y (4);
+
+    int lt=(ss_x<ss_y);
+    int gt=(ss_x>ss_y);
+    int eq=(ss_x==ss_y);
+
     test_execute (__func__, lt&&!eq&&!gt);
 }
 
 TESTFUNC tests[] = 
 {
-    t_us_char_divmod,
-    t_s_char_divmod,
-    t_us_char_mpy,
-    t_s_char_mpy,
-    t_s_char_ext_short,
-    t_us_char_ext_short,
-    t_s_char_ext_long,
-    t_us_char_ext_long,
-    t_s_short_tr_char,
-    t_us_short_tr_char,
-    t_s_long_tr_char,
-    t_us_long_tr_char,
-    t_s_char_or,
-    t_us_char_or,
-    t_s_short_or,
-    t_us_short_or,
-    t_s_char_and,
-    t_us_char_and,
-    t_s_short_and,
-    t_us_short_and,
-    t_s_char_sra,
-    t_s_char_sra_var,
-    t_us_char_srl,
-    t_s_char_sla,
-    t_s_char_sla_var,
-    t_us_char_sla,
-    t_s_short_sra,
-    t_s_short_sra_var,
-    t_us_short_srl,
-    t_s_short_sla,
-    t_s_short_sla_var,
-    t_us_short_sla,
-    t_s_char_add,
-    t_us_char_add,
-    t_s_short_add,
-    t_us_short_add,
-    t_s_char_sub,
-    t_us_char_sub,
-    t_byte_imm_sub,
-    t_byte_sub_imm,
-    t_s_short_sub,
-    t_us_short_sub,
-    t_cmp_s_char,
-    t_cmp_s_short
+    t_uc_divmod,
+    t_sc_divmod,
+    t_uc_mpy,
+    t_sc_mpy,
+    t_sc_extend_ss,
+    t_uc_extend_us,
+    t_sc_extend_sl,
+    t_uc_extend_ul,
+    t_ss_trunc_sc,
+    t_us_trunc_uc,
+    t_sl_trunc_sc,
+    t_ul_trunc_uc,
+    t_sc_or,
+    t_uc_or,
+    t_ss_or,
+    t_us_or,
+    t_sc_and,
+    t_uc_and,
+    t_ss_and,
+    t_us_and,
+    t_sc_sra,
+    t_sc_sra_var,
+    t_uc_srl,
+    t_sc_sla,
+    t_sc_sla_var,
+    t_uc_sla,
+    t_ss_sra,
+    t_ss_sra_var,
+    t_us_srl,
+    t_ss_sla,
+    t_ss_sla_var,
+    t_us_sla,
+    t_sc_add,
+    t_uc_add,
+    t_ss_add,
+    t_us_add,
+    t_sc_sub,
+    t_uc_sub,
+    t_sc_imm_sub,
+    t_sc_sub_imm,
+    t_ss_sub,
+    t_us_sub,
+    t_cmp_sc,
+    t_cmp_ss
 };
 
 #define TEST_COUNT (sizeof (tests) / sizeof (TESTFUNC))
