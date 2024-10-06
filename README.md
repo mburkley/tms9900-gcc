@@ -18,7 +18,7 @@ to create modified sources for gcc and binutils.
 
 The branch **main** in the repo contains The latest scripts and patch files. The patch files are:
 * binutils-2.19.1-tms9900-1.11.patch
-* gcc-4.4.0-tms9900-1.31.patch
+* gcc-4.4.0-tms9900-1.32.patch
 
 Patch files are cumulative.  The latest version of the patch file includes all
 previous updates as well.  Only the latest patch file is stored in the repo.
@@ -44,6 +44,12 @@ Release Notes - current
 binutils patch 1.11
 * Updates to .texi files
 * Added __attribute(fallthrough) in switches where compiler was issuing an error
+
+gcc patch 1.32
+* Fixed problems with subtract word and byte
+* Fixed 32-bit integer initialisation
+* Fixed left and right shifts by a byte variable
+* Removed cmphi-movhi peephole
 
 gcc patch 1.31
 * Added build and install of elfutils (elf2cart, elf2ea5 and ea5split) to install.sh
@@ -136,13 +142,17 @@ Compiler switches
 -----------------
 For optimised builds use **-O2** for speed or **-Os** for size as usual.
 
-**-fno-function-cse** is receommended to prevent loading label addresses in to
-registers before branch
+**-fno-function-cse** is recommended to prevent loading label addresses in to
+registers before branch.
 
 **-fomit-frame-pointer** is recommended if using inline assembly that uses all
 registers as otherwise gcc will complain that R9 is not available.  This
 shouldn't be needed if building optimised for size since gcc omits frame
 pointers anyway in that case.
+
+**-fno-peephole2** disables peephole optimisations.  This shouldn't be necessary 
+under normal circumstances, but if you encounter a compiler error, adding this
+switch may help avoid it.
 
 **-minline_rtl** will add RTL insn dumps into the assembly output.
 

@@ -1,6 +1,6 @@
 diff -ru gcc-4.4.0-orig/config.guess gcc-4.4.0/config.guess
---- gcc-4.4.0-orig/config.guess	2024-10-05 07:51:42.917652205 +0100
-+++ gcc-4.4.0/config.guess	2024-10-05 07:51:42.969651835 +0100
+--- gcc-4.4.0-orig/config.guess	2024-10-06 08:31:26.862724800 +0100
++++ gcc-4.4.0/config.guess	2024-10-06 08:31:26.922724406 +0100
 @@ -1,14 +1,14 @@
  #! /bin/sh
  # Attempt to guess a canonical system name.
@@ -2567,7 +2567,7 @@ diff -ru gcc-4.4.0-orig/config.guess gcc-4.4.0/config.guess
  # time-stamp-end: "'"
 diff -ru gcc-4.4.0-orig/config.sub gcc-4.4.0/config.sub
 --- gcc-4.4.0-orig/config.sub	2008-12-18 03:27:27.000000000 +0000
-+++ gcc-4.4.0/config.sub	2024-10-05 07:51:42.977651778 +0100
++++ gcc-4.4.0/config.sub	2024-10-06 08:31:26.930724354 +0100
 @@ -1,44 +1,42 @@
  #! /bin/sh
  # Configuration validation subroutine script.
@@ -6157,7 +6157,7 @@ diff -ru gcc-4.4.0-orig/gcc/c-cppbuiltin.c gcc-4.4.0/gcc/c-cppbuiltin.c
      cpp_define (pfile, "__GNUC_GNU_INLINE__");
 diff -ru gcc-4.4.0-orig/gcc/combine.c gcc-4.4.0/gcc/combine.c
 --- gcc-4.4.0-orig/gcc/combine.c	2009-04-01 21:47:37.000000000 +0100
-+++ gcc-4.4.0/gcc/combine.c	2024-10-05 07:51:43.009651551 +0100
++++ gcc-4.4.0/gcc/combine.c	2024-10-06 08:31:26.962724143 +0100
 @@ -672,9 +672,29 @@
        && GET_CODE (newval) == CONST_INT)
      {
@@ -6447,7 +6447,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/d_compare.c gcc-4.4.0/gcc/config/tms9
 +}
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/double.c gcc-4.4.0/gcc/config/tms9900/double.c
 --- gcc-4.4.0-orig/gcc/config/tms9900/double.c	2024-10-05 07:13:03.774413576 +0100
-+++ gcc-4.4.0/gcc/config/tms9900/double.c	2024-10-05 07:51:43.017651494 +0100
++++ gcc-4.4.0/gcc/config/tms9900/double.c	2024-10-06 08:31:26.970724091 +0100
 @@ -0,0 +1,98 @@
 +/* double.c
 +   This file includes double math functions that the GCC compiler requires.
@@ -6666,7 +6666,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/ledf2.c gcc-4.4.0/gcc/config/tms9900/
 +}  
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/lib1funcs.asm gcc-4.4.0/gcc/config/tms9900/lib1funcs.asm
 --- gcc-4.4.0-orig/gcc/config/tms9900/lib1funcs.asm	2024-07-28 14:42:12.617792819 +0100
-+++ gcc-4.4.0/gcc/config/tms9900/lib1funcs.asm	2024-10-05 07:51:43.025651437 +0100
++++ gcc-4.4.0/gcc/config/tms9900/lib1funcs.asm	2024-10-06 08:31:26.978724038 +0100
 @@ -0,0 +1,1058 @@
 +/*
 + *  MGB 32-bit arithmetic functions never seem to be used.  The compiler emits
@@ -7823,7 +7823,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/math_private.h gcc-4.4.0/gcc/config/t
 +#endif
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms9900/tms9900.c
 --- gcc-4.4.0-orig/gcc/config/tms9900/tms9900.c	2024-07-28 14:42:12.629792725 +0100
-+++ gcc-4.4.0/gcc/config/tms9900/tms9900.c	2024-10-05 16:18:55.563322568 +0100
++++ gcc-4.4.0/gcc/config/tms9900/tms9900.c	2024-10-06 08:31:26.994723933 +0100
 @@ -0,0 +1,1515 @@
 +/* Subroutines for insn-output.c for TMS9900.
 +   Copyright (C) 1987, 1994, 1995, 1997, 1998, 1999, 2000, 2001, 2002,
@@ -9342,7 +9342,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms990
 +
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.h gcc-4.4.0/gcc/config/tms9900/tms9900.h
 --- gcc-4.4.0-orig/gcc/config/tms9900/tms9900.h	2024-07-28 14:42:12.629792725 +0100
-+++ gcc-4.4.0/gcc/config/tms9900/tms9900.h	2024-10-05 07:51:43.045651295 +0100
++++ gcc-4.4.0/gcc/config/tms9900/tms9900.h	2024-10-06 08:31:27.002723881 +0100
 @@ -0,0 +1,1247 @@
 +/* Definitions of target machine for GNU compiler.
 +   Texas Instruments TMS9900
@@ -10593,8 +10593,8 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.h gcc-4.4.0/gcc/config/tms990
 +
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms9900/tms9900.md
 --- gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md	2024-07-28 14:42:12.633792695 +0100
-+++ gcc-4.4.0/gcc/config/tms9900/tms9900.md	2024-10-05 17:07:57.906813534 +0100
-@@ -0,0 +1,3373 @@
++++ gcc-4.4.0/gcc/config/tms9900/tms9900.md	2024-10-06 09:16:07.620555312 +0100
+@@ -0,0 +1,3375 @@
 +;;- Machine description for the TMS9900 for GNU C compiler
 +;; Copyright (C) 1994, 1995, 1997, 1998, 1999, 2000, 2001, 2004, 2005
 +;; 2007, 2008 Free Software Foundation, Inc.
@@ -10873,6 +10873,8 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +;
 +; TODO expand to nonimmediate, not just memory
 +;
++;  Disabled - seems there are cases where this breaks code
++;
 +; Replace:
 +;   mov @x, r1
 +;   cmp @y, r1
@@ -10880,20 +10882,20 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +; With:
 +;   cmp @y, @x
 +
-+(define_peephole2
-+  [(set (match_operand:HI 0 "register_operand" "")
-+	(match_operand:HI 1 "memory_operand" ""))
-+   (set (cc0)
-+        (compare (match_operand:HI 2 "memory_operand" "")
-+                 (match_dup 0)))]
-+  "peep2_reg_dead_p(3, operands[0])"
-+  [(set (cc0) 
-+        (compare (match_dup 2)
-+                 (match_dup 1)))]
-+  {
-+    tms9900_debug_operands ("peep-movhi-cmphi", NULL_RTX, operands, 3);
-+  }
-+)
++; (define_peephole2
++;   [(set (match_operand:HI 0 "register_operand" "")
++; 	(match_operand:HI 1 "memory_operand" ""))
++;    (set (cc0)
++;         (compare (match_operand:HI 2 "memory_operand" "")
++;                  (match_dup 0)))]
++;   "peep2_reg_dead_p(3, operands[0])"
++;   [(set (cc0) 
++;         (compare (match_dup 2)
++;                  (match_dup 1)))]
++;   {
++;     tms9900_debug_operands ("peep-movhi-cmphi", NULL_RTX, operands, 3);
++;   }
++; )
 +
 +;;-------------------------------------
 +;
@@ -14293,13 +14295,13 @@ diff -ru gcc-4.4.0-orig/gcc/cp/cfns.h gcc-4.4.0/gcc/cp/cfns.h
  }
 diff -ru gcc-4.4.0-orig/gcc/DATESTAMP gcc-4.4.0/gcc/DATESTAMP
 --- gcc-4.4.0-orig/gcc/DATESTAMP	2024-10-05 07:13:03.762413661 +0100
-+++ gcc-4.4.0/gcc/DATESTAMP	2024-10-05 23:02:48.015674787 +0100
++++ gcc-4.4.0/gcc/DATESTAMP	2024-10-06 10:07:47.490985166 +0100
 @@ -1 +1 @@
 -20090421
-+20241005
++20241006
 diff -ru gcc-4.4.0-orig/gcc/DEV-PHASE gcc-4.4.0/gcc/DEV-PHASE
 --- gcc-4.4.0-orig/gcc/DEV-PHASE	2009-04-21 09:48:37.000000000 +0100
-+++ gcc-4.4.0/gcc/DEV-PHASE	2024-10-05 23:02:48.019674766 +0100
++++ gcc-4.4.0/gcc/DEV-PHASE	2024-10-06 10:07:47.494985133 +0100
 @@ -0,0 +1 @@
 +TMS9900 patch
 diff -ru gcc-4.4.0-orig/gcc/df-core.c gcc-4.4.0/gcc/df-core.c
@@ -14343,8 +14345,8 @@ diff -ru gcc-4.4.0-orig/gcc/dfp.c gcc-4.4.0/gcc/dfp.c
  
    decimal_from_decnumber (r, &dn, &set);
 diff -ru gcc-4.4.0-orig/gcc/doc/cppopts.texi gcc-4.4.0/gcc/doc/cppopts.texi
---- gcc-4.4.0-orig/gcc/doc/cppopts.texi	2024-10-05 07:51:42.933652092 +0100
-+++ gcc-4.4.0/gcc/doc/cppopts.texi	2024-10-05 07:51:43.073651095 +0100
+--- gcc-4.4.0-orig/gcc/doc/cppopts.texi	2024-10-06 08:31:26.878724695 +0100
++++ gcc-4.4.0/gcc/doc/cppopts.texi	2024-10-06 08:31:27.030723697 +0100
 @@ -758,7 +758,7 @@
  Enable special code to work around file systems which only permit very
  short file names, such as MS-DOS@.
@@ -14355,8 +14357,8 @@ diff -ru gcc-4.4.0-orig/gcc/doc/cppopts.texi gcc-4.4.0/gcc/doc/cppopts.texi
  @opindex help
  @opindex target-help
 diff -ru gcc-4.4.0-orig/gcc/doc/c-tree.texi gcc-4.4.0/gcc/doc/c-tree.texi
---- gcc-4.4.0-orig/gcc/doc/c-tree.texi	2024-10-05 07:51:42.925652149 +0100
-+++ gcc-4.4.0/gcc/doc/c-tree.texi	2024-10-05 07:51:43.065651152 +0100
+--- gcc-4.4.0-orig/gcc/doc/c-tree.texi	2024-10-06 08:31:26.870724748 +0100
++++ gcc-4.4.0/gcc/doc/c-tree.texi	2024-10-06 08:31:27.022723749 +0100
 @@ -2338,13 +2338,13 @@
  not matter.  The type of the operands and that of the result are
  always of @code{BOOLEAN_TYPE} or @code{INTEGER_TYPE}.
@@ -14374,8 +14376,8 @@ diff -ru gcc-4.4.0-orig/gcc/doc/c-tree.texi gcc-4.4.0/gcc/doc/c-tree.texi
  @itemx MULT_EXPR
  These nodes represent various binary arithmetic operations.
 diff -ru gcc-4.4.0-orig/gcc/doc/gcc.texi gcc-4.4.0/gcc/doc/gcc.texi
---- gcc-4.4.0-orig/gcc/doc/gcc.texi	2024-10-05 07:51:42.937652063 +0100
-+++ gcc-4.4.0/gcc/doc/gcc.texi	2024-10-05 07:51:43.077651067 +0100
+--- gcc-4.4.0-orig/gcc/doc/gcc.texi	2024-10-06 08:31:26.886724642 +0100
++++ gcc-4.4.0/gcc/doc/gcc.texi	2024-10-06 08:31:27.038723644 +0100
 @@ -84,11 +84,11 @@
  Published by:
  @multitable @columnfractions 0.5 0.5
@@ -14393,7 +14395,7 @@ diff -ru gcc-4.4.0-orig/gcc/doc/gcc.texi gcc-4.4.0/gcc/doc/gcc.texi
  @item Boston, MA 02110-1301 USA
 diff -ru gcc-4.4.0-orig/gcc/doc/install.texi gcc-4.4.0/gcc/doc/install.texi
 --- gcc-4.4.0-orig/gcc/doc/install.texi	2009-03-16 13:23:13.000000000 +0000
-+++ gcc-4.4.0/gcc/doc/install.texi	2024-10-05 07:51:43.089650981 +0100
++++ gcc-4.4.0/gcc/doc/install.texi	2024-10-06 08:31:27.074723408 +0100
 @@ -2746,7 +2746,8 @@
  <!-- -------- host/target specific issues start here ---------------- -->
  <hr />
@@ -14990,8 +14992,8 @@ diff -ru gcc-4.4.0-orig/gcc/doc/install.texi gcc-4.4.0/gcc/doc/install.texi
  C++ support is significantly better on ELF targets if you use the
  @uref{./configure.html#with-gnu-ld,,GNU linker}; duplicate copies of
 diff -ru gcc-4.4.0-orig/gcc/doc/invoke.texi gcc-4.4.0/gcc/doc/invoke.texi
---- gcc-4.4.0-orig/gcc/doc/invoke.texi	2024-10-05 07:51:42.961651893 +0100
-+++ gcc-4.4.0/gcc/doc/invoke.texi	2024-10-05 07:51:43.113650810 +0100
+--- gcc-4.4.0-orig/gcc/doc/invoke.texi	2024-10-06 08:31:26.914724458 +0100
++++ gcc-4.4.0/gcc/doc/invoke.texi	2024-10-06 08:31:27.098723250 +0100
 @@ -4624,11 +4624,11 @@
  @option{-fdump-rtl-ce3} enable dumping after the three
  if conversion passes. 
@@ -15243,7 +15245,7 @@ diff -ru gcc-4.4.0-orig/gcc/ira-costs.c gcc-4.4.0/gcc/ira-costs.c
    ira_free (total_costs);
 diff -ru gcc-4.4.0-orig/gcc/libgcc2.c gcc-4.4.0/gcc/libgcc2.c
 --- gcc-4.4.0-orig/gcc/libgcc2.c	2024-10-05 07:13:03.870412901 +0100
-+++ gcc-4.4.0/gcc/libgcc2.c	2024-10-05 07:51:43.125650725 +0100
++++ gcc-4.4.0/gcc/libgcc2.c	2024-10-06 08:31:27.114723145 +0100
 @@ -4,6 +4,7 @@
     2000, 2001, 2002, 2003, 2004, 2005, 2007, 2008, 2009
     Free Software Foundation, Inc.
@@ -15273,7 +15275,7 @@ diff -ru gcc-4.4.0-orig/gcc/libgcc2.c gcc-4.4.0/gcc/libgcc2.c
      }
 diff -ru gcc-4.4.0-orig/gcc/passes.c gcc-4.4.0/gcc/passes.c
 --- gcc-4.4.0-orig/gcc/passes.c	2009-02-20 15:20:38.000000000 +0000
-+++ gcc-4.4.0/gcc/passes.c	2024-10-05 07:51:43.133650668 +0100
++++ gcc-4.4.0/gcc/passes.c	2024-10-06 08:31:27.122723093 +0100
 @@ -102,6 +102,11 @@
  				   declarations for e.g. AIX 4.x.  */
  #endif
@@ -15354,7 +15356,7 @@ diff -ru gcc-4.4.0-orig/gcc/reload.c gcc-4.4.0/gcc/reload.c
  						      SUBREG_BYTE (*loc),
 diff -ru gcc-4.4.0-orig/gcc/REVISION gcc-4.4.0/gcc/REVISION
 --- gcc-4.4.0-orig/gcc/REVISION	2024-10-05 07:13:03.762413661 +0100
-+++ gcc-4.4.0/gcc/REVISION	2024-10-05 23:02:48.059674553 +0100
++++ gcc-4.4.0/gcc/REVISION	2024-10-06 10:07:47.498985100 +0100
 @@ -0,0 +1 @@
 +1.32
 diff -ru gcc-4.4.0-orig/gcc/targhooks.c gcc-4.4.0/gcc/targhooks.c
