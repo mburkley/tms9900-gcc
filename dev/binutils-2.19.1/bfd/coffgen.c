@@ -1978,6 +1978,7 @@ coff_print_symbol (bfd *abfd,
 			       llnos, next);
 		      break;
 		    }
+                    __attribute((fallthrough));
 		  /* Otherwise fall through.  */
 		default:
 		  fprintf (file, "AUX lnno %d size 0x%x tagndx %ld",
