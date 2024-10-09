@@ -386,6 +386,15 @@ void t_us_sla ()
     test_execute (__func__, us_x==0x0248);
 }
 
+void t_sc_shift_add()
+{
+    set_sc_x (1);
+    set_sc_y (1);
+
+    ss_z = (sc_x<<4)+(sc_y<<8);
+    test_execute (__func__, ss_z==0x0110);
+}
+
 void t_sc_add()
 {
     set_sc_x (7);
@@ -520,7 +529,6 @@ void t_cmp_ss()
 
 TESTFUNC tests[] = 
 {
-    #if 1
     t_uc_divmod,
     t_sc_divmod,
     t_uc_mpy,
@@ -553,11 +561,11 @@ TESTFUNC tests[] =
     t_ss_sla,
     t_ss_sla_var,
     t_us_sla,
+    t_sc_shift_add,
     t_sc_add,
     t_uc_add,
     t_ss_add,
     t_us_add,
-    #endif
     t_sc_sub,
     t_uc_sub,
     t_sc_imm_sub,
