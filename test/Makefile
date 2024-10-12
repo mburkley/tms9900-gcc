@@ -23,7 +23,17 @@ test_one
 
 BINTARGETS=$(TARGETS:=.bin)
 
-all: $(BINTARGETS)
+all: $(BINTARGETS) harness/harness
+
+harness/harness:
+	$(MAKE) -C harness
+
+.PHONY: test clean
+
+test: $(BINTARGETS) harness/harness
+	for target in $(BINTARGETS); do \
+            harness/harness -f $$target ; \
+        done
 
 ifdef EA5
 ELF2BIN=../elfutils/elf2ea5
@@ -80,7 +90,7 @@ $(BINTARGETS): %.bin: %.elf
 	$(LD) $(HEADER) $< $(OBJECTS) -o $@ $(LDFLAGS) -L$(LIBTI99DIR) $(LIBTI99) \
 	-Map=$(patsubst %.elf,%.map,$@) $(LIBGCC)
 
-.phony clean:
+clean:
 	rm -f *.o
 	rm -f *.elf
 	rm -f *.bin

@@ -5,3 +5,10 @@ dev
 gccdump.*
 deb/opt
 *.deb
+test/*.i
+test/*.s
+test/harness/*.o
+test/harness/harness
+elfutils/elf2cart
+elfutils/elf2ea5
+elfutils/ea5split
