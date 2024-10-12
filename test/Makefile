@@ -8,21 +8,22 @@ LD=$(GCCDIR)tms9900-ld
 CC=$(GCCDIR)tms9900-gcc
 LIBGCC=$(GCCDIR)../lib/gcc/tms9900/4.4.0/libgcc.a
 
-# Uncomment one test file here.  Tests are split up so as to fit into an 8K bin file
+# Tests are split up so as to fit into an 8K bin file
 # to make a cartridge bin.  Note some tests will not fit into a cartridge
 # without optimisation.  Check the bin file is less than 8192 bytes before
 # running.
 
-# TODO make these targets
+TARGETS=\
+test_char_short \
+test_long \
+test_float \
+test_misc \
+test_subreg \
+test_one
 
-TEST_SRC=test_char_short
-# TEST_SRC=test_long
-# TEST_SRC=test_float
-# TEST_SRC=test_misc
-# TEST_SRC=test_subreg
-# TEST_SRC=test_one
-# TEST_SRC=zap
-# TEST_SRC=fab2
+BINTARGETS=$(TARGETS:=.bin)
+
+all: $(BINTARGETS)
 
 ifdef EA5
 ELF2BIN=../elfutils/elf2ea5
@@ -31,7 +32,7 @@ FNAME=test.ea5
 else
 ELF2BIN=../elfutils/elf2cart
 LDFLAGS=--section-start .text=6000 --section-start .data=2080
-OBJECT_LIST=header.o
+HEADER=header.o
 FNAME=test.bin
 endif
 
@@ -53,18 +54,13 @@ CFLAGS+=-Os
 # Uncomment to build binary for use with emulator
 CFLAGS+=-DEMUL_TEST=1
 
-CRT0 = $(LIBTI99DIR)/crt0_ea5.o
+HEADER+=$(LIBTI99DIR)/crt0_ea5.o
 
 LIBTI99=-lti99
 
 # OBJECT_LIST=temu_hdr.o
 
-OBJECT_LIST+=\
-  $(CRT0)\
-  $(TEST_SRC).o \
-  tap.o params.o
-
-all: $(FNAME)
+OBJECTS=tap.o params.o
 
 #  Build on host.  Used to verify tests
 host-test: test.c
@@ -74,12 +70,16 @@ host-test: test.c
 #	size=$(wc -c < $(FNAME).bin)
 #        if (size > 8191) $(error
 
-$(FNAME): $(FNAME).elf
-	$(ELF2BIN) $(FNAME).elf $(FNAME)
+$(BINTARGETS): %.bin: %.elf
+	$(ELF2BIN) $< $@
 
-$(FNAME).elf: $(OBJECT_LIST)
-	$(LD) $(OBJECT_LIST) $(LDFLAGS) -L$(LIBTI99DIR) $(LIBTI99) -o $(FNAME).elf \
-	-Map=mapfile $(LIBGCC)
+#  NOTE link order is important.  Headers must be first and target can't be last.  There is some issue with byte
+#  alignment if target is last.
+
+%.elf: %.o $(HEADER) $(OBJECTS)
+	$(LD) $(HEADER) $< $(OBJECTS) -o $@ $(LDFLAGS) -L$(LIBTI99DIR) $(LIBTI99) \
+	-Map=$(patsubst %.elf,%.map,$@) $(LIBGCC)
+#	-Map=$@.map $(LIBGCC)
 
 .phony clean:
 	rm -f *.o
@@ -87,6 +87,7 @@ $(FNAME).elf: $(OBJECT_LIST)
 	rm -f *.bin
 	rm -f *.i
 	rm -f *.s
+	rm -f *.map
 	rm -f mapfile
 	rm -f gccdump.*
 	rm -f *.c.*r.*

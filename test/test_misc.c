@@ -14,7 +14,7 @@
 
 void t_version (void)
 {
-    printf ("# gcc v=%s, major=%d minor=%d\n",
+    dprintf ("# gcc v=%s, major=%d minor=%d\n",
             __VERSION__,
             __TMS9900_PATCH_MAJOR__,
             __TMS9900_PATCH_MINOR__);
@@ -280,31 +280,15 @@ int f2(int x)
     return 42;
 }
 
-char c;
-int d;
-long e;
-int t_tbd_f(int x)
-{
-    int y;
-    int z=777777777;
-    printf("hi");
-    char cc=c+1;
-    char dd=c+7;
-    if(cc==0x55||dd==0x77) f2(c-1);
-    while(x--)
-        y=f2(x);
-    return y;
-}
 void t_tbd_f3(void)
 {
-    printf("hi2");
-e=1;
+    dprintf("hi2");
 }
 
 /*  Test for bug where constants are expanded signed and then verified unsigned
  *  in combine.c:676 (do_SUBST)
  */
-#if 0
+#if 1
 #define VDP_MODE1_16K			(unsigned char)0x80		// set 16k mode (4k mode if cleared)
 #define VDP_MODE1_UNBLANK		(unsigned char)0x40		// set to enable display, clear to blank it
 #define VDP_MODE1_INT			(unsigned char)0x20		// enable VDP interrupts

@@ -71,7 +71,7 @@ int memLoad (char *file, uint16_t addr, int bank)
     int len = ftell (fp);
     fseek (fp, 0, SEEK_SET);
 
-    printf("%s %s %x %x\n", __func__, file, addr, len);
+    printf("# %s %s %x %x\n", __func__, file, addr, len);
 
     int got;
 

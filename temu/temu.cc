@@ -34,6 +34,7 @@
 
 #include "types.h"
 #include "temu.h"
+#include "xop.h"
 
 char *Temu::getString (uint16_t addr)
 {
@@ -73,6 +74,12 @@ void Temu::test_execute ()
     clearDisassembly();
 }
 
+void Temu::test_start ()
+{
+    int count = memReadW(getWP()+2); // R1
+    printf ("1..%d\n", count);
+}
+
 void Temu::test_report ()
 {
     printf ("# %d of %d passed\n", _testsPass, _testsRun);
@@ -102,9 +109,11 @@ void Temu::_xopHandler (uint8_t vector, uint16_t data)
 
     switch (data)
     {
-    case 0: test_execute (); break;
-    case 1: test_report (); break;
-    case 2: test_printf (); break;
+    case XOP_EXECUTE: test_execute (); break;
+    case XOP_START: test_start (); break;
+    case XOP_REPORT: test_report (); break;
+    case XOP_PRINT: test_printf (); break;
+    default: std::cerr <<"Unknown XOP " << data << std::endl; exit (1); break;
     }
 }
 

@@ -157,7 +157,7 @@ void test_us_add()
 
     us_z = us_x + us_y;
 
-    printf("# res=%d\n", (int)us_z);
+    dprintf("# res=%d\n", (int)us_z);
     test_execute (__func__, us_z==32802);
 }
 
@@ -279,7 +279,7 @@ void t_sc_sra_var ()
 
     sc_x >>= sc_y;
 
-    printf("# x=%X\n", sc_x);
+    dprintf("# x=%X\n", sc_x);
     test_execute (__func__, (unsigned char)sc_x==0xc0);
 }
 
@@ -310,7 +310,7 @@ void t_sc_sla_var ()
 
     sc_x <<= sc_y;
 
-    printf("# x=%X\n", sc_x);
+    dprintf("# x=%X\n", sc_x);
     test_execute (__func__, sc_x==0x02);
 }
 

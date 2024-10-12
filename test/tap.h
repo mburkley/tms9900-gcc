@@ -11,6 +11,8 @@
 #ifndef __TAP_H
 #define __TAP_H
 
+#include "xop.h"
+
 #ifdef __tms9900__
 
 #ifndef EMUL_TEST
@@ -41,7 +43,6 @@ typedef unsigned int uint32_t;
 #define dprintf printf
 #endif
 #endif
-
 
 typedef void (*TESTFUNC) (void);
 

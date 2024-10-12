@@ -40,6 +40,7 @@ public:
     void captureDisassembly () { _testDisassembly += unasm.getOutput(); }
     std::string getDisassembly () { return _testDisassembly; }
     void clearDisassembly() { _testDisassembly = ""; }
+    bool allPassed () { return _testsPass == _testsRun; }
 
 private:
     bool _runFlag;
@@ -48,6 +49,7 @@ private:
     int _testsPass;
     char *getString (uint16_t addr);
     void test_execute ();
+    void test_start ();
     void test_report ();
     void test_printf ();
     void _xopHandler (uint8_t vector, uint16_t data);
@@ -59,8 +61,7 @@ private:
     // TODO no interrupts for now
     int _interruptLevel (int mask) { return -1; }
 
-    // TODO temp halt does not stop
-    void _halt (const char *s) { std::cerr << s; }
+    void _halt (const char *s) { std::cerr << s; exit(1); }
 
     void _xop (uint8_t vector, uint16_t data) { _xopHandler (vector, data); }
 

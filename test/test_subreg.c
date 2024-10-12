@@ -26,7 +26,7 @@ void t_bitwise_replace()
 {
     color = 0xaa;
     setbackground(0x55);
-    printf("# color=%d\n", color);
+    dprintf("# color=%d\n", color);
     test_execute (__func__, color==0xa5);
 }
 
