@@ -24,28 +24,33 @@ void test_dummy_int (int x)
 #ifdef EMUL_TEST
 
 /*  Functions that cause a trap to the emulator when running in emulated
- *  mode.  Note parameters are not passed as they are assumed to already
- *  be in R1, R2, .... */
+ *  mode.  XOP handler assumes params in R1, R2, .... */
 
-#define XOP_ASM_STR "li r0,%0\n\txop r0,15\n"
 void test_execute (const char *name, int passed)
 {
-    __asm__ (XOP_ASM_STR : : "i"(XOP_EXECUTE));
+    __asm__ ("mov %1,r1\n\t"
+             "mov %2,r2\n\t"
+             "li r0,%0\n\t"
+             "xop r0,15" : : "i"(XOP_EXECUTE),"r"(name),"r"(passed) : "r1","r2");
 }
 
 void test_start (int count)
 {
-    __asm__ (XOP_ASM_STR : : "i"(XOP_START));
+    __asm__ ("mov %1,r1\n\t"
+             "li r0,%0\n\t"
+             "xop r0,15" : : "i"(XOP_START),"r"(count) : "r1");
 }
 
 void test_report (void)
 {
-    __asm__ (XOP_ASM_STR : : "i"(XOP_REPORT));
+    __asm__ ("li r0,%0\n\t"
+             "xop r0,15" : : "i"(XOP_REPORT));
 }
 
 void test_printf (void)
 {
-    __asm__ (XOP_ASM_STR : : "i"(XOP_PRINT));
+    __asm__ ("li r0,%0\n\t"
+             "xop r0,15" : : "i"(XOP_PRINT));
 }
 
 #else

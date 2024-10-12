@@ -79,7 +79,6 @@ $(BINTARGETS): %.bin: %.elf
 %.elf: %.o $(HEADER) $(OBJECTS)
 	$(LD) $(HEADER) $< $(OBJECTS) -o $@ $(LDFLAGS) -L$(LIBTI99DIR) $(LIBTI99) \
 	-Map=$(patsubst %.elf,%.map,$@) $(LIBGCC)
-#	-Map=$@.map $(LIBGCC)
 
 .phony clean:
 	rm -f *.o
