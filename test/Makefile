@@ -15,13 +15,14 @@ LIBGCC=$(GCCDIR)../lib/gcc/tms9900/4.4.0/libgcc.a
 
 # TODO make these targets
 
-# TEST_SRC=test_char_short
-TEST_SRC=test_long
+TEST_SRC=test_char_short
+# TEST_SRC=test_long
 # TEST_SRC=test_float
 # TEST_SRC=test_misc
 # TEST_SRC=test_subreg
 # TEST_SRC=test_one
 # TEST_SRC=zap
+# TEST_SRC=fab2
 
 ifdef EA5
 ELF2BIN=../elfutils/elf2ea5
@@ -50,7 +51,7 @@ CFLAGS+=-Os
 # CFLAGS+=-D_DEBUG=1
 
 # Uncomment to build binary for use with emulator
-# CFLAGS+=-DEMUL_TEST=1
+CFLAGS+=-DEMUL_TEST=1
 
 CRT0 = $(LIBTI99DIR)/crt0_ea5.o
 
