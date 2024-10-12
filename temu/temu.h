@@ -36,6 +36,7 @@ public:
     Temu() { _runFlag = false; _testsRun = _testsPass = 0; }
     Unasm unasm;
     void run () { _runFlag = true; }
+    void stop () { _runFlag = false; }
     bool running () { return _runFlag; }
     void captureDisassembly () { _testDisassembly += unasm.getOutput(); }
     std::string getDisassembly () { return _testDisassembly; }

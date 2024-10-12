@@ -83,7 +83,7 @@ void Temu::test_start ()
 void Temu::test_report ()
 {
     printf ("# %d of %d passed\n", _testsPass, _testsRun);
-    exit (1);
+    stop ();
 }
 
 // Host printf function - NOTE : numeric values only
@@ -160,5 +160,8 @@ int main (int argc, char *argv[])
         temu.unasm.clearOutput();
     }
 
-    return 0;
+    if (temu.allPassed())
+        return 0;
+
+    return 1;
 }
