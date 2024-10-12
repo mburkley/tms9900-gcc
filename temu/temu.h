@@ -37,14 +37,19 @@ public:
     Unasm unasm;
     void run () { _runFlag = true; }
     bool running () { return _runFlag; }
+    void captureDisassembly () { _testDisassembly += unasm.getOutput(); }
+    std::string getDisassembly () { return _testDisassembly; }
+    void clearDisassembly() { _testDisassembly = ""; }
 
 private:
     bool _runFlag;
+    std::string _testDisassembly;
     int _testsRun;
     int _testsPass;
     char *getString (uint16_t addr);
     void test_execute ();
     void test_report ();
+    void test_printf ();
     void _xopHandler (uint8_t vector, uint16_t data);
     uint16_t _memReadW (uint16_t addr) { return memReadW (addr); }
     uint8_t _memReadB (uint16_t addr) { return memReadB (addr); }

@@ -35,7 +35,11 @@ typedef unsigned int uint32_t;
 #ifndef _DEBUG
 #define dprintf(...)
 #else
+#ifdef EMUL_TEST
+#define dprintf test_printf
+#else
 #define dprintf printf
+#endif
 #endif
 
 
@@ -45,6 +49,7 @@ void test_dummy_void (void);
 void test_dummy_int (int x);
 void test_execute (const char *name, int passed);
 void test_report (void);
+void test_printf (void);
 void test_run (TESTFUNC funcs[], int count);
 
 #endif

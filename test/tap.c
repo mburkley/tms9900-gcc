@@ -24,20 +24,9 @@ void test_dummy_int (int x)
 #ifdef EMUL_TEST
 void test_execute (const char *name, int passed)
 {
-    // Don't actually need any clobbers because R1 and R2 are already params so just pass them on
-
-    #if 0
-    __asm__(
-            "mov %0,r1\n\t"
-            "mov %1,r2\n\t"
-            "li r0,0\n\t"
-            "xop r0,15\n\t"
-             : : "r"(name),"r"(passed) : "r1", "r2");
-    #else
     __asm__(
             "li r0,0\n\t"
             "xop r0,15\n\t");
-    #endif
 }
 
 void test_report (void)
@@ -46,6 +35,14 @@ void test_report (void)
             "li r0,1\n\t"
             "xop r0,15\n\t");
 }
+
+void test_printf (void)
+{
+    __asm__(
+            "li r0,2\n\t"
+            "xop r0,15\n\t");
+}
+
 #else
 void test_execute (const char *name, int passed)
 {

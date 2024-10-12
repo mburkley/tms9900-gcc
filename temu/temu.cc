@@ -31,78 +31,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
-#if 0
-#include <ctype.h>
-#include <arpa/inet.h>
 
-#include "parse.h"
-#include "files.h"
-#endif
 #include "types.h"
-// #include "cpu.h"
-// #include "mem.h"
 #include "temu.h"
-
-// Temu temu;
-
-static void temu_printfd /*_regs*/ (uint16_t wp)
-{
-    char s[1000];
-    char *sp = s;
-    int c;
-    int r[16];
-
-    for (int i = 0; i < 16; i++)
-        r[i] = memReadW (wp + i*2);
-
-    while ((c = memReadB (r[1]++)) != 0)
-       *sp++ = c;
-
-    *sp = 0;
-    // printf ("fmt=%s\n", s);
-    printf (s, r[2], r[3], r[4], r[5], r[6]);
-}
-
-static void temu_printfd_stack (uint16_t wp)
-{
-    char s[1000];
-    char *sp = s;
-    int c;
-    int r[16];
-
-    int stack = memReadW (wp + 20);
-
-    for (int i = 0; i < 16; i++)
-        r[i] = memReadW (wp + i*2);
-
-    while ((c = memReadB (r[1]++)) != 0)
-       *sp++ = c;
-
-    *sp = 0;
-    // printf ("fmt=%s\n", s);
-    printf (s, r[2], r[3], r[4], r[5], r[6]);
-}
-
-static void temu_printfs (uint16_t wp)
-{
-    int c;
-    char s[16][100];
-
-    for (int i = 0; i < 16; i++)
-    {
-        char *sp = s[i];
-        int addr = memReadW (wp + i*2);
-
-        while ((c = memReadB (addr++)) != 0)
-           *sp++ = c;
-
-        *sp = 0;
-    }
-
-    // printf ("fmt=%s\n", s);
-    printf (s[1], s[2], s[3], s[4], s[5], s[6]);
-}
-
 
 char *Temu::getString (uint16_t addr)
 {
@@ -110,7 +41,6 @@ char *Temu::getString (uint16_t addr)
     char *pos = str;
     uint8_t byte;
 
-    // printf ("get str at %04x\n", addr);
     do
     {
         byte = memReadB (addr++);
@@ -128,7 +58,6 @@ void Temu::test_execute ()
     int name = memReadW(getWP()+2); // R1
     int passed = memReadW(getWP()+4); // R2
 
-    // printf ("wp=%04x name=%04x passed=%04x\n", getWP(), name, passed);
     if (passed)
     {
         printf ("ok %d - %s\n", _testsRun, getString (name));
@@ -137,7 +66,11 @@ void Temu::test_execute ()
     else
     {
         printf ("not ok %d - %s\n", _testsRun, getString (name));
+
+        std::cout << getDisassembly();
     }
+
+    clearDisassembly();
 }
 
 void Temu::test_report ()
@@ -146,10 +79,22 @@ void Temu::test_report ()
     exit (1);
 }
 
+// Host printf function - NOTE : numeric values only
+void Temu::test_printf()
+{
+    int c;
+    int r[16];
+
+    for (int i = 0; i < 16; i++)
+        r[i] = memReadW (getWP() + i*2);
+
+    char *fmt = getString (r[1]);
+
+    printf (fmt, r[2], r[3], r[4], r[5], r[6]);
+}
+
 void Temu::_xopHandler (uint8_t vector, uint16_t data)
 {
-    // printf ("Back to emu, vec=%d d=%04x\n", vector, data);
-
     if (vector != 15)
         return;
 
@@ -159,31 +104,23 @@ void Temu::_xopHandler (uint8_t vector, uint16_t data)
     {
     case 0: test_execute (); break;
     case 1: test_report (); break;
+    case 2: test_printf (); break;
     }
-
-    #if 0
-    switch (opcode & 0xff)
-    {
-    case 1: temu_printfd(wp); break;
-    case 2: temu_printfs(wp); break;
-    case 3: exit(1); break;
-    }
-    #endif
 }
-
-static bool disasm = false;
 
 int main (int argc, char *argv[])
 {
     Temu temu;
     char c;
+    bool disasmAll = false;
+    bool disasmFails = false;
 
-    while ((c = getopt(argc, argv, "d")) != -1)
+    while ((c = getopt(argc, argv, "df")) != -1)
     {
         switch (c)
         {
-            case 'd' : disasm = true; break;
-            // case 'b' : showBasic = true; break;
+            case 'd' : disasmAll = true; break;
+            case 'f' : disasmFails = true; break;
             default: printf ("Unknown option '%c'\n", c);
         }
     }
@@ -191,30 +128,26 @@ int main (int argc, char *argv[])
     if (argc - optind < 1)
     {
         printf ("\nBinary test tool\n\n"
-                "usage: %s [-d] <bin-file>\n"
-                "\t where -d=disassemble\n\n", argv[0]);
+                "usage: %s [-d] [-f] <bin-file>\n"
+                "\t where -d=disassemble all tests\n"
+                "\t       -f=disassemble only failed tests\n", argv[0]);
         return 1;
     }
 
     memLoad (argv[optind], 0x6000, 0);
-
-    // cpuHandleBadOpcode (opcodeTrap);
-
-    // if (disasm)
-    //     outputLevel = LVL_CPU|LVL_UNASM;
 
     //  Hardcoded to cartridge _start for now
     temu.branch(0x6026);
     temu.run();
 
     while (temu.running())
-    // for (int i =0; i < 2; i++)
     {
         uint16_t opcode = temu.fetch ();
         temu.execute(opcode);
-        // std::cout << "out";
-        if (disasm)
-        std::cout << temu.unasm.getOutput();
+        if (disasmAll)
+            std::cout << temu.unasm.getOutput();
+        else if (disasmFails)
+            temu.captureDisassembly();
         temu.unasm.clearOutput();
     }
 
