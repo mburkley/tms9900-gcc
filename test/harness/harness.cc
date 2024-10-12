@@ -36,7 +36,7 @@
 #include "harness.h"
 #include "../xop.h"
 
-char *Temu::getString (uint16_t addr)
+char *Harness::getString (uint16_t addr)
 {
     static char str[100];
     char *pos = str;
@@ -52,7 +52,7 @@ char *Temu::getString (uint16_t addr)
     return str;
 }
 
-void Temu::test_execute ()
+void Harness::test_execute ()
 {
     _testsRun++;
 
@@ -74,20 +74,20 @@ void Temu::test_execute ()
     clearDisassembly();
 }
 
-void Temu::test_start ()
+void Harness::test_start ()
 {
     int count = memReadW(getWP()+2); // R1
     printf ("1..%d\n", count);
 }
 
-void Temu::test_report ()
+void Harness::test_report ()
 {
     printf ("# %d of %d passed\n", _testsPass, _testsRun);
     stop ();
 }
 
 // Host printf function - NOTE : numeric values only
-void Temu::test_printf()
+void Harness::test_printf()
 {
     int c;
     int r[16];
@@ -100,7 +100,7 @@ void Temu::test_printf()
     printf (fmt, r[2], r[3], r[4], r[5], r[6]);
 }
 
-void Temu::_xopHandler (uint8_t vector, uint16_t data)
+void Harness::_xopHandler (uint8_t vector, uint16_t data)
 {
     if (vector != 15)
         return;
@@ -119,7 +119,7 @@ void Temu::_xopHandler (uint8_t vector, uint16_t data)
 
 int main (int argc, char *argv[])
 {
-    Temu temu;
+    Harness harness;
     char c;
     bool disasmAll = false;
     bool disasmFails = false;
@@ -146,22 +146,19 @@ int main (int argc, char *argv[])
     memLoad (argv[optind], 0x6000, 0);
 
     //  Hardcoded to cartridge _start for now
-    temu.branch(0x6026);
-    temu.run();
+    harness.branch(0x6026);
+    harness.run();
 
-    while (temu.running())
+    while (harness.running())
     {
-        uint16_t opcode = temu.fetch ();
-        temu.execute(opcode);
+        uint16_t opcode = harness.fetch ();
+        harness.execute(opcode);
         if (disasmAll)
-            std::cout << temu.unasm.getOutput();
+            std::cout << harness.unasm.getOutput();
         else if (disasmFails)
-            temu.captureDisassembly();
-        temu.unasm.clearOutput();
+            harness.captureDisassembly();
+        harness.unasm.clearOutput();
     }
 
-    if (temu.allPassed())
-        return 0;
-
-    return 1;
+    return harness.failCount();
 }

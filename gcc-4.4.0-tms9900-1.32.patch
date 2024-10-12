@@ -10593,8 +10593,8 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.h gcc-4.4.0/gcc/config/tms990
 +
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms9900/tms9900.md
 --- gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md	2024-07-28 14:42:12.633792695 +0100
-+++ gcc-4.4.0/gcc/config/tms9900/tms9900.md	2024-10-09 19:15:57.472280425 +0100
-@@ -0,0 +1,3433 @@
++++ gcc-4.4.0/gcc/config/tms9900/tms9900.md	2024-10-12 21:47:51.977234784 +0100
+@@ -0,0 +1,3436 @@
 +;;- Machine description for the TMS9900 for GNU C compiler
 +;; Copyright (C) 1994, 1995, 1997, 1998, 1999, 2000, 2001, 2004, 2005
 +;; 2007, 2008 Free Software Foundation, Inc.
@@ -12012,7 +12012,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +;; Arithmetic shift left
 +;;
 +;; op0 is register only.  op2 is general.  Either or both could be subregs.
-+;; Extend using srl if they are.  If op2 is a const and is zero then do nothing.
++;; Extend using sra if they are.  If op2 is a const and is zero then do nothing.
 +;; If op2 is const and greater than 15 then just clear op0
 +;;-------------------------------------------------------------------
 +(define_insn "ashlhi3"
@@ -12030,7 +12030,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +
 +    if (tms9900_operand_subreg_offset (operands[1], HImode))
 +    {
-+      output_asm_insn("srl  %0, 8 ; subreg correction",  operands);
++      output_asm_insn("sra  %0, 8 ; subreg correction",  operands);
 +    }
 +
 +    if (which_alternative < 2)
@@ -12043,6 +12043,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +        output_asm_insn ("sra  r0,8 ; ashlhi3 extend op2", operands);
 +      }
 +
++      output_asm_insn("andi r0,15",   operands);
 +      output_asm_insn("jeq  $+4",    operands);
 +      output_asm_insn("sla  %0, 0",  operands);
 +    }
@@ -12082,7 +12083,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +
 +    if (tms9900_operand_subreg_offset (operands[1], HImode))
 +    {
-+      output_asm_insn("srl  %0, 8 ; subreg correction",  operands);
++      output_asm_insn("sra  %0, 8 ; subreg correction",  operands);
 +    }
 +
 +    if (which_alternative < 2)
@@ -12095,6 +12096,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +        output_asm_insn ("sra  r0,8 ; ashrhi3 extend op2", operands);
 +      }
 +
++      output_asm_insn("andi r0,15",   operands);
 +      output_asm_insn("jeq  $+4",    operands);
 +      output_asm_insn("sra  %0, 0",  operands);
 +    }
@@ -12145,6 +12147,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +        output_asm_insn ("sra  r0,8 ; lshrhi3 extend op2", operands);
 +      }
 +
++      output_asm_insn("andi r0,15",   operands);
 +      output_asm_insn("jeq  $+4",    operands);
 +      output_asm_insn("srl  %0, 0",  operands);
 +    }
@@ -14353,13 +14356,13 @@ diff -ru gcc-4.4.0-orig/gcc/cp/cfns.h gcc-4.4.0/gcc/cp/cfns.h
  }
 diff -ru gcc-4.4.0-orig/gcc/DATESTAMP gcc-4.4.0/gcc/DATESTAMP
 --- gcc-4.4.0-orig/gcc/DATESTAMP	2024-10-05 07:13:03.762413661 +0100
-+++ gcc-4.4.0/gcc/DATESTAMP	2024-10-09 19:21:07.034051776 +0100
++++ gcc-4.4.0/gcc/DATESTAMP	2024-10-12 21:51:52.423289079 +0100
 @@ -1 +1 @@
 -20090421
-+20241009
++20241012
 diff -ru gcc-4.4.0-orig/gcc/DEV-PHASE gcc-4.4.0/gcc/DEV-PHASE
 --- gcc-4.4.0-orig/gcc/DEV-PHASE	2009-04-21 09:48:37.000000000 +0100
-+++ gcc-4.4.0/gcc/DEV-PHASE	2024-10-09 19:21:07.038051747 +0100
++++ gcc-4.4.0/gcc/DEV-PHASE	2024-10-12 21:51:52.427289047 +0100
 @@ -0,0 +1 @@
 +TMS9900 patch
 diff -ru gcc-4.4.0-orig/gcc/df-core.c gcc-4.4.0/gcc/df-core.c
@@ -15425,7 +15428,7 @@ diff -ru gcc-4.4.0-orig/gcc/reload.c gcc-4.4.0/gcc/reload.c
  						      SUBREG_BYTE (*loc),
 diff -ru gcc-4.4.0-orig/gcc/REVISION gcc-4.4.0/gcc/REVISION
 --- gcc-4.4.0-orig/gcc/REVISION	2024-10-05 07:13:03.762413661 +0100
-+++ gcc-4.4.0/gcc/REVISION	2024-10-09 19:21:07.038051747 +0100
++++ gcc-4.4.0/gcc/REVISION	2024-10-12 21:51:52.431289014 +0100
 @@ -0,0 +1 @@
 +1.32
 diff -ru gcc-4.4.0-orig/gcc/targhooks.c gcc-4.4.0/gcc/targhooks.c

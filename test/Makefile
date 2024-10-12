@@ -13,10 +13,13 @@ LIBGCC=$(GCCDIR)../lib/gcc/tms9900/4.4.0/libgcc.a
 # without optimisation.  Check the bin file is less than 8192 bytes before
 # running.
 
+# test_float is not tested by this framework as it uses the console ROM
+# floating point routines
+NONTARGET=test_float
+
 TARGETS=\
 test_char_short \
 test_long \
-test_float \
 test_misc \
 test_subreg \
 test_one
@@ -25,15 +28,21 @@ BINTARGETS=$(TARGETS:=.bin)
 
 all: $(BINTARGETS) harness/harness
 
+.PHONY: test clean harness/harness
+
 harness/harness:
 	$(MAKE) -C harness
-
-.PHONY: test clean
 
 test: $(BINTARGETS) harness/harness
 	for target in $(BINTARGETS); do \
             harness/harness -f $$target ; \
-        done
+            count=$$(($$count + $$?)) ; \
+        done ; \
+	if [ $$count -gt 0 ]; then \
+	echo "\n*** $$count tests FAILED\n" ; \
+	else \
+	echo "\n*** all tests passed\n" ; \
+	fi
 
 ifdef EA5
 ELF2BIN=../elfutils/elf2ea5
@@ -53,7 +62,7 @@ CFLAGS=-std=c99 --save-temp -I$(LIBTI99DIR)
 #  NOTE some tests are useless with -O2 as the compiler optimises away any
 #  arithmetic or comparisons with constants.
 # CFLAGS+=-O2
-CFLAGS+=-Os
+# CFLAGS+=-Os
 
 # Uncomment to dump gcc insns into assembly output file
 # CFLAGS+=-minline_rtl

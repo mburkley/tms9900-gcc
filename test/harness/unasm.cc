@@ -53,7 +53,7 @@ std::string Unasm::_align (const char *msg, int width)
     return std::string (s);
 }
 
-// TODO move commenting out of unasm - not needed for temu
+// TODO move commenting out of unasm - not needed for harness
 const char *Unasm::_parseComment (char type, int *len)
 {
     const char *next;

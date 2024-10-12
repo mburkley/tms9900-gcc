@@ -21,8 +21,8 @@
  * SOFTWARE.
  */
 
-#ifndef __TEMU_H
-#define __TEMU_H
+#ifndef __HARNESS_H
+#define __HARNESS_H
 
 #include <stdarg.h>
 
@@ -30,10 +30,10 @@
 #include "mem.h"
 #include "unasm.h"
 
-class Temu:public TMS9900
+class Harness:public TMS9900
 {
 public:
-    Temu() { _runFlag = false; _testsRun = _testsPass = 0; }
+    Harness() { _runFlag = false; _testsRun = _testsPass = 0; }
     Unasm unasm;
     void run () { _runFlag = true; }
     void stop () { _runFlag = false; }
@@ -41,7 +41,7 @@ public:
     void captureDisassembly () { _testDisassembly += unasm.getOutput(); }
     std::string getDisassembly () { return _testDisassembly; }
     void clearDisassembly() { _testDisassembly = ""; }
-    bool allPassed () { return _testsPass == _testsRun; }
+    int failCount () { return _testsRun - _testsPass; }
 
 private:
     bool _runFlag;
