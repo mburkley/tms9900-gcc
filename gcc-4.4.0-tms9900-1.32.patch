@@ -10593,8 +10593,8 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.h gcc-4.4.0/gcc/config/tms990
 +
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms9900/tms9900.md
 --- gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md	2024-07-28 14:42:12.633792695 +0100
-+++ gcc-4.4.0/gcc/config/tms9900/tms9900.md	2024-10-12 21:47:51.977234784 +0100
-@@ -0,0 +1,3436 @@
++++ gcc-4.4.0/gcc/config/tms9900/tms9900.md	2024-10-13 10:44:05.234999098 +0100
+@@ -0,0 +1,3442 @@
 +;;- Machine description for the TMS9900 for GNU C compiler
 +;; Copyright (C) 1994, 1995, 1997, 1998, 1999, 2000, 2001, 2004, 2005
 +;; 2007, 2008 Free Software Foundation, Inc.
@@ -12742,36 +12742,42 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +;;-------------------------------------
 +;; Reverse subtract
 +;;
-+;; This case covers subtracting a register from an immediate by adding the
-+;; immediate and then negating the result.
++;; This case covers subtracting a register from an immediate by negating the
++;; register and then adding the immediate.
++;;
++;; NOTE - it is not possible to negate the immediate as it may be a SYMBOL_REF
 +;;
 +;; Reduces +/-1 and +/-2 to inc(t) or dec(t)
 +;;-------------------------------------
 +
 +(define_insn "tms9900_rsubihi"
-+  [(set (match_operand:HI 0 "register_operand" "=r")
-+	(minus:HI (match_operand:HI 1 "immediate_operand" "i")
-+		  (match_operand:HI 2 "register_operand" "0")))]
++  [(set (match_operand:HI 0 "register_operand" "=r,r")
++	(minus:HI (match_operand:HI 1 "immediate_operand" "LMN,i")
++		  (match_operand:HI 2 "register_operand" "0,0")))]
 +  ""
 +  {
 +    tms9900_debug_operands ("tms9900_rsubihi", insn, operands, 3);
-+    if (INTVAL(operands[1]) == -1)
-+      output_asm_insn("inc  %0",operands);
-+    else if (INTVAL(operands[1]) == 1)
-+      output_asm_insn("dec  %0",operands);
-+    else if (INTVAL(operands[1]) == -2)
-+      output_asm_insn("inct %0",operands);
-+    else if (INTVAL(operands[1]) == 2)
-+      output_asm_insn("dect %0",operands);
++    if (which_alternative == 0)
++    {
++      if (INTVAL(operands[1]) == -1)
++        output_asm_insn ("inc  %0",operands);
++      else if (INTVAL(operands[1]) == 1)
++        output_asm_insn ("dec  %0",operands);
++      else if (INTVAL(operands[1]) == -2)
++        output_asm_insn ("inct %0",operands);
++      else if (INTVAL(operands[1]) == 2)
++        output_asm_insn("dect %0",operands);
++      else
++        gcc_unreachable();
++    }
 +    else
 +    {
-+      operands[1] = GEN_INT(-INTVAL(operands[1]));
++      output_asm_insn("neg  %0",operands);
 +      output_asm_insn("ai   %0, %1",operands);
 +    }
-+    output_asm_insn("neg  %0",operands);
 +    return "";
 +  }
-+  [(set_attr "length" "6")])
++  [(set_attr "length" "2,6")])
 +
 +;;-------------------------------------
 +;; op0 = op1 - op2(i)      movb op1,op0 
@@ -14356,13 +14362,13 @@ diff -ru gcc-4.4.0-orig/gcc/cp/cfns.h gcc-4.4.0/gcc/cp/cfns.h
  }
 diff -ru gcc-4.4.0-orig/gcc/DATESTAMP gcc-4.4.0/gcc/DATESTAMP
 --- gcc-4.4.0-orig/gcc/DATESTAMP	2024-10-05 07:13:03.762413661 +0100
-+++ gcc-4.4.0/gcc/DATESTAMP	2024-10-12 21:51:52.423289079 +0100
++++ gcc-4.4.0/gcc/DATESTAMP	2024-10-13 11:18:39.265112712 +0100
 @@ -1 +1 @@
 -20090421
-+20241012
++20241013
 diff -ru gcc-4.4.0-orig/gcc/DEV-PHASE gcc-4.4.0/gcc/DEV-PHASE
 --- gcc-4.4.0-orig/gcc/DEV-PHASE	2009-04-21 09:48:37.000000000 +0100
-+++ gcc-4.4.0/gcc/DEV-PHASE	2024-10-12 21:51:52.427289047 +0100
++++ gcc-4.4.0/gcc/DEV-PHASE	2024-10-13 11:18:39.269112685 +0100
 @@ -0,0 +1 @@
 +TMS9900 patch
 diff -ru gcc-4.4.0-orig/gcc/df-core.c gcc-4.4.0/gcc/df-core.c
@@ -15428,7 +15434,7 @@ diff -ru gcc-4.4.0-orig/gcc/reload.c gcc-4.4.0/gcc/reload.c
  						      SUBREG_BYTE (*loc),
 diff -ru gcc-4.4.0-orig/gcc/REVISION gcc-4.4.0/gcc/REVISION
 --- gcc-4.4.0-orig/gcc/REVISION	2024-10-05 07:13:03.762413661 +0100
-+++ gcc-4.4.0/gcc/REVISION	2024-10-12 21:51:52.431289014 +0100
++++ gcc-4.4.0/gcc/REVISION	2024-10-13 11:18:39.273112659 +0100
 @@ -0,0 +1 @@
 +1.32
 diff -ru gcc-4.4.0-orig/gcc/targhooks.c gcc-4.4.0/gcc/targhooks.c
