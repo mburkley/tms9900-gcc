@@ -17,13 +17,16 @@ extern unsigned long ul_y;
 
 void set_uc_x (unsigned char x);
 void set_uc_y (unsigned char y);
+void set_uc_xy (unsigned char x, unsigned char y);
 void set_sc_x (char x);
 void set_sc_y (char y);
 void set_us_x (unsigned short x);
 void set_us_y (unsigned short y);
 void set_ss_x (short x);
 void set_ss_y (short y);
+void set_ss_xy (short x, short y);
 void set_ul_x (unsigned long x);
 void set_ul_y (unsigned long y);
 void set_sl_x (long x);
 void set_sl_y (long y);
+int get_uc_add (unsigned char x, unsigned char y);

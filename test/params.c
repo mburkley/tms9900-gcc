@@ -28,6 +28,12 @@ void set_uc_y (unsigned char y)
     uc_y = y;
 }
 
+void set_uc_xy (unsigned char x, unsigned char y)
+{
+    uc_x = x;
+    uc_y = y;
+}
+
 void set_sc_x (char x)
 {
     sc_x = x;
@@ -58,6 +64,12 @@ void set_ss_y (short y)
     ss_y = y;
 }
 
+void set_ss_xy (short x, short y)
+{
+    ss_x = x;
+    ss_y = y;
+}
+
 void set_ul_x (unsigned long x)
 {
     ul_x = x;
@@ -76,5 +88,10 @@ void set_sl_x (long x)
 void set_sl_y (long y)
 {
     sl_y = y;
+}
+
+int get_uc_add (unsigned char x, unsigned char y)
+{
+    return x+y;
 }
 

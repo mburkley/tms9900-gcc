@@ -22,7 +22,7 @@ test_char_short \
 test_long \
 test_misc \
 test_subreg \
-test_one
+test_array
 
 BINTARGETS=$(TARGETS:=.bin)
 
@@ -79,7 +79,7 @@ LIBTI99=-lti99
 
 # OBJECT_LIST=temu_hdr.o
 
-OBJECTS=tap.o params.o
+OBJECTS=tap.o params.o fabl.o
 
 #  Build on host.  Used to verify tests
 host-test: test.c
