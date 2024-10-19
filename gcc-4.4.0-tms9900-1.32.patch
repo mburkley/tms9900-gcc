@@ -9342,7 +9342,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms990
 +
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.h gcc-4.4.0/gcc/config/tms9900/tms9900.h
 --- gcc-4.4.0-orig/gcc/config/tms9900/tms9900.h	2024-07-28 14:42:12.629792725 +0100
-+++ gcc-4.4.0/gcc/config/tms9900/tms9900.h	2024-10-07 10:04:07.899846410 +0100
++++ gcc-4.4.0/gcc/config/tms9900/tms9900.h	2024-10-19 19:28:55.997774442 +0100
 @@ -0,0 +1,1247 @@
 +/* Definitions of target machine for GNU compiler.
 +   Texas Instruments TMS9900
@@ -10495,7 +10495,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.h gcc-4.4.0/gcc/config/tms990
 +   rounded up to whatever alignment the caller wants. */
 +#define ASM_OUTPUT_ALIGNED_BSS(STREAM, DECL, NAME, SIZE, ALIGNMENT)     \
 +  do{\
-+  if(ALIGNMENT > 1) fprintf ((STREAM), "\n\teven\n");                   \
++  if(ALIGNMENT > 8) fprintf ((STREAM), "\n\teven\n");                   \
 +  asm_output_aligned_bss ((STREAM), (DECL), (NAME), (SIZE), (ALIGNMENT)); }while(0)
 +
 +/* A C statement (sans semicolon) to output to the stdio stream
@@ -10505,7 +10505,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.h gcc-4.4.0/gcc/config/tms990
 +#define ASM_OUTPUT_ALIGNED_COMMON(STREAM, NAME, SIZE, ALIGNMENT)           \
 +do {                                                                       \
 +     switch_to_section (bss_section);                                      \
-+     if(ALIGNMENT > 1) fprintf ((STREAM), "\n\teven");                     \
++     if(ALIGNMENT > 8) fprintf ((STREAM), "\n\teven");                     \
 +     fprintf ((STREAM), "\n\tdef %s\n", (NAME));                           \
 +     assemble_name ((STREAM), (NAME));                                     \
 +     fprintf ((STREAM), "\n\tbss %u\n", (int)(SIZE));                      \
@@ -10518,7 +10518,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.h gcc-4.4.0/gcc/config/tms990
 +#define ASM_OUTPUT_ALIGNED_LOCAL(STREAM, NAME, SIZE, ALIGNMENT)            \
 +do {                                                                       \
 +     switch_to_section (bss_section);                                      \
-+     if(ALIGNMENT > 1) fprintf ((STREAM), "\n\teven\n");                   \
++     if(ALIGNMENT > 8) fprintf ((STREAM), "\n\teven\n");                   \
 +     assemble_name ((STREAM), (NAME));                                     \
 +     fprintf ((STREAM), "\n\tbss %u\n", (int)(SIZE));                      \
 +} while (0)
@@ -10593,8 +10593,8 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.h gcc-4.4.0/gcc/config/tms990
 +
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms9900/tms9900.md
 --- gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md	2024-07-28 14:42:12.633792695 +0100
-+++ gcc-4.4.0/gcc/config/tms9900/tms9900.md	2024-10-13 10:44:05.234999098 +0100
-@@ -0,0 +1,3442 @@
++++ gcc-4.4.0/gcc/config/tms9900/tms9900.md	2024-10-13 17:23:23.240079703 +0100
+@@ -0,0 +1,3443 @@
 +;;- Machine description for the TMS9900 for GNU C compiler
 +;; Copyright (C) 1994, 1995, 1997, 1998, 1999, 2000, 2001, 2004, 2005
 +;; 2007, 2008 Free Software Foundation, Inc.
@@ -11994,20 +11994,34 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +;;-------------------------------------------------------------------
 +;;  Bit Shift Operations
 +;;-------------------------------------------------------------------
-+
-+;; NOTE : On the TMS9900 a shift count of 0 is interpreted as
-+;; shift by 16, so test for 0 and jump over the shift if true.  Do the same in
-+;; all other shift by register insns as well.
-+
++;;
 +;; Accept any shift count but if it is not a constant, load it into r0 first.
-+
++;;
 +;; If we are asked to shift by a constant 0 then the
 +;; compiler is being stupid so detect this (constraint 'O') and emit nothing
-+
++;;
 +;; The shift count may be a dropped extend subreg.  Detect this and shift right by 8
-+
++;;
 +;; It does not appear byte variants (ashrqi3 etc) are used.  Comment them out for now 
-+
++;;
++;; NOTE-1 : On the TMS9900 a shift count of 0 is interpreted as
++;; shift by 16, so test for 0 and jump over the shift if true.  Do the same in
++;; all other shift by register insns as well.
++;;
++;; NOTE-2 : 32-bit shift operations are not implemented as insns at the moment
++;; because the sequence of instructions would be quite lengthy.  There are library
++;; functions in lib1funcs.asm to do 32-bit shift ops.  Unfortunately when building
++;; for speed optimisation, the compiler does not use the library and instead tries
++;; to construct its own 32-bit shift using 16-bit ops.  This works except when
++;; the shift count is a variable that had a value of 16.  In this case the compiler
++;; emits an insn to shift by 0x10 presumably in the assumption that a shift of 0 does
++;; nothing.  But on the tms9900 that does a shift of 16 instead which destroys
++;; the data.  The comparse of the shiftcount to zero fails because 0x10 != 0.  To fix 
++;; this I have added ANDI R0,>F to ensure only the lower 4 bits are examined.  This
++;; bloats the code unnecessarily for 16-bit ops but for now it is better to be correct
++;; than efficient.  In the longer term it may be necessary to add back in 32-bit
++;; insns to avoid this
++;;
 +;;-------------------------------------------------------------------
 +;; Arithmetic shift left
 +;;
@@ -12063,7 +12077,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +    }
 +    return(""); 
 +  }
-+  [(set_attr "length" "8,10,2,4")])
++  [(set_attr "length" "12,14,2,4")])
 +
 +
 +;;-------------------------------------
@@ -12117,7 +12131,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +    }
 +    return(""); 
 +  }
-+  [(set_attr "length" "8,10,2,4")])
++  [(set_attr "length" "12,14,2,4")])
 +
 +;;-------------------------------------------------------------------
 +;; Logical shift right
@@ -12167,7 +12181,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +    }
 +    return(""); 
 +  }
-+  [(set_attr "length" "8,10,2,4")])
++  [(set_attr "length" "12,14,2,4")])
 +
 +
 +;;-------------------------------------
@@ -12411,8 +12425,6 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +
 +;;-------------------------------------------------------------------
 +;; Or
-+
-+
 +;;-------------------------------------
 +(define_insn "iorhi3"
 +  [(set (match_operand:HI 0 "nonimmediate_operand"         "=rR>,rR>,Q,  Q,r,r,r")
@@ -12477,8 +12489,6 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +
 +;;-------------------------------------------------------------------
 +;; Xor
-+
-+
 +;;-------------------------------------
 +(define_insn "xorhi3"
 +  [(set (match_operand:HI 0 "register_operand" "=r,r")
@@ -12495,6 +12505,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +;;-------------------------------------
 +;; This works for regs only as xor is 16-bit only and should not be used on
 +;; memory locations as it will affect the neighbouring byte
++;;-------------------------------------
 +(define_insn "xorqi3"
 +  [(set (match_operand:QI 0 "register_operand" "=r")
 +	(xor:QI (match_operand:QI 1 "register_operand" "%0")
@@ -12524,6 +12535,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +;;-------------------------------------
 +;; This works for regs only as inv is 16-bit only and should not be used on
 +;; memory locations as it will affect the neighbouring byte
++;;-------------------------------------
 +(define_insn "one_cmplqi2"
 +  [(set (match_operand:QI 0 "nonimmediate_operand" "=r")
 +        (not:QI (match_operand:QI 1 "nonimmediate_operand" "0")))]
@@ -12825,17 +12837,6 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +      output_asm_insn("sb   %0,0",operands);
 +      output_asm_insn("movb 0,%0",operands);
 +    }
-+    #if 0
-+    else
-+    {
-+      // subtract non reg from non reg  x = y - x 
-+      // op0 = op1 - op0
-+      output_asm_insn("mov  %0,0",operands);
-+      output_asm_insn("inv  0",operands);
-+      output_asm_insn("ab   %1,0",operands);
-+      output_asm_insn("movb 0,%0",operands);
-+    }
-+    #endif
 +    return "";
 +  }
 +  [(set_attr "length" "2,4,4,6,6,10,8,12")])
@@ -14362,13 +14363,13 @@ diff -ru gcc-4.4.0-orig/gcc/cp/cfns.h gcc-4.4.0/gcc/cp/cfns.h
  }
 diff -ru gcc-4.4.0-orig/gcc/DATESTAMP gcc-4.4.0/gcc/DATESTAMP
 --- gcc-4.4.0-orig/gcc/DATESTAMP	2024-10-05 07:13:03.762413661 +0100
-+++ gcc-4.4.0/gcc/DATESTAMP	2024-10-13 11:18:39.265112712 +0100
++++ gcc-4.4.0/gcc/DATESTAMP	2024-10-19 19:36:09.258636166 +0100
 @@ -1 +1 @@
 -20090421
-+20241013
++20241019
 diff -ru gcc-4.4.0-orig/gcc/DEV-PHASE gcc-4.4.0/gcc/DEV-PHASE
 --- gcc-4.4.0-orig/gcc/DEV-PHASE	2009-04-21 09:48:37.000000000 +0100
-+++ gcc-4.4.0/gcc/DEV-PHASE	2024-10-13 11:18:39.269112685 +0100
++++ gcc-4.4.0/gcc/DEV-PHASE	2024-10-19 19:36:09.258636166 +0100
 @@ -0,0 +1 @@
 +TMS9900 patch
 diff -ru gcc-4.4.0-orig/gcc/df-core.c gcc-4.4.0/gcc/df-core.c
@@ -15434,7 +15435,7 @@ diff -ru gcc-4.4.0-orig/gcc/reload.c gcc-4.4.0/gcc/reload.c
  						      SUBREG_BYTE (*loc),
 diff -ru gcc-4.4.0-orig/gcc/REVISION gcc-4.4.0/gcc/REVISION
 --- gcc-4.4.0-orig/gcc/REVISION	2024-10-05 07:13:03.762413661 +0100
-+++ gcc-4.4.0/gcc/REVISION	2024-10-13 11:18:39.273112659 +0100
++++ gcc-4.4.0/gcc/REVISION	2024-10-19 19:36:09.262636137 +0100
 @@ -0,0 +1 @@
 +1.32
 diff -ru gcc-4.4.0-orig/gcc/targhooks.c gcc-4.4.0/gcc/targhooks.c

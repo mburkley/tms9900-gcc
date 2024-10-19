@@ -46,10 +46,20 @@ binutils patch 1.11
 * Added __attribute(fallthrough) in switches where compiler was issuing an error
 
 gcc patch 1.32
-* Fixed problems with subtract word and byte
-* Fixed 32-bit integer initialisation
 * Fixed left and right shifts by a byte variable
+* Add extra check for zero to rotate by register and removed word alignment of byte constants
+* Fixed problems with subtract word and byte (rsubihi insn)
+* Refactored shift insns to take subregs properly into account
+* Add andhi to shifts to fix int32 unit tests
+* Added fix to rsubihi problem with label refs
+* Fixed 32-bit integer initialisation
 * Removed cmphi-movhi peephole
+* Added test harness with emulated CPU and XOP 15 for traps
+* Ensured all unit tests pass with and without optimisation
+* Fixed unrecognised insn in initialisation of longs
+* Disabled cmphi peephole and add fallthrough to binutils code
+* Refactored movsi to not do highpart/lowpart on regs
+* Add reg mov thru r0 to fix off-by-one-bug in byte sub
 
 gcc patch 1.31
 * Added build and install of elfutils (elf2cart, elf2ea5 and ea5split) to install.sh
