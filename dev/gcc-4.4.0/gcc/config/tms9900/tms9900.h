@@ -1149,7 +1149,7 @@ EMW*/
    rounded up to whatever alignment the caller wants. */
 #define ASM_OUTPUT_ALIGNED_BSS(STREAM, DECL, NAME, SIZE, ALIGNMENT)     \
   do{\
-  if(ALIGNMENT > 1) fprintf ((STREAM), "\n\teven\n");                   \
+  if(ALIGNMENT > 8) fprintf ((STREAM), "\n\teven\n");                   \
   asm_output_aligned_bss ((STREAM), (DECL), (NAME), (SIZE), (ALIGNMENT)); }while(0)
 
 /* A C statement (sans semicolon) to output to the stdio stream
@@ -1159,7 +1159,7 @@ EMW*/
 #define ASM_OUTPUT_ALIGNED_COMMON(STREAM, NAME, SIZE, ALIGNMENT)           \
 do {                                                                       \
      switch_to_section (bss_section);                                      \
-     if(ALIGNMENT > 1) fprintf ((STREAM), "\n\teven");                     \
+     if(ALIGNMENT > 8) fprintf ((STREAM), "\n\teven");                     \
      fprintf ((STREAM), "\n\tdef %s\n", (NAME));                           \
      assemble_name ((STREAM), (NAME));                                     \
      fprintf ((STREAM), "\n\tbss %u\n", (int)(SIZE));                      \
@@ -1172,7 +1172,7 @@ do {                                                                       \
 #define ASM_OUTPUT_ALIGNED_LOCAL(STREAM, NAME, SIZE, ALIGNMENT)            \
 do {                                                                       \
      switch_to_section (bss_section);                                      \
-     if(ALIGNMENT > 1) fprintf ((STREAM), "\n\teven\n");                   \
+     if(ALIGNMENT > 8) fprintf ((STREAM), "\n\teven\n");                   \
      assemble_name ((STREAM), (NAME));                                     \
      fprintf ((STREAM), "\n\tbss %u\n", (int)(SIZE));                      \
 } while (0)

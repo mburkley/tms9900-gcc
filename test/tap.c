@@ -47,7 +47,7 @@ void test_report (void)
              "xop r0,15" : : "i"(XOP_REPORT));
 }
 
-void test_printf (void)
+void test_printf (char *fmt, ...)
 {
     __asm__ ("li r0,%0\n\t"
              "xop r0,15" : : "i"(XOP_PRINT));

@@ -12,17 +12,21 @@ void t_array (void)
     test_execute (__func__, a[2]==1);
 }
 
-static unsigned char array[] = { 7, 11, 5, 19, 23 };
+static unsigned char array[] = { 5, 4, 3, 2, 1, 0 };
 
 void t_array_loop (void)
 {
     unsigned char i;
 
+    ss_z=0;
     for (i=0; i < 5; i++)
     {
         set_ss_xy(get_uc_add(0,11+2*i), array[5-i]+15);
-        ss_x = 11+i*2;
+        ss_z += 11+i*2 + ss_x + ss_y;
+        dprintf("x=%d y=%d z=%d\n", ss_x, ss_y, ss_z);
     }
+
+    test_execute (__func__, ss_z==235);
 }
 
 TESTFUNC tests[] = 

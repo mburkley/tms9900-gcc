@@ -34,7 +34,7 @@ harness/harness:
 	$(MAKE) -C harness
 
 test: $(BINTARGETS) harness/harness
-	for target in $(BINTARGETS); do \
+	@for target in $(BINTARGETS); do \
             harness/harness -f $$target ; \
             count=$$(($$count + $$?)) ; \
         done ; \
@@ -79,7 +79,7 @@ LIBTI99=-lti99
 
 # OBJECT_LIST=temu_hdr.o
 
-OBJECTS=tap.o params.o fabl.o
+OBJECTS=tap.o params.o
 
 #  Build on host.  Used to verify tests
 host-test: test.c

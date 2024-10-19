@@ -87,17 +87,24 @@ void Harness::test_report ()
 }
 
 // Host printf function - NOTE : numeric values only
+// Caller passed fmt string and params on stack
+
 void Harness::test_printf()
 {
     int c;
-    int r[16];
+    int s[10];
+    int stack;
 
-    for (int i = 0; i < 16; i++)
-        r[i] = memReadW (getWP() + i*2);
+    stack = memReadW (getWP() + 20); // R10
 
-    char *fmt = getString (r[1]);
+    for (int i = 0; i < 10; i++)
+        s[i] = memReadW (stack + (i+1)*2);
 
-    printf (fmt, r[2], r[3], r[4], r[5], r[6]);
+    char *fmt = getString (s[0]);
+
+    printf (fmt, s[1], s[2], s[3],
+            s[4], s[5], s[6],
+            s[7], s[8], s[9]);
 }
 
 void Harness::_xopHandler (uint8_t vector, uint16_t data)

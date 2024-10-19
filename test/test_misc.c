@@ -14,8 +14,9 @@
 
 void t_version (void)
 {
-    dprintf ("# gcc v=%s, major=%d minor=%d\n",
-            __VERSION__,
+    dprintf ("# gcc v=");
+    dprintf (__VERSION__);
+    dprintf (", major=%d minor=%d\n",
             __TMS9900_PATCH_MAJOR__,
             __TMS9900_PATCH_MINOR__);
 
