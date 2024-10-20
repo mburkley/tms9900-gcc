@@ -1,4 +1,4 @@
-LIBTI99DIR?=../libti99
+LIBTI99DIR?=/home/mark/ti99/libti99
 
 # GCCDIR=/opt/tms9900-gcc/bin/
 GCCDIR=../gcc4/bin/
