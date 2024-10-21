@@ -26,7 +26,7 @@ void t_bitwise_replace()
 {
     color = 0xaa;
     setbackground(0x55);
-    printf("# color=%d\n", color);
+    dprintf("# color=%d\n", color);
     test_execute (__func__, color==0xa5);
 }
 
@@ -219,7 +219,6 @@ void t_char_array (void)
 
     test_execute (__func__, haunted == 0);
 }
-
 
 /*  Add to a static long.  This will generate offsets of +/- 2 which are NOT
  *  byte offsets that should be corrected */
