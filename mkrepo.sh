@@ -7,6 +7,10 @@
 PKGS_BULLSEYE=tms9900-gcc*bullseye*.deb
 PKGS_BOOKWORM=tms9900-gcc*bookworm*.deb
 PKGS_TRIXIE=
+echo adding to repo : $PKGS_BOOKWORM
 for p in $PKGS_BOOKWORM ; do reprepro -b repo includedeb bookworm $p ; done
+echo adding to repo : $PKGS_BULLSEYE
 for p in $PKGS_BULLSEYE ; do reprepro -b repo includedeb bullseye $p ; done
+echo adding to repo : $PKGS_TRIXIE
+for p in $PKGS_TRIXIE ; do reprepro -b repo includedeb trixie $p ; done
 

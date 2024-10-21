@@ -19,10 +19,11 @@ fi
 
 #  Each architecture has a separate directory in the deb directory
 #  since each package is for one architecture only and so needs a
-#  unique control file
+#  unique control file.  The distro is appended to the version number
+#  so we can have the same version package in different distros
 
 REVISION=`cat dev/gcc-4.4.0/gcc/REVISION`
-sed -i "s/Version: .*/Version: $REVISION/g" deb/$ARCH/DEBIAN/control
+sed -i "s/Version: .*/Version: $REVISION~$DISTRO/g" deb/$ARCH/DEBIAN/control
 
 echo cleaning...
 rm -r deb/$ARCH/opt
@@ -31,4 +32,9 @@ mkdir -p deb/$ARCH/opt
 mkdir -p deb/$ARCH/opt/tms9900-gcc
 rsync -a $SOURCE/ deb/$ARCH/opt/tms9900-gcc
 
-dpkg -b deb/$ARCH "tms9900-gcc_$REVISION""_$DISTRO""_$ARCH.deb"
+#  Build a package with the version and include the distro as part 
+#  of the version after a tilde (~).  This is to allow the same
+#  version of a package but for different distros to exist at the
+#  same time in the pool directory
+
+dpkg -b deb/$ARCH "tms9900-gcc_$REVISION~$DISTRO""_$ARCH.deb"
