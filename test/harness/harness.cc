@@ -127,7 +127,7 @@ void Harness::_xopHandler (uint8_t vector, uint16_t data)
 int main (int argc, char *argv[])
 {
     Harness harness;
-    char c;
+    int c;
     bool disasmAll = false;
     bool disasmFails = false;
 
