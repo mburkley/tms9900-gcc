@@ -234,7 +234,7 @@ to provide the path to libgcc).
 
 If you want to use floats but don't want to use console ROM routines, then you
 will need to link to an alternative floating point emulation library.  Emulation
-libaries typically expect
+libraries typically expect
 IEEE radix-2 floats, so use the compiler switch **-mno-ti99-float** to disable
 floats to be formatted as TI floats.
 
