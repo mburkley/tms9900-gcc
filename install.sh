@@ -55,7 +55,7 @@ if [ -z $PREFIX ] ; then
    echo
    echo Usage:
    echo   install.sh DIRECTORY
-   echo The output binaries willl be installed at DIRECTORY/bin
+   echo The output binaries will be installed at DIRECTORY/bin
    exit
 fi
 
