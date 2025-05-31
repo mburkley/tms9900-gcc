@@ -32,7 +32,8 @@ test_char_short \
 test_long \
 test_misc \
 test_subreg \
-test_array
+test_array \
+test_muldiv
 
 BINTARGETS=$(TARGETS:=.bin)
 ELFTARGETS=$(TARGETS:=.elf)
