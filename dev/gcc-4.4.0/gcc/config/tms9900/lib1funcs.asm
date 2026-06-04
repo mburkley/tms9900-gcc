@@ -23,6 +23,7 @@
   def __clzqi2
 __clzqi2:
   mov  r2, @-2(r10)     /* Scratch reg */
+  clr r2
   movb r1, r2  /* Move value into position, set condition flags */
   clr  r1      /* Set minimum bit count, flags unchanged */
   jgt  do_clz  /* If val==0, return undefined, if val<0, MSB set, return 0*/
@@ -152,11 +153,12 @@ bottom:
 /*********************************************************/
   def __ctzqi2
 __ctzqi2:
+  mov  r2, @-2(r10)     /* Scratch reg */
   clr  r2
   movb r1, r2  /* Move value to R2, clearing low bits */
   jeq  bottom  /* If all bits clear, stop now, return zero */
   li   r1, 8   /* Max possible zero bits */
-  b    @__ctz  /* Examine provided value */
+  b    @__ctz_nosave  /* Examine provided value */
 bottom:
   mov  @-2(r10), r2
   b *r11
@@ -340,7 +342,7 @@ done:
 * Return the value zero if the number of bits set in the given value is even,
 * and the value one otherwise.
 *
-* Inputs : R1 - Value to test
+* Inputs : R1 - Value to test - must be byte in MSB!
 *
 * Returns: R1 - Number of zero bits
 ******************************************************************************/
@@ -420,7 +422,7 @@ __popcountqi2:
   clr  r1           /* Clear bit count */
   bl   @__popcount  /* Find set bit count */
   mov  *r10+, r11
-  mov  *r10+, r3
+  mov  *r10+, r2    /* fix by claude */
   b    *r11
 #endif
 
