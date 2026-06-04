@@ -1106,37 +1106,6 @@ tms9900_subreg (void)
 {
   dbgprintf("%s disabled\n", __func__);
   return 0;
-  basic_block bb;
-  rtx insn;
-
-  FOR_EACH_BB (bb)
-    FOR_BB_INSNS (bb, insn)
-    {
-    dbgprintf("%s looping\n", __func__);
-    if (INSN_P (insn))
-    {
-      dbgprintf("%s get single_set\n", __func__);
-      rtx set=single_set (insn);
-      if(set !=NULL)
-      {
-        /* We only need to handle cases where there may be
-           subreg expressions in an operation in the source
-           argument. Unary expressions are already handled
-           in the machine description. */
-        rtx src=SET_SRC(set);
-        if(BINARY_P(src))
-        {
-          tms9900_extract_subreg(insn, XEXP(src,0), &XEXP(src,0));
-          tms9900_extract_subreg(insn, XEXP(src,1), &XEXP(src,1));
-        }
-      }
-    }
-    else
-      dbgprintf("%s not INSN_P\n", __func__);
-    }
-
-  dbgprintf("%s done\n", __func__);
-  return 0;
 }
 
 
@@ -1337,46 +1306,47 @@ struct rtl_opt_pass pass_tms9900_postinc =
 
 // MGB additions start here - mostly for debug
 
-/*  Check if there is a byte offset correction needed for an operand.  If
- *  operand is a register and REGNO matches ORIGINAL_REGNO and offset is non
- *  zero then a correction is needed.  -1 indicates an extend is needed, +1
- *  indicates a truncate is needed. */
+/*  Check whether a register operand needs a byte-position correction.
+
+    On the TMS9900 a byte value lives in the HIGH byte of its register.  gcc
+    records this displacement in REG_OFFSET:
+
+      REG_OFFSET == +1 : value was downgraded from HImode to a byte and sits
+                         in the register; a TRUNCATE-direction correction is
+                         needed (this is the QImode case, cf. tms9900_movqi).
+
+      REG_OFFSET == -1 : value is a byte that must be widened/repositioned
+                         before being used as a full HImode value; an
+                         EXTEND-direction correction is needed (HImode case).
+
+    Return true when a correction is required for the given mode.  */
 extern bool tms9900_operand_subreg_offset (rtx operand, int mode)
 {
-  /*  If the source operand is not a register or does not have an offset of
-   *  minus 1 byte then no action required */
-  // if (!REG_P (operand) || (REG_OFFSET (operand) % 2) == 0)
-  // if (!REG_P (operand) || REG_OFFSET (operand) != -1)
-  if (!REG_P (operand) || REG_OFFSET (operand) == 0)
+  if (!REG_P (operand))
     return false;
 
   int offset = REG_OFFSET (operand);
+  
+  /*  Offset 0 means the byte is already correctly positioned; no correction
+      for any mode.  (Also guards modes other than QI/HI from falling through
+      the checks below.) */
+  if (offset == 0)
+    return false;  
 
-  // Bypass debug flag and put direct to file
-  // tms9900_inline_debug ("; reg/reg=%d/%d expr=%d\n", REGNO(operand),
-  fprintf (asm_out_file, "; SUBR off=%ld mode=%s reg/reg=%d/%d\n",
-           REG_OFFSET (operand), GET_MODE_NAME (mode),
-           REGNO(operand), ORIGINAL_REGNO(operand));
-
+  /*  QImode operands need correcting when displaced by +1, HImode operands
+      when displaced by -1.  Any other offset (normally 0) needs no action. */
   if (mode == QImode && offset != 1)
     return false;
 
   if (mode == HImode && offset != -1)
     return false;
 
-  /*  If the source register is not the original register, and the original is a
-   *  mem expression, then the offset refers to something else, so we can ignore
-   *  this case */
+  /*  If the source register is not the original register then the offset
+      refers to some other decl's layout, so ignore it.  Same guard as the
+      movqi insn. */
   if (ORIGINAL_REGNO (operand) != REGNO (operand))
-      //  && REG_EXPR (operand))
-  {
-    tms9900_debug_operands ("REG_EXPR", operand, NULL, 0);
     return false;
-  }
 
-  // tms9900_inline_debug ("; correct required\n");
-  fprintf (asm_out_file, "; SUBR correction required\n");
-  /*  Correction is needed */
   return true;
 }
 

@@ -11,7 +11,7 @@ unsigned long denominator_u32_cache = 0;
 volatile unsigned long quotient_u32_cache;
 volatile unsigned long remainder_u32_cache;
 
-void divmod_u32 (long numerator, long denominator) {
+void divmod_u32 (unsigned long numerator, unsigned long denominator) {
 
    unsigned long t;
 
