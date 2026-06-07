@@ -8157,7 +8157,7 @@ diff -ru binutils-2.19.1-orig/opcodes/Makefile.in binutils-2.19.1/opcodes/Makefi
 diff -ru binutils-2.19.1-orig/opcodes/tms9900-dis.c binutils-2.19.1/opcodes/tms9900-dis.c
 --- binutils-2.19.1-orig/opcodes/tms9900-dis.c	2024-07-29 07:17:02.849482103 +0100
 +++ binutils-2.19.1/opcodes/tms9900-dis.c	2023-12-23 10:48:53.509244401 +0000
-@@ -0,0 +1,387 @@
+@@ -0,0 +1,389 @@
 +/* Print TMS9900 instructions
 +   Copyright 2009 Eric Welser
 +
@@ -8411,6 +8411,8 @@ diff -ru binutils-2.19.1-orig/opcodes/tms9900-dis.c binutils-2.19.1/opcodes/tms9
 +  {parse_type_8b, "lwpi"},
 +  {parse_error,   ""},
 +  {parse_type_8b, "limi"},
++  {parse_error,   ""},
++  {parse_error,   ""},
 +  {parse_error,   ""},
 +  {parse_type_7,  "idle"},
 +  {parse_error,   ""},
