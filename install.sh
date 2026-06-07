@@ -1,3 +1,4 @@
+set +x
 # Super simple patch and install script for GCC and Binutils
 
 
@@ -45,7 +46,7 @@ GCC_ARCHIVE="$GCC_VERSION.tar.gz"
 if [ ! -z "`which wget`" ]; then
   WGET=wget
 elif [ ! -z "`which curl`" ]; then
-  WGET=curl -C
+  WGET="curl -L -O"
 fi
 
 # Check arguments
