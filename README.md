@@ -17,7 +17,7 @@ Patch files are archived in the main branch which are used by an install script
 to create modified sources for gcc and binutils.
 
 The branch **main** in the repo contains The latest scripts and patch files. The patch files are:
-* binutils-2.19.1-tms9900-1.11.patch
+* binutils-2.19.1-tms9900-1.12.patch
 * gcc-4.4.0-tms9900-1.32.patch
 
 Patch files are cumulative.  The latest version of the patch file includes all
