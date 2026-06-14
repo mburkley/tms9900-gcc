@@ -92,7 +92,7 @@ void Harness::test_report ()
 void Harness::test_printf()
 {
     int c;
-    int s[10];
+    short s[10];
     int stack;
 
     stack = memReadW (getWP() + 20); // R10

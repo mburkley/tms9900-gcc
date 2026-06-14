@@ -18,7 +18,7 @@ to create modified sources for gcc and binutils.
 
 The branch **main** in the repo contains The latest scripts and patch files. The patch files are:
 * binutils-2.19.1-tms9900-1.12.patch
-* gcc-4.4.0-tms9900-1.32.patch
+* gcc-4.4.0-tms9900-1.33.patch
 
 Patch files are cumulative.  The latest version of the patch file includes all
 previous updates as well.  Only the latest patch file is stored in the repo.
@@ -41,9 +41,28 @@ cd tms900-gcc
 
 Release Notes - current
 -----------------------
+binutils patch 1.12
+* fix: adjust level 4 parse table (#79)
+* fix: missing parse error entries for level 4 instructions
+* fix: curl does not work properly
+
+gcc patch 1.33
+* fix to some assembly setup functions in lib1funcs.asm
+* remove dead code in tms9900_subreg
+* rewrite tms9900_operand_subreg_offset - but it ended up pretty much the same as original
+* add ashlqi3 and lshrqi3 - byte shift instructions. The word shifts were getting confused
+* fix prototype of divmod_u32 to unsigned arguments
+* Fix sign of remainder in division and fixed direction of rsubihi
+
+Release Notes - historical
+--------------------------
+
 binutils patch 1.11
 * Updates to .texi files
 * Added __attribute(fallthrough) in switches where compiler was issuing an error
+
+binutils patch 1.10
+* No changes to 1.9 but includes the multi-def patch to avoid compile errors relating to "do_wide"
 
 gcc patch 1.32
 * Fixed left and right shifts by a byte variable
@@ -74,12 +93,6 @@ gcc patch 1.31
 * Updated several .texi files (newer TEXinfo is stricter)
 * Updated patches to 1.31 for gcc and 1.11 for binutils
 * Added separate ARM64 and AMD64 architectures in debian package build
-
-Release Notes - historical
---------------------------
-
-binutils patch 1.10
-* No changes to 1.9 but includes the multi-def patch to avoid compile errors relating to "do_wide"
 
 gcc patch 1.30
 * Pass constants as wides to force_const_mem to avoid assert in combine.c:do_SUBST

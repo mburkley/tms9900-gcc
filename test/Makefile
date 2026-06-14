@@ -1,9 +1,8 @@
 ##
 #  Directories where tools are located.  Edit to reflect your setup
 ##
-LIBTI99DIR?=~/work/ti99/libTi99All/buildti
-# GCCDIR=/opt/tms9900-gcc/bin/
-GCCDIR=../gcc4/bin/
+LIBTI99DIR?=~/libTi99All/buildti
+GCCDIR=~/gcc4/bin/
 
 ##
 #  Locations of tools relative to directories defined above
@@ -32,7 +31,8 @@ test_char_short \
 test_long \
 test_misc \
 test_subreg \
-test_array
+test_array \
+test_muldiv
 
 BINTARGETS=$(TARGETS:=.bin)
 ELFTARGETS=$(TARGETS:=.elf)
