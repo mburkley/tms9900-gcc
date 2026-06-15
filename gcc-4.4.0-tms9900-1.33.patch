@@ -6110,7 +6110,7 @@ diff -ru gcc-4.4.0-orig/config.sub gcc-4.4.0/config.sub
  # time-stamp-format: "%:y-%02m-%02d"
  # time-stamp-end: "'"
 diff -ru gcc-4.4.0-orig/gcc/c-cppbuiltin.c gcc-4.4.0/gcc/c-cppbuiltin.c
---- gcc-4.4.0-orig/gcc/c-cppbuiltin.c	2026-06-14 15:43:41.347386074 +0100
+--- gcc-4.4.0-orig/gcc/c-cppbuiltin.c	2026-06-14 20:16:01.345160948 +0100
 +++ gcc-4.4.0/gcc/c-cppbuiltin.c	2026-06-08 18:46:28.791160038 +0100
 @@ -104,12 +104,27 @@
    int decimal_dig;
@@ -6549,7 +6549,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/double.c gcc-4.4.0/gcc/config/tms9900
 +}
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/eqdf2.c gcc-4.4.0/gcc/config/tms9900/eqdf2.c
 --- gcc-4.4.0-orig/gcc/config/tms9900/eqdf2.c	2026-06-08 18:46:28.779160023 +0100
-+++ gcc-4.4.0/gcc/config/tms9900/eqdf2.c	2026-06-14 15:42:52.235300625 +0100
++++ gcc-4.4.0/gcc/config/tms9900/eqdf2.c	2026-06-14 20:16:01.345160948 +0100
 @@ -0,0 +1,15 @@
 +/* 06/23/2023 mrvan initial version
 +*/
@@ -6640,7 +6640,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/gedf2.c gcc-4.4.0/gcc/config/tms9900/
 +}
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/gtdf2.c gcc-4.4.0/gcc/config/tms9900/gtdf2.c
 --- gcc-4.4.0-orig/gcc/config/tms9900/gtdf2.c	2026-06-08 18:46:28.779160023 +0100
-+++ gcc-4.4.0/gcc/config/tms9900/gtdf2.c	2026-06-14 15:42:52.235300625 +0100
++++ gcc-4.4.0/gcc/config/tms9900/gtdf2.c	2026-06-14 20:16:01.345160948 +0100
 @@ -0,0 +1,9 @@
 +/* 06/23/2023 mrvan initial version
 +*/
@@ -6666,7 +6666,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/ledf2.c gcc-4.4.0/gcc/config/tms9900/
 +}  
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/lib1funcs.asm gcc-4.4.0/gcc/config/tms9900/lib1funcs.asm
 --- gcc-4.4.0-orig/gcc/config/tms9900/lib1funcs.asm	2026-06-08 18:46:28.783160028 +0100
-+++ gcc-4.4.0/gcc/config/tms9900/lib1funcs.asm	2026-06-14 15:42:52.239300632 +0100
++++ gcc-4.4.0/gcc/config/tms9900/lib1funcs.asm	2026-06-14 20:16:01.345160948 +0100
 @@ -0,0 +1,1060 @@
 +/*
 + *  MGB 32-bit arithmetic functions never seem to be used.  The compiler emits
@@ -7825,7 +7825,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/math_private.h gcc-4.4.0/gcc/config/t
 +#endif
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms9900/tms9900.c
 --- gcc-4.4.0-orig/gcc/config/tms9900/tms9900.c	2026-06-08 18:46:28.783160028 +0100
-+++ gcc-4.4.0/gcc/config/tms9900/tms9900.c	2026-06-14 15:42:52.239300632 +0100
++++ gcc-4.4.0/gcc/config/tms9900/tms9900.c	2026-06-14 20:16:01.345160948 +0100
 @@ -0,0 +1,1485 @@
 +/* Subroutines for insn-output.c for TMS9900.
 +   Copyright (C) 1987, 1994, 1995, 1997, 1998, 1999, 2000, 2001, 2002,
@@ -10565,7 +10565,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.h gcc-4.4.0/gcc/config/tms990
 +
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms9900/tms9900.md
 --- gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md	2026-06-08 18:46:28.783160028 +0100
-+++ gcc-4.4.0/gcc/config/tms9900/tms9900.md	2026-06-14 17:00:14.239861430 +0100
++++ gcc-4.4.0/gcc/config/tms9900/tms9900.md	2026-06-14 20:16:01.345160948 +0100
 @@ -0,0 +1,3532 @@
 +;;- Machine description for the TMS9900 for GNU C compiler
 +;; Copyright (C) 1994, 1995, 1997, 1998, 1999, 2000, 2001, 2004, 2005
@@ -14255,7 +14255,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/t-tms9900 gcc-4.4.0/gcc/config/tms990
 +
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/ulongdivmod.c gcc-4.4.0/gcc/config/tms9900/ulongdivmod.c
 --- gcc-4.4.0-orig/gcc/config/tms9900/ulongdivmod.c	2026-06-08 18:46:28.783160028 +0100
-+++ gcc-4.4.0/gcc/config/tms9900/ulongdivmod.c	2026-06-14 15:42:52.239300632 +0100
++++ gcc-4.4.0/gcc/config/tms9900/ulongdivmod.c	2026-06-14 20:16:01.345160948 +0100
 @@ -0,0 +1,51 @@
 +/* ulongdivmod.c
 +   These methods provide unsigned long division and modulus.
@@ -14424,13 +14424,13 @@ diff -ru gcc-4.4.0-orig/gcc/cp/cfns.h gcc-4.4.0/gcc/cp/cfns.h
  }
 diff -ru gcc-4.4.0-orig/gcc/DATESTAMP gcc-4.4.0/gcc/DATESTAMP
 --- gcc-4.4.0-orig/gcc/DATESTAMP	2026-06-08 18:46:28.779160023 +0100
-+++ gcc-4.4.0/gcc/DATESTAMP	2026-06-14 20:10:08.188515771 +0100
++++ gcc-4.4.0/gcc/DATESTAMP	2026-06-15 09:36:28.020111210 +0100
 @@ -1 +1 @@
 -20090421
-+20260614
++20260615
 diff -ru gcc-4.4.0-orig/gcc/DEV-PHASE gcc-4.4.0/gcc/DEV-PHASE
 --- gcc-4.4.0-orig/gcc/DEV-PHASE	2026-06-08 18:46:28.779160023 +0100
-+++ gcc-4.4.0/gcc/DEV-PHASE	2026-06-14 20:10:08.188515771 +0100
++++ gcc-4.4.0/gcc/DEV-PHASE	2026-06-15 09:36:28.020111210 +0100
 @@ -0,0 +1 @@
 +TMS9900 patch
 diff -ru gcc-4.4.0-orig/gcc/dfp.c gcc-4.4.0/gcc/dfp.c
@@ -14656,7 +14656,7 @@ diff -ru gcc-4.4.0-orig/gcc/reload.c gcc-4.4.0/gcc/reload.c
  						      SUBREG_BYTE (*loc),
 diff -ru gcc-4.4.0-orig/gcc/REVISION gcc-4.4.0/gcc/REVISION
 --- gcc-4.4.0-orig/gcc/REVISION	2026-06-08 18:46:28.779160023 +0100
-+++ gcc-4.4.0/gcc/REVISION	2026-06-14 20:10:08.188515771 +0100
++++ gcc-4.4.0/gcc/REVISION	2026-06-15 09:36:28.020111210 +0100
 @@ -0,0 +1 @@
 +1.33
 diff -ru gcc-4.4.0-orig/gcc/toplev.h gcc-4.4.0/gcc/toplev.h

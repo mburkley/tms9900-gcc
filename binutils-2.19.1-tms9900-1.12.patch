@@ -6454,8 +6454,8 @@ diff -ru binutils-2.19.1-orig/config.sub binutils-2.19.1/config.sub
  # time-stamp-format: "%:y-%02m-%02d"
  # time-stamp-end: "'"
 diff -ru binutils-2.19.1-orig/gas/app.c binutils-2.19.1/gas/app.c
---- binutils-2.19.1-orig/gas/app.c	2026-06-14 18:13:07.987865115 +0100
-+++ binutils-2.19.1/gas/app.c	2026-06-14 18:30:18.457542708 +0100
+--- binutils-2.19.1-orig/gas/app.c	2026-06-14 20:16:01.345160948 +0100
++++ binutils-2.19.1/gas/app.c	2026-06-14 20:16:01.345160948 +0100
 @@ -650,6 +650,10 @@
  
  	    default:
@@ -6469,7 +6469,7 @@ diff -ru binutils-2.19.1-orig/gas/app.c binutils-2.19.1/gas/app.c
  	      break;
 diff -ru binutils-2.19.1-orig/gas/config/tc-tms9900.c binutils-2.19.1/gas/config/tc-tms9900.c
 --- binutils-2.19.1-orig/gas/config/tc-tms9900.c	2026-06-08 18:46:28.767160009 +0100
-+++ binutils-2.19.1/gas/config/tc-tms9900.c	2026-06-08 18:46:28.775160018 +0100
++++ binutils-2.19.1/gas/config/tc-tms9900.c	2026-06-15 09:32:54.011747105 +0100
 @@ -0,0 +1,1282 @@
 +/* tc-tms9900.c -- Assemble code for the Texas Instruments TMS9900
 +   Copyright 2009 Eric Welser
@@ -7334,7 +7334,7 @@ diff -ru binutils-2.19.1-orig/gas/config/tc-tms9900.c binutils-2.19.1/gas/config
 +  { "srl",  0x0900, {ARG_REGISTER,  ARG_SHIFT}},
 +  { "stcr", 0x3400, {ARG_MODE,      ARG_CRU_COUNT}},
 +  { "stst", 0x02C0, {ARG_REGISTER,  ARG_NONE}},
-+  { "stwp", 0x02A0, {ARG_REGISTER,  ARG_IMMEDIATE}},
++  { "stwp", 0x02A0, {ARG_REGISTER,  ARG_NONE}},
 +  { "swpb", 0x06C0, {ARG_MODE,      ARG_NONE}},
 +  { "szc",  0x4000, {ARG_MODE,      ARG_MODE}},
 +  { "szcb", 0x5000, {ARG_MODE,      ARG_MODE}},

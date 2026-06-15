@@ -861,7 +861,7 @@ static table_t instab[] =
   { "srl",  0x0900, {ARG_REGISTER,  ARG_SHIFT}},
   { "stcr", 0x3400, {ARG_MODE,      ARG_CRU_COUNT}},
   { "stst", 0x02C0, {ARG_REGISTER,  ARG_NONE}},
-  { "stwp", 0x02A0, {ARG_REGISTER,  ARG_IMMEDIATE}},
+  { "stwp", 0x02A0, {ARG_REGISTER,  ARG_NONE}},
   { "swpb", 0x06C0, {ARG_MODE,      ARG_NONE}},
   { "szc",  0x4000, {ARG_MODE,      ARG_MODE}},
   { "szcb", 0x5000, {ARG_MODE,      ARG_MODE}},
