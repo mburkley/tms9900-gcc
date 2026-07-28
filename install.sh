@@ -124,9 +124,10 @@ if [ ! -f .binutils_built ] ; then
    cd $BINUTILS_VERSION
    ./configure --target tms9900 --prefix $PREFIX --disable-build-warnings
    check_result "=== Failed to configure Binutils ==="
-   make all
+   # MAKEINFO=true skips building the info docs, which fail with texinfo >= 5
+   make all MAKEINFO=true
    check_result "=== Failed to build Binutils ==="
-   make install
+   make install MAKEINFO=true
    check_result "=== Failed to install Binutils ==="
    cd ..
    touch .binutils_built
@@ -139,11 +140,11 @@ if [ ! -f .gcc_built ] ; then
    cd build
    ../configure --prefix $PREFIX --target=tms9900 --enable-languages=c,c++
    check_result "=== Failed to configure GCC ==="
-   make all-gcc
+   make all-gcc MAKEINFO=true
    check_result "=== Failed to build GCC ==="
-   make all-target-libgcc
+   make all-target-libgcc MAKEINFO=true
    check_result "=== Failed to build libgcc ==="
-   make install-gcc install-target-libgcc
+   make install-gcc install-target-libgcc MAKEINFO=true
    # Make install has an expected failure:
    #  /bin/bash: line 3: cd: tms9900/libssp: No such file or directory
    # We do not build libssp, so that's OK
@@ -156,9 +157,9 @@ if [ ! -f .libgcc_built ] ; then
    cd $GCC_VERSION
    mkdir build
    cd build
-   make  all-target-libgcc
+   make  all-target-libgcc MAKEINFO=true
    check_result "=== Failed to build libgcc.a ==="
-   make install-target-libgcc
+   make install-target-libgcc MAKEINFO=true
    check_result "=== Failed to build libgcc.a ==="
    cd ../..
    touch .libgcc_built
