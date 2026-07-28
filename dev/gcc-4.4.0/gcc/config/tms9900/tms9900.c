@@ -1341,12 +1341,34 @@ extern bool tms9900_operand_subreg_offset (rtx operand, int mode)
   if (mode == HImode && offset != -1)
     return false;
 
+#if 0
   /*  If the source register is not the original register then the offset
       refers to some other decl's layout, so ignore it.  Same guard as the
       movqi insn. */
   if (ORIGINAL_REGNO (operand) != REGNO (operand))
     return false;
+#else
+    /* QImode (truncate) direction: keep the original strict rule. */
+    if (mode == QImode)
+      return ORIGINAL_REGNO (operand) == REGNO (operand);
 
+    /* HImode (extend) direction: the offset only describes the runtime byte
+       position when this rtx is reload's replacement of a paradoxical
+       (subreg:HI (reg:QI ...)).  That is the case when the rtx *is* the
+       original (hard) register, or when the original pseudo was QImode.
+       If the original pseudo was itself HImode (e.g. the destination of a
+       zero_extend), the value is already correctly positioned and the
+       offset merely records which decl byte it holds.  */
+    if (ORIGINAL_REGNO (operand) != REGNO (operand))
+      {
+        unsigned int orig = ORIGINAL_REGNO (operand);
+        if (orig < FIRST_PSEUDO_REGISTER
+            || regno_reg_rtx[orig] == NULL_RTX
+            || GET_MODE (regno_reg_rtx[orig]) != QImode)
+          return false;
+      }
+#endif
+    
   return true;
 }
 
