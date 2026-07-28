@@ -18,7 +18,7 @@ to create modified sources for gcc and binutils.
 
 The branch **main** in the repo contains The latest scripts and patch files. The patch files are:
 * binutils-2.19.1-tms9900-1.12.patch
-* gcc-4.4.0-tms9900-1.33.patch
+* gcc-4.4.0-tms9900-1.34.patch
 
 Patch files are cumulative.  The latest version of the patch file includes all
 previous updates as well.  Only the latest patch file is stored in the repo.
@@ -46,14 +46,13 @@ binutils patch 1.12
 * fix: missing parse error entries for level 4 instructions
 * fix: curl does not work properly
 
-gcc patch 1.33
-* fix to some assembly setup functions in lib1funcs.asm
-* remove dead code in tms9900_subreg
-* rewrite tms9900_operand_subreg_offset - but it ended up pretty much the same as original
-* add ashlqi3 and lshrqi3 - byte shift instructions. The word shifts were getting confused
-* fix prototype of divmod_u32 to unsigned arguments
-* Fix sign of remainder in division and fixed direction of rsubihi
-
+gcc patch 1.34
+* fixed signed division by -32768, at least as far as the test harness expects
+* added test harness for signed division
+* added test harness for bitfields
+* fix for return-and of unsigned chars and or-or-or of unsigned chars
+* fix to build script (turn off docs) to resolve build failures, starting with bfd
+    
 Release Notes - historical
 --------------------------
 
@@ -63,6 +62,14 @@ binutils patch 1.11
 
 binutils patch 1.10
 * No changes to 1.9 but includes the multi-def patch to avoid compile errors relating to "do_wide"
+
+gcc patch 1.33
+* fix to some assembly setup functions in lib1funcs.asm
+* remove dead code in tms9900_subreg
+* rewrite tms9900_operand_subreg_offset - but it ended up pretty much the same as original
+* add ashlqi3 and lshrqi3 - byte shift instructions. The word shifts were getting confused
+* fix prototype of divmod_u32 to unsigned arguments
+* Fix sign of remainder in division and fixed direction of rsubihi
 
 gcc patch 1.32
 * Fixed left and right shifts by a byte variable
