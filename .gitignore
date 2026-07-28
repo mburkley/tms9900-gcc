@@ -12,3 +12,8 @@ test/harness/harness
 elfutils/elf2cart
 elfutils/elf2ea5
 elfutils/ea5split
+*.o
+*.elf
+*.bin
+*.map
+
