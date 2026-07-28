@@ -4,9 +4,7 @@ unasm.o \
 parse.o \
 harness-mem.o 
 
-LIBS=\
--lreadline \
--lm 
+LIBS=-lm
 
 CFLAGS=-Wall -ggdb3
 # LDFLAGS=
