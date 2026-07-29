@@ -534,13 +534,14 @@ savemod:
   mov  *r10, r0
   mov  r3, *r0+
   mov  r4, *r0
+  
+  bl   @__divmodend      ; apply sign (reads R5) BEFORE restoring R5    
 
   /* Restore from stack */
   mov  *r10+, r5
   mov  *r10+, r11
+  b    *r11
 
-  /* Complete operatons */
-  b    @__divmodend
 #endif
 
 
@@ -567,12 +568,12 @@ __divsi3:
   /* Caclulate result */
 calc:
   bl   @__udivmod32
+  bl   @__divmodend      ; apply sign (reads R5) BEFORE restoring R5  
 
   /* Restore from stack */
   mov  *r10+, r5
   mov  *r10+, r11
-
-  b    @__divmodend
+  b    *r11
 #endif
 
 
@@ -602,11 +603,12 @@ calc:
   mov  r3, r1
   mov  r4, r2
 
+  bl   @__divmodend      ; apply sign (reads R5) BEFORE restoring R5  
+    
   /* Restore from stack */
   mov  *r10+, r5
   mov  *r10+, r11
-
-  b    @__divmodend
+  b    *r11
 #endif
 
 
