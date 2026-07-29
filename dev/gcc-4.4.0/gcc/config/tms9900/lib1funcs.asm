@@ -514,6 +514,8 @@ __divmodsi3:
   mov  r11,*r10
   dect r10
   mov  r5,*r10
+  dect r10
+  mov  r1,*r10    ; save original numerator for sign
 
   bl   @__divmodstart
 
@@ -534,8 +536,9 @@ savemod:
   mov  *r10, r0
   mov  r3, *r0+
   mov  r4, *r0
-  
-  bl   @__divmodend      ; apply sign (reads R5) BEFORE restoring R5    
+
+  mov *r10+,r5           ; get original numerator sign  
+  bl   @__divmodend      ; apply sign (reads R5)
 
   /* Restore from stack */
   mov  *r10+, r5
@@ -595,6 +598,8 @@ __modsi3:
   mov  r11,*r10  ; save r11
   dect r10
   mov  r5,*r10  ; save r5
+  dect r10
+  mov  r1,*r10  ; save ORIGINAL numerator high word (dividend sign)
   bl   @__divmodstart
 
   /* Caclulate result */
@@ -603,7 +608,8 @@ calc:
   mov  r3, r1
   mov  r4, r2
 
-  bl   @__divmodend      ; apply sign (reads R5) BEFORE restoring R5  
+  mov  *r10+, r5         ; r5 = original numerator high for it's sign bit
+  bl   @__divmodend      ; apply the NUMERATOR (DIVIDEND) sign to the remainder
     
   /* Restore from stack */
   mov  *r10+, r5
