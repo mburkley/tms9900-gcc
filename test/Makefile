@@ -22,17 +22,12 @@ CRT0=$(LIBTI99DIR)/crt0_ea5.o
 # without optimisation.  Check the bin file is less than 8192 bytes before
 # running.
 
-# test_float is not tested by this framework as it uses the console ROM
-# floating point routines
-NONTARGET=test_float
+# Generate a list of targets based on any file in the directory match test_*.c
+FILELIST=$(patsubst %.c,%,$(wildcard test_*.c))
 
-TARGETS=\
-test_char_short \
-test_long \
-test_misc \
-test_subreg \
-test_array \
-test_muldiv
+# test_float is not tested by this framework as it uses the console ROM
+# floating point routines so remove it from the list
+TARGETS=$(subst test_float,,$(FILELIST))
 
 BINTARGETS=$(TARGETS:=.bin)
 ELFTARGETS=$(TARGETS:=.elf)

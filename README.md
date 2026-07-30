@@ -46,13 +46,12 @@ binutils patch 1.12
 * fix: missing parse error entries for level 4 instructions
 * fix: curl does not work properly
 
-gcc patch 1.34
-* fixed signed division by -32768, at least as far as the test harness expects
-* added test harness for signed division
-* added test harness for bitfields
-* fix for return-and of unsigned chars and or-or-or of unsigned chars
-* fix to build script (turn off docs) to resolve build failures, starting with bfd
-    
+gcc patch 1.35
+* add two more tests that cover long modulo
+* sign fix for long modulo
+* fix for signed division on longs
+* added two tests that reproduced the issue
+
 Release Notes - historical
 --------------------------
 
@@ -63,6 +62,13 @@ binutils patch 1.11
 binutils patch 1.10
 * No changes to 1.9 but includes the multi-def patch to avoid compile errors relating to "do_wide"
 
+gcc patch 1.34
+* fixed signed division by -32768, at least as far as the test harness expects
+* added test harness for signed division
+* added test harness for bitfields
+* fix for return-and of unsigned chars and or-or-or of unsigned chars
+* fix to build script (turn off docs) to resolve build failures, starting with bfd
+    
 gcc patch 1.33
 * fix to some assembly setup functions in lib1funcs.asm
 * remove dead code in tms9900_subreg
