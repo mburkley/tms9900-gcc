@@ -6666,7 +6666,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/ledf2.c gcc-4.4.0/gcc/config/tms9900/
 +}  
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/lib1funcs.asm gcc-4.4.0/gcc/config/tms9900/lib1funcs.asm
 --- gcc-4.4.0-orig/gcc/config/tms9900/lib1funcs.asm	2026-06-08 18:46:28.783160028 +0100
-+++ gcc-4.4.0/gcc/config/tms9900/lib1funcs.asm	2026-07-30 06:34:11.932183739 +0100
++++ gcc-4.4.0/gcc/config/tms9900/lib1funcs.asm	2026-07-30 09:06:37.905199015 +0100
 @@ -0,0 +1,1068 @@
 +/*
 + *  MGB 32-bit arithmetic functions never seem to be used.  The compiler emits
@@ -7833,8 +7833,8 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/math_private.h gcc-4.4.0/gcc/config/t
 +#endif
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms9900/tms9900.c
 --- gcc-4.4.0-orig/gcc/config/tms9900/tms9900.c	2026-06-08 18:46:28.783160028 +0100
-+++ gcc-4.4.0/gcc/config/tms9900/tms9900.c	2026-07-28 23:17:43.100016144 +0100
-@@ -0,0 +1,1507 @@
++++ gcc-4.4.0/gcc/config/tms9900/tms9900.c	2026-07-30 09:09:01.125460029 +0100
+@@ -0,0 +1,1537 @@
 +/* Subroutines for insn-output.c for TMS9900.
 +   Copyright (C) 1987, 1994, 1995, 1997, 1998, 1999, 2000, 2001, 2002,
 +   2004, 2005, 2006, 2007, 2008
@@ -9342,6 +9342,36 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.c gcc-4.4.0/gcc/config/tms990
 +    }
 +}
 +
++/* A constant-address call builds (mem:FUNCTION_MODE (const_int N)), which is
++ bit-identical to a data load at N (FUNCTION_MODE == HImode).  CSE then
++ forwards a known data value into the call target.  Mark such call MEMs
++ volatile so they are never value-numbered/forwarded -- same mechanism as a
++ volatile source access.  Only const-int addresses can collide, so leave
++ symbol and register targets alone.  */
++rtx tms9900_fixup_call_target (rtx target)
++{
++    rtx addr;
++    if (!MEM_P (target)) {
++        return target;
++    }
++        
++    addr = XEXP (target, 0);
++    
++    /* A numeric call address -- or a register that may have been value-numbered
++    to one -- collides with a same-address data load (FUNCTION_MODE == HImode).
++    Mark such call targets volatile so CSE/gcse won't forward a data value in.
++    Symbol/label targets can't collide, so leave them fully optimizable.  */
++    
++    if (REG_P (addr) || CONST_INT_P (addr))
++    {
++        rtx mem = gen_rtx_MEM (GET_MODE (target), addr);
++        MEM_VOLATILE_P (mem) = 1;
++        return mem;
++    }
++    
++    return target;
++}
++
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.h gcc-4.4.0/gcc/config/tms9900/tms9900.h
 --- gcc-4.4.0-orig/gcc/config/tms9900/tms9900.h	2026-06-08 18:46:28.783160028 +0100
 +++ gcc-4.4.0/gcc/config/tms9900/tms9900.h	2026-07-25 17:56:58.676131742 +0100
@@ -10595,8 +10625,8 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.h gcc-4.4.0/gcc/config/tms990
 +
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms9900/tms9900.md
 --- gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md	2026-06-08 18:46:28.783160028 +0100
-+++ gcc-4.4.0/gcc/config/tms9900/tms9900.md	2026-07-28 23:17:43.100016144 +0100
-@@ -0,0 +1,3635 @@
++++ gcc-4.4.0/gcc/config/tms9900/tms9900.md	2026-07-30 09:09:01.125460029 +0100
+@@ -0,0 +1,3652 @@
 +;;- Machine description for the TMS9900 for GNU C compiler
 +;; Copyright (C) 1994, 1995, 1997, 1998, 1999, 2000, 2001, 2004, 2005
 +;; 2007, 2008 Free Software Foundation, Inc.
@@ -10703,8 +10733,8 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +
 +;;-------------------------------------------------------------------
 +;; Jump to a subroutine which returns a value
-+(define_insn "call"
-+  [(call (match_operand:HI 0 "general_operand" "rR,Q")
++(define_insn "*call_internal"
++  [(call (match_operand:HI 0 "general_operand" "R,Q")
 +         (match_operand:HI 1 "general_operand"  "g,g"))
 +  ]
 +  ""
@@ -10722,9 +10752,9 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +
 +;-------------------------------------------------------------------
 +; Jump to a subroutine which returns a value
-+(define_insn "call_value"
++(define_insn "*call_value_internal"
 +  [(set (match_operand 0 "" "")
-+        (call (match_operand:HI 1 "general_operand" "rR,Q")
++        (call (match_operand:HI 1 "general_operand" "R,Q")
 +	      (match_operand:HI 2 "general_operand" "g,g")))
 +  ]
 +  ""
@@ -10738,6 +10768,23 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.md gcc-4.4.0/gcc/config/tms99
 +  }
 +  [(set_attr "length" "2,4")]
 +)
++
++(define_expand "call"
++    [(call (match_operand:HI 0 "memory_operand" "")
++           (match_operand:HI 1 "general_operand" ""))]
++    ""
++  {
++    operands[0] = tms9900_fixup_call_target (operands[0]);
++  })
++
++(define_expand "call_value"
++    [(set (match_operand 0 "" "")
++          (call (match_operand:HI 1 "memory_operand" "")
++                (match_operand:HI 2 "general_operand" "")))]
++    ""
++  {
++    operands[1] = tms9900_fixup_call_target (operands[1]);
++  })
 +
 +;; The O2 and O3 optimise options replace BL @xxx with LI Ry,xxx and BL *Ry
 +;; when the BL is inside a loop, even though the LI is also inside the loop,
@@ -14272,8 +14319,8 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900.opt gcc-4.4.0/gcc/config/tms9
 +
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900-protos.h gcc-4.4.0/gcc/config/tms9900/tms9900-protos.h
 --- gcc-4.4.0-orig/gcc/config/tms9900/tms9900-protos.h	2026-06-08 18:46:28.783160028 +0100
-+++ gcc-4.4.0/gcc/config/tms9900/tms9900-protos.h	2026-06-27 19:39:34.470324799 +0100
-@@ -0,0 +1,65 @@
++++ gcc-4.4.0/gcc/config/tms9900/tms9900-protos.h	2026-07-30 09:09:01.125460029 +0100
+@@ -0,0 +1,66 @@
 +/* Definitions of target machine for GNU compiler, for the TMS9900
 +
 +Copyright 2009 Eric Welser (EMW)
@@ -14339,6 +14386,7 @@ diff -ru gcc-4.4.0-orig/gcc/config/tms9900/tms9900-protos.h gcc-4.4.0/gcc/config
 +extern bool tms9900_operand_subreg_offset (rtx operand, int mode);
 +extern void tms9900_inline_debug (const char *fmt,...);
 +extern void tms9900_debug_operands (const char *name, rtx insn, rtx ops[], int count);
++extern rtx tms9900_fixup_call_target (rtx);
 diff -ru gcc-4.4.0-orig/gcc/config/tms9900/t-tms9900 gcc-4.4.0/gcc/config/tms9900/t-tms9900
 --- gcc-4.4.0-orig/gcc/config/tms9900/t-tms9900	2026-06-08 18:46:28.783160028 +0100
 +++ gcc-4.4.0/gcc/config/tms9900/t-tms9900	2026-06-27 19:39:34.470324799 +0100
@@ -14557,13 +14605,13 @@ diff -ru gcc-4.4.0-orig/gcc/cp/cfns.h gcc-4.4.0/gcc/cp/cfns.h
  }
 diff -ru gcc-4.4.0-orig/gcc/DATESTAMP gcc-4.4.0/gcc/DATESTAMP
 --- gcc-4.4.0-orig/gcc/DATESTAMP	2026-06-08 18:46:28.779160023 +0100
-+++ gcc-4.4.0/gcc/DATESTAMP	2026-07-30 06:34:45.864258173 +0100
++++ gcc-4.4.0/gcc/DATESTAMP	2026-07-30 09:10:41.505643415 +0100
 @@ -1 +1 @@
 -20090421
 +20260730
 diff -ru gcc-4.4.0-orig/gcc/DEV-PHASE gcc-4.4.0/gcc/DEV-PHASE
 --- gcc-4.4.0-orig/gcc/DEV-PHASE	2026-06-08 18:46:28.779160023 +0100
-+++ gcc-4.4.0/gcc/DEV-PHASE	2026-07-30 06:34:45.864258173 +0100
++++ gcc-4.4.0/gcc/DEV-PHASE	2026-07-30 09:10:41.505643415 +0100
 @@ -0,0 +1 @@
 +TMS9900 patch
 diff -ru gcc-4.4.0-orig/gcc/dfp.c gcc-4.4.0/gcc/dfp.c
@@ -14789,7 +14837,7 @@ diff -ru gcc-4.4.0-orig/gcc/reload.c gcc-4.4.0/gcc/reload.c
  						      SUBREG_BYTE (*loc),
 diff -ru gcc-4.4.0-orig/gcc/REVISION gcc-4.4.0/gcc/REVISION
 --- gcc-4.4.0-orig/gcc/REVISION	2026-06-08 18:46:28.779160023 +0100
-+++ gcc-4.4.0/gcc/REVISION	2026-07-30 06:34:45.864258173 +0100
++++ gcc-4.4.0/gcc/REVISION	2026-07-30 09:10:41.505643415 +0100
 @@ -0,0 +1 @@
 +1.35
 diff -ru gcc-4.4.0-orig/gcc/toplev.h gcc-4.4.0/gcc/toplev.h
