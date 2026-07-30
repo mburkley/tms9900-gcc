@@ -1505,3 +1505,21 @@ extern void tms9900_debug_operands (const char *name, rtx insn, rtx ops[], int c
     }
 }
 
+/* A constant-address call builds (mem:FUNCTION_MODE (const_int N)), which is
+ bit-identical to a data load at N (FUNCTION_MODE == HImode).  CSE then
+ forwards a known data value into the call target.  Mark such call MEMs
+ volatile so they are never value-numbered/forwarded -- same mechanism as a
+ volatile source access.  Only const-int addresses can collide, so leave
+ symbol and register targets alone.  */
+rtx tms9900_fixup_call_target (rtx target)
+{
+    if (MEM_P (target) && CONST_INT_P (XEXP (target, 0)))
+    {
+        rtx mem = gen_rtx_MEM (GET_MODE (target), XEXP (target, 0));
+        MEM_VOLATILE_P (mem) = 1;
+        MEM_READONLY_P (mem) = 1;   /* it's code, it doesn't change */
+        return mem;
+    }
+    
+    return target;
+}
