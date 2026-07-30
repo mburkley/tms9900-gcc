@@ -63,3 +63,4 @@ extern bool tms9900_constant_address_p (rtx x);
 extern bool tms9900_operand_subreg_offset (rtx operand, int mode);
 extern void tms9900_inline_debug (const char *fmt,...);
 extern void tms9900_debug_operands (const char *name, rtx insn, rtx ops[], int count);
+extern rtx tms9900_fixup_call_target (rtx);
