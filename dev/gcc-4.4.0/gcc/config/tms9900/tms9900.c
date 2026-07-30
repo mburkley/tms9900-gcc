@@ -1513,13 +1513,25 @@ extern void tms9900_debug_operands (const char *name, rtx insn, rtx ops[], int c
  symbol and register targets alone.  */
 rtx tms9900_fixup_call_target (rtx target)
 {
-    if (MEM_P (target) && CONST_INT_P (XEXP (target, 0)))
+    rtx addr;
+    if (!MEM_P (target)) {
+        return target;
+    }
+        
+    addr = XEXP (target, 0);
+    
+    /* A numeric call address -- or a register that may have been value-numbered
+    to one -- collides with a same-address data load (FUNCTION_MODE == HImode).
+    Mark such call targets volatile so CSE/gcse won't forward a data value in.
+    Symbol/label targets can't collide, so leave them fully optimizable.  */
+    
+    if (REG_P (addr) || CONST_INT_P (addr))
     {
-        rtx mem = gen_rtx_MEM (GET_MODE (target), XEXP (target, 0));
+        rtx mem = gen_rtx_MEM (GET_MODE (target), addr);
         MEM_VOLATILE_P (mem) = 1;
-        MEM_READONLY_P (mem) = 1;   /* it's code, it doesn't change */
         return mem;
     }
     
     return target;
 }
+
