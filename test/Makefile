@@ -1,9 +1,8 @@
-<<<<<<< HEAD
 ##
 #  Directories where tools are located.  Edit to reflect your setup
 ##
 LIBTI99DIR?=~/libTi99All/buildti
-GCCDIR=~/gcc4/bin/
+GCCDIR=~/gcc13/bin/
 
 ##
 #  Locations of tools relative to directories defined above
@@ -13,18 +12,6 @@ LD=$(GCCDIR)tms9900-ld
 CC=$(GCCDIR)tms9900-gcc
 LIBGCC=$(GCCDIR)../lib/gcc/tms9900/4.4.0/libgcc.a
 CRT0=$(LIBTI99DIR)/crt0_ea5.o
-=======
-LIBTI99DIR?=../libti99
-
-GCC4DIR=/opt/tms9900-gcc/bin/
-GCCDIR=/home/mark/tms9900-gcc/tmsgcc13/bin/
-GAS=$(GCC4DIR)tms9900-as
-LD=$(GCCDIR)tms9900-ld
-CC=$(GCCDIR)tms9900-gcc
-# LIBGCC=$(GCCDIR)../lib/gcc/tms9900/4.4.0/libgcc.a
-# LIBGCC=$(GCCDIR)../lib/gcc/tms9900/13.2.0/libgcc.a
-ELF2CART=elf2cart
->>>>>>> e254d80 (Mostly working, some unit tests failing)
 
 ##
 # Define test targets
@@ -35,18 +22,12 @@ ELF2CART=elf2cart
 # without optimisation.  Check the bin file is less than 8192 bytes before
 # running.
 
-# test_float is not tested by this framework as it uses the console ROM
-# floating point routines
-NONTARGET=test_float
+# Generate a list of targets based on any file in the directory match test_*.c
+FILELIST=$(patsubst %.c,%,$(wildcard test_*.c))
 
-<<<<<<< HEAD
-TARGETS=\
-test_char_short \
-test_long \
-test_misc \
-test_subreg \
-test_array \
-test_muldiv
+# test_float is not tested by this framework as it uses the console ROM
+# floating point routines so remove it from the list
+TARGETS=$(subst test_float,,$(FILELIST))
 
 BINTARGETS=$(TARGETS:=.bin)
 ELFTARGETS=$(TARGETS:=.elf)
@@ -67,16 +48,6 @@ HEADER=header.o
 endif
 
 OBJECTS=tap.o params.o
-=======
-TEST_SRC=test_char_short
-# TEST_SRC=test_long
-# TEST_SRC=test_float
-# TEST_SRC=test_misc
-# TEST_SRC=test_one
-
-LDFLAGS=\
-  --section-start .text=0000 --section-start .data=2080
->>>>>>> e254d80 (Mostly working, some unit tests failing)
 
 CFLAGS=-std=c99 --save-temp -I$(LIBTI99DIR)
 
@@ -98,19 +69,11 @@ CFLAGS+=-DEMUL_TEST=1
 
 LIBTI99=-lti99
 
-<<<<<<< HEAD
 ##
 #  Define make rules
 ##
 harness:
 	$(MAKE) -C harness
-=======
-OBJECT_LIST=\
-  temu_hdr.o\
-  $(CRT0)\
-  $(TEST_SRC).o \
-  tap.o
->>>>>>> e254d80 (Mostly working, some unit tests failing)
 
 test: $(BINTARGETS) harness
 	@for target in $(BINTARGETS); do \

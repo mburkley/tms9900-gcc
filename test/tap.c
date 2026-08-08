@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 #ifdef __tms9900__
 #ifndef EMUL_TEST
 #include <vdp.h>
@@ -6,8 +5,6 @@
 #else
 #include <stdio.h>
 #endif
-=======
->>>>>>> e254d80 (Mostly working, some unit tests failing)
 
 #include "tap.h"
 
@@ -63,36 +60,28 @@ void test_execute (const char *name, int passed)
 
     if (passed)
     {
-        printfd ("ok %d - ", testsRun);
+        printf ("ok %d - %s\n", testsRun, name);
         testsPass++;
     }
     else
-        printfd ("not ok %d - ", testsRun);
+    {
+        printf ("not ok %d - %s\n", testsRun, name);
+    }
 
-    printfs ("%s\n", name);
 }
 
 void test_report (void)
 {
-    printfd ("# %d of %d passed\n", testsPass, testsRun);
+    printf ("# %d of %d passed\n", testsPass, testsRun);
 }
 #endif
 void test_run (TESTFUNC tests[], int count)
 {
-<<<<<<< HEAD
 #ifdef USE_VDP
     set_graphics(0);
     charset();
     printf ("1..%d\n", count);
 #endif
-=======
-// #ifdef __tms9900__
-#ifdef USE_VDP
-    set_graphics(0);
-    charset();
-#endif
-    printfd ("1..%d\n", count);
->>>>>>> e254d80 (Mostly working, some unit tests failing)
 
     test_start(count);
     int i;
@@ -101,14 +90,8 @@ void test_run (TESTFUNC tests[], int count)
         
     test_report ();
 
-<<<<<<< HEAD
-=======
-// #ifdef __tms9900__
->>>>>>> e254d80 (Mostly working, some unit tests failing)
 #ifdef USE_VDP
     while(1);
-#else
-    temu_quit();
 #endif
 }
 

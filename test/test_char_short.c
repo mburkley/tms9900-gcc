@@ -463,7 +463,6 @@ void t_uc_sub ()
 
 void t_sc_imm_sub (void)
 {
-<<<<<<< HEAD
     set_sc_x (0x49);
 
     sc_y = sc_x - 0x27;
@@ -514,15 +513,6 @@ void t_cmp_sc()
     char eq=(sc_x==sc_y);
 
     test_execute (__func__, lt&&!eq&&!gt);
-=======
-    char x=3;
-    char y=4;
-    char lt=(x<y);
-    char gt=(x>y);
-    char eq=(x==y);
-    int pass=lt&&!eq&&!gt;
-    test_execute (__func__, pass);
->>>>>>> e254d80 (Mostly working, some unit tests failing)
 }
 
 void t_cmp_ss()
