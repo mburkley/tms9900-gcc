@@ -30,9 +30,53 @@ check_result ()
 }
 
 
-# Base all following work on latest patch versions
-BINUTILS_PATCH=`latest binutils-*.patch`
-GCC_PATCH=`latest gcc-*.patch`
+# Check arguments
+PREFIX=$1
+if [ -z $PREFIX ] ; then
+   echo Error: No output directory specified
+   echo
+   echo Usage:
+   echo   install.sh DIRECTORY [VERSION]
+   echo The output binaries will be installed at DIRECTORY/bin
+   echo VERSION is optional: 1 for gcc-4.4.0/binutils-2.19.1, 2 for
+   echo gcc-14.2.0/binutils-2.44.  If omitted, you will be prompted.
+   exit
+fi
+
+# Pick which gcc/binutils pair to build.  Patches for more than one
+# version can be present in this directory at once (a stable version
+# and an in-development one), so we can't just always pick the patch
+# with the highest revision number as "latest" any more.
+VERSION_CHOICE=$2
+if [ -z "$VERSION_CHOICE" ] ; then
+  echo "Which version would you like to install?"
+  echo "  1) gcc-4.4.0 / binutils-2.19.1 (stable)"
+  echo "  2) gcc-14.2.0 / binutils-2.44 (in development)"
+  printf "Enter 1 or 2 [1]: "
+  read VERSION_CHOICE
+  if [ -z "$VERSION_CHOICE" ] ; then
+    VERSION_CHOICE=1
+  fi
+fi
+
+case $VERSION_CHOICE in
+  1)
+    BINUTILS_GLOB="binutils-2.19.1-tms9900-*.patch"
+    GCC_GLOB="gcc-4.4.0-tms9900-*.patch"
+    ;;
+  2)
+    BINUTILS_GLOB="binutils-2.44-tms9900-*.patch"
+    GCC_GLOB="gcc-14.2.0-tms9900-*.patch"
+    ;;
+  *)
+    echo "Error: Invalid version '$VERSION_CHOICE', expected 1 or 2"
+    exit
+    ;;
+esac
+
+# Base all following work on latest patch versions for the chosen pair
+BINUTILS_PATCH=`latest $BINUTILS_GLOB`
+GCC_PATCH=`latest $GCC_GLOB`
 
 # Extract tool versions from patch name
 BINUTILS_VERSION=`echo $BINUTILS_PATCH | sed "s/-tms9900.*//"`
@@ -47,17 +91,6 @@ if [ ! -z "`which wget`" ]; then
   WGET=wget
 elif [ ! -z "`which curl`" ]; then
   WGET="curl -L -O"
-fi
-
-# Check arguments
-PREFIX=$1
-if [ -z $PREFIX ] ; then
-   echo Error: No output directory specified
-   echo
-   echo Usage:
-   echo   install.sh DIRECTORY
-   echo The output binaries will be installed at DIRECTORY/bin
-   exit
 fi
 
 echo "Using these patches:"
