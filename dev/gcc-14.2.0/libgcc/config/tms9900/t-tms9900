@@ -36,7 +36,11 @@ INHIBIT_LIBC_CFLAGS = -Dinhibit_libc
 dwarf2out.o-warn = -Wno-error
 
 LIB1ASMSRC    = tms9900/lib1funcs.asm
-LIB1ASMFUNCS  = _divsi3 _udivsi3 _modsi3 _umodsi3
+# _divmod_common provides __divmodstart/__divmodend, shared helpers that
+# _divsi3, _modsi3 and _divmodsi3 all branch to; it must be built even
+# though nothing lists it directly as a libcall target, or those
+# symbols are left undefined at link time.
+LIB1ASMFUNCS  = _divsi3 _udivsi3 _modsi3 _umodsi3 _divmod_common
 
 # No C++ exceptions or backtrace support on this freestanding target, and
 # unwind-dw2.c currently trips a backend code-generation bug in its (large,

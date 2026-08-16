@@ -3872,8 +3872,8 @@ diff -ru gcc-14.2.0-orig/gcc/config/tms9900/tms9900.h gcc-14.2.0/gcc/config/tms9
 +
 diff -ru gcc-14.2.0-orig/gcc/config/tms9900/tms9900.md gcc-14.2.0/gcc/config/tms9900/tms9900.md
 --- gcc-14.2.0-orig/gcc/config/tms9900/tms9900.md	2026-08-16 13:07:39.644934004 +0100
-+++ gcc-14.2.0/gcc/config/tms9900/tms9900.md	2026-08-16 14:53:48.547254778 +0100
-@@ -0,0 +1,2679 @@
++++ gcc-14.2.0/gcc/config/tms9900/tms9900.md	2026-08-16 21:46:39.687716837 +0100
+@@ -0,0 +1,2696 @@
 +;;- Machine description for the tms9900 for GNU C compiler
 +;; Copyright (C) 2010-2023 Free Software Foundation, Inc.
 +;; Contributed by Eric Welser and Mark Burkley (mark@burkley.net)
@@ -4668,11 +4668,28 @@ diff -ru gcc-14.2.0-orig/gcc/config/tms9900/tms9900.md gcc-14.2.0/gcc/config/tms
 +
 +;;-------------------------------------------------------------------
 +;; Unconditional jump using pointer
++;;
++;; B does not dereference its source operand the way ordinary
++;; instructions do: for register indirect (*Rn) it uses Rn's own value
++;; as the new PC, and for indexed/symbolic (@sym(Rn)) it uses the
++;; computed address itself, not the value stored there.  So a computed
++;; goto through a table of label pointers (eg "goto *table[i]", GCC PR
++;; tms9900-gcc#74) must not branch directly against a memory operand --
++;; that would jump to the table entry's address instead of the label it
++;; points to.  Load the target into a scratch register with an ordinary
++;; (dereferencing) mov first, matching how "tablejump" below already
++;; does this correctly.
 +(define_insn "indirect_jump"
-+  [(set (pc) (match_operand:HI 0 "nonimmediate_operand" "R,Q"))]
++  [(clobber (match_scratch:HI 1 "=r,r"))
++   (set (pc) (match_operand:HI 0 "nonimmediate_operand" "rR,Q"))
++   (clobber (reg:CC CC_REGNUM))]
 +  ""
-+  "b    %0 ; indir"
-+  [(set_attr "length" "2,4")])
++  {
++    output_asm_insn("mov  %0, %1", operands);
++    output_asm_insn("b    *%1 ; indir", operands);
++    return "";
++  }
++  [(set_attr "length" "4,6")])
 +
 +
 +;;-------------------------------------------------------------------
@@ -6675,18 +6692,18 @@ diff -ru gcc-14.2.0-orig/gcc/config.gcc gcc-14.2.0/gcc/config.gcc
  	tm_file="elfos.h v850/v850.h"
 diff -ru gcc-14.2.0-orig/gcc/DATESTAMP gcc-14.2.0/gcc/DATESTAMP
 --- gcc-14.2.0-orig/gcc/DATESTAMP	2026-08-16 13:07:39.644934004 +0100
-+++ gcc-14.2.0/gcc/DATESTAMP	2026-08-16 13:07:39.648934012 +0100
++++ gcc-14.2.0/gcc/DATESTAMP	2026-08-16 22:10:41.790787017 +0100
 @@ -1 +1 @@
 -20240801
 +20260816
 diff -ru gcc-14.2.0-orig/gcc/DEV-PHASE gcc-14.2.0/gcc/DEV-PHASE
 --- gcc-14.2.0-orig/gcc/DEV-PHASE	2026-08-16 13:07:39.644934004 +0100
-+++ gcc-14.2.0/gcc/DEV-PHASE	2026-08-16 13:07:39.648934012 +0100
++++ gcc-14.2.0/gcc/DEV-PHASE	2026-08-16 22:10:41.790787017 +0100
 @@ -0,0 +1 @@
 +TMS9900 patch
 diff -ru gcc-14.2.0-orig/gcc/REVISION gcc-14.2.0/gcc/REVISION
 --- gcc-14.2.0-orig/gcc/REVISION	2026-08-16 13:07:39.644934004 +0100
-+++ gcc-14.2.0/gcc/REVISION	2026-08-16 13:07:39.812934351 +0100
++++ gcc-14.2.0/gcc/REVISION	2026-08-16 22:10:41.790787017 +0100
 @@ -0,0 +1 @@
 +2.0
 diff -ru gcc-14.2.0-orig/libgcc/config/tms9900/atof.cc gcc-14.2.0/libgcc/config/tms9900/atof.cc
@@ -7748,8 +7765,8 @@ diff -ru gcc-14.2.0-orig/libgcc/config/tms9900/lib1funcs.asm gcc-14.2.0/libgcc/c
 +
 diff -ru gcc-14.2.0-orig/libgcc/config/tms9900/t-tms9900 gcc-14.2.0/libgcc/config/tms9900/t-tms9900
 --- gcc-14.2.0-orig/libgcc/config/tms9900/t-tms9900	2026-08-16 14:30:30.527518598 +0100
-+++ gcc-14.2.0/libgcc/config/tms9900/t-tms9900	2026-08-16 14:32:43.855949533 +0100
-@@ -0,0 +1,59 @@
++++ gcc-14.2.0/libgcc/config/tms9900/t-tms9900	2026-08-16 22:08:25.426496151 +0100
+@@ -0,0 +1,63 @@
 +# Copyright (C) 1995-2023 Free Software Foundation, Inc.
 +#
 +# This file is part of GCC.
@@ -7788,7 +7805,11 @@ diff -ru gcc-14.2.0-orig/libgcc/config/tms9900/t-tms9900 gcc-14.2.0/libgcc/confi
 +dwarf2out.o-warn = -Wno-error
 +
 +LIB1ASMSRC    = tms9900/lib1funcs.asm
-+LIB1ASMFUNCS  = _divsi3 _udivsi3 _modsi3 _umodsi3
++# _divmod_common provides __divmodstart/__divmodend, shared helpers that
++# _divsi3, _modsi3 and _divmodsi3 all branch to; it must be built even
++# though nothing lists it directly as a libcall target, or those
++# symbols are left undefined at link time.
++LIB1ASMFUNCS  = _divsi3 _udivsi3 _modsi3 _umodsi3 _divmod_common
 +
 +# No C++ exceptions or backtrace support on this freestanding target, and
 +# unwind-dw2.c currently trips a backend code-generation bug in its (large,

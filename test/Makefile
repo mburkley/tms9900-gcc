@@ -2,7 +2,7 @@
 #  Directories where tools are located.  Edit to reflect your setup
 ##
 LIBTI99DIR?=~/libTi99All/buildti
-GCCDIR=~/gcc13/bin/
+GCCDIR=~/gcc14/bin/
 
 ##
 #  Locations of tools relative to directories defined above
@@ -10,7 +10,7 @@ GCCDIR=~/gcc13/bin/
 GAS=$(GCCDIR)tms9900-as
 LD=$(GCCDIR)tms9900-ld
 CC=$(GCCDIR)tms9900-gcc
-LIBGCC=$(GCCDIR)../lib/gcc/tms9900/4.4.0/libgcc.a
+LIBGCC=$(GCCDIR)../lib/gcc/tms9900/14.2.0/libgcc.a
 CRT0=$(LIBTI99DIR)/crt0_ea5.o
 
 ##
