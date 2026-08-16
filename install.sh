@@ -164,6 +164,17 @@ if [ ! -f .gcc_patched ] ; then
    touch .gcc_patched
 fi
 
+echo "=== Getting GCC prerequisites (GMP/MPFR/MPC/ISL) ==="
+if [ ! -f .gcc_prereqs ] ; then
+   if [ -f $GCC_VERSION/contrib/download_prerequisites ] ; then
+     cd $GCC_VERSION
+     ./contrib/download_prerequisites
+     check_result "=== Failed to download GCC prerequisites ==="
+     cd ..
+   fi
+   touch .gcc_prereqs
+fi
+
 echo "=== Building Binutils ==="
 if [ ! -f .binutils_built ] ; then
    cd $BINUTILS_VERSION
