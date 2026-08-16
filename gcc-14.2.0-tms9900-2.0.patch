@@ -6690,20 +6690,66 @@ diff -ru gcc-14.2.0-orig/gcc/config.gcc gcc-14.2.0/gcc/config.gcc
  v850-*-rtems*)
  	target_cpu_default="TARGET_CPU_generic"
  	tm_file="elfos.h v850/v850.h"
+diff -ru gcc-14.2.0-orig/gcc/cppbuiltin.cc gcc-14.2.0/gcc/cppbuiltin.cc
+--- gcc-14.2.0-orig/gcc/cppbuiltin.cc	2026-08-16 22:22:08.216251459 +0100
++++ gcc-14.2.0/gcc/cppbuiltin.cc	2026-08-16 22:22:25.320287958 +0100
+@@ -71,6 +71,17 @@
+   cpp_define_formatted (pfile, "__ATOMIC_RELEASE=%d", MEMMODEL_RELEASE);
+   cpp_define_formatted (pfile, "__ATOMIC_ACQ_REL=%d", MEMMODEL_ACQ_REL);
+   cpp_define_formatted (pfile, "__ATOMIC_CONSUME=%d", MEMMODEL_CONSUME);
++
++#ifdef TMS9900
++  /* Let target code query the tms9900 backend patch level, eg to work
++     around a bug fixed in a specific patch release.  */
++  {
++    int patch_major = 0, patch_minor = 0;
++    sscanf (TMS9900_REVISION, "%d.%d", &patch_major, &patch_minor);
++    cpp_define_formatted (pfile, "__TMS9900_PATCH_MAJOR__=%d", patch_major);
++    cpp_define_formatted (pfile, "__TMS9900_PATCH_MINOR__=%d", patch_minor);
++  }
++#endif
+ }
+ 
+ 
 diff -ru gcc-14.2.0-orig/gcc/DATESTAMP gcc-14.2.0/gcc/DATESTAMP
 --- gcc-14.2.0-orig/gcc/DATESTAMP	2026-08-16 13:07:39.644934004 +0100
-+++ gcc-14.2.0/gcc/DATESTAMP	2026-08-16 22:10:41.790787017 +0100
++++ gcc-14.2.0/gcc/DATESTAMP	2026-08-16 22:22:28.380294489 +0100
 @@ -1 +1 @@
 -20240801
 +20260816
 diff -ru gcc-14.2.0-orig/gcc/DEV-PHASE gcc-14.2.0/gcc/DEV-PHASE
 --- gcc-14.2.0-orig/gcc/DEV-PHASE	2026-08-16 13:07:39.644934004 +0100
-+++ gcc-14.2.0/gcc/DEV-PHASE	2026-08-16 22:10:41.790787017 +0100
++++ gcc-14.2.0/gcc/DEV-PHASE	2026-08-16 22:22:28.380294489 +0100
 @@ -0,0 +1 @@
 +TMS9900 patch
+diff -ru gcc-14.2.0-orig/gcc/Makefile.in gcc-14.2.0/gcc/Makefile.in
+--- gcc-14.2.0-orig/gcc/Makefile.in	2026-08-16 22:22:08.216251459 +0100
++++ gcc-14.2.0/gcc/Makefile.in	2026-08-16 22:22:20.464277596 +0100
+@@ -957,6 +957,12 @@
+ REVISION_s  := "\"\""
+ endif
+ 
++# Clean (unprefixed) copy of REVISION_c, for the TMS9900 port's
++# __TMS9900_PATCH_MAJOR__/__TMS9900_PATCH_MINOR__ builtins -- REVISION_s
++# above has a ", " prefix baked in for concatenation into version_string,
++# which isn't what we want to sscanf out of.
++TMS9900_REVISION_s := "\"$(REVISION_c)\""
++
+ # Shorthand variables for dependency lists.
+ DUMPFILE_H = $(srcdir)/../libcpp/include/line-map.h dumpfile.h
+ VEC_H = vec.h statistics.h $(GGC_H)
+@@ -3214,7 +3220,7 @@
+   -DSTANDARD_EXEC_PREFIX=\"$(libdir)/gcc/\" \
+   @TARGET_SYSTEM_ROOT_DEFINE@
+ 
+-CFLAGS-cppbuiltin.o += $(PREPROCESSOR_DEFINES) -DBASEVER=$(BASEVER_s)
++CFLAGS-cppbuiltin.o += $(PREPROCESSOR_DEFINES) -DBASEVER=$(BASEVER_s) -DTMS9900_REVISION=$(TMS9900_REVISION_s)
+ cppbuiltin.o: $(BASEVER)
+ 
+ CFLAGS-cppdefault.o += $(PREPROCESSOR_DEFINES)
 diff -ru gcc-14.2.0-orig/gcc/REVISION gcc-14.2.0/gcc/REVISION
 --- gcc-14.2.0-orig/gcc/REVISION	2026-08-16 13:07:39.644934004 +0100
-+++ gcc-14.2.0/gcc/REVISION	2026-08-16 22:10:41.790787017 +0100
++++ gcc-14.2.0/gcc/REVISION	2026-08-16 22:22:28.380294489 +0100
 @@ -0,0 +1 @@
 +2.0
 diff -ru gcc-14.2.0-orig/libgcc/config/tms9900/atof.cc gcc-14.2.0/libgcc/config/tms9900/atof.cc
