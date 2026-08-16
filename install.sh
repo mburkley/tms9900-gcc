@@ -63,10 +63,15 @@ case $VERSION_CHOICE in
   1)
     BINUTILS_GLOB="binutils-2.19.1-tms9900-*.patch"
     GCC_GLOB="gcc-4.4.0-tms9900-*.patch"
+    GCC_CONFIGURE_EXTRA=""
     ;;
   2)
     BINUTILS_GLOB="binutils-2.44-tms9900-*.patch"
     GCC_GLOB="gcc-14.2.0-tms9900-*.patch"
+    # Avoids a codegen ICE in libgcov-driver.c: this freestanding target
+    # has no OS to write coverage files, and gcov support was never a
+    # goal, so skip building it rather than chase the ICE.
+    GCC_CONFIGURE_EXTRA="--disable-gcov"
     ;;
   *)
     echo "Error: Invalid version '$VERSION_CHOICE', expected 1 or 2"
@@ -85,6 +90,13 @@ GCC_VERSION=`     echo $GCC_PATCH      | sed "s/-tms9900.*//"`
 # Compose name of source archive
 BINUTILS_ARCHIVE="$BINUTILS_VERSION.tar.bz2"
 GCC_ARCHIVE="$GCC_VERSION.tar.gz"
+
+# Parallel build jobs: one per CPU core, so `make` actually uses all
+# available cores instead of building single-threaded.
+JOBS=`nproc 2>/dev/null`
+if [ -z "$JOBS" ] ; then
+  JOBS=1
+fi
 
 # Select download tool
 if [ ! -z "`which wget`" ]; then
@@ -158,8 +170,22 @@ if [ ! -f .binutils_built ] ; then
    ./configure --target tms9900 --prefix $PREFIX --disable-build-warnings
    check_result "=== Failed to configure Binutils ==="
    # MAKEINFO=true skips building the info docs, which fail with texinfo >= 5
-   make all MAKEINFO=true
-   check_result "=== Failed to build Binutils ==="
+   make -j$JOBS all MAKEINFO=true
+   if [ ! $? == 0 ] ; then
+     # Work around a long-standing binutils build ordering bug: on this
+     # first pass, ld's Makefile can generate e<emulation>.c (eg
+     # eelf32tms9900.c) via genscripts.sh before the ldscripts/
+     # directory it writes into has been created, leaving the linker
+     # script text empty and producing "'return' with no value" compile
+     # errors.  ld/Makefile now exists (it's generated on this first
+     # pass), so forcing its ldscripts/stamp target and retrying
+     # completes the build cleanly.
+     echo "=== Retrying Binutils build after forcing ld/ldscripts ==="
+     make -C ld ldscripts/stamp MAKEINFO=true
+     check_result "=== Failed to build Binutils ld/ldscripts ==="
+     make -j$JOBS all MAKEINFO=true
+     check_result "=== Failed to build Binutils ==="
+   fi
    make install MAKEINFO=true
    check_result "=== Failed to install Binutils ==="
    cd ..
@@ -171,11 +197,11 @@ if [ ! -f .gcc_built ] ; then
    cd $GCC_VERSION
    mkdir build
    cd build
-   ../configure --prefix $PREFIX --target=tms9900 --enable-languages=c,c++
+   ../configure --prefix $PREFIX --target=tms9900 --enable-languages=c,c++ $GCC_CONFIGURE_EXTRA
    check_result "=== Failed to configure GCC ==="
-   make all-gcc MAKEINFO=true
+   make -j$JOBS all-gcc MAKEINFO=true
    check_result "=== Failed to build GCC ==="
-   make all-target-libgcc MAKEINFO=true
+   make -j$JOBS all-target-libgcc MAKEINFO=true
    check_result "=== Failed to build libgcc ==="
    make install-gcc install-target-libgcc MAKEINFO=true
    # Make install has an expected failure:
@@ -190,7 +216,7 @@ if [ ! -f .libgcc_built ] ; then
    cd $GCC_VERSION
    mkdir build
    cd build
-   make  all-target-libgcc MAKEINFO=true
+   make -j$JOBS all-target-libgcc MAKEINFO=true
    check_result "=== Failed to build libgcc.a ==="
    make install-target-libgcc MAKEINFO=true
    check_result "=== Failed to build libgcc.a ==="
