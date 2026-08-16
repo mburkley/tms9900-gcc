@@ -94,6 +94,7 @@ static bool
 tms9900_ok_for_sibcall (tree decl ATTRIBUTE_UNUSED, tree exp ATTRIBUTE_UNUSED);
 
 static bool tms9900_fixed_condition_code_regs (unsigned int *, unsigned int *);
+static bool tms9900_truly_noop_truncation (poly_uint64, poly_uint64);
 
 static int tms9900_dwarf_label_counter;
 
@@ -158,6 +159,9 @@ static int tms9900_dwarf_label_counter;
 
 #undef TARGET_FIXED_CONDITION_CODE_REGS
 #define TARGET_FIXED_CONDITION_CODE_REGS tms9900_fixed_condition_code_regs
+
+#undef TARGET_TRULY_NOOP_TRUNCATION
+#define TARGET_TRULY_NOOP_TRUNCATION tms9900_truly_noop_truncation
 
 /*  Is it ok for us to make a tail call to a sibling function?  I don't know of
  *  any reason why not. */
@@ -1168,6 +1172,22 @@ tms9900_fixed_condition_code_regs (unsigned int *p1, unsigned int *p2)
   *p1 = CC_REGNUM;
   *p2 = INVALID_REGNUM;
   return true;
+}
+
+/* Implement TARGET_TRULY_NOOP_TRUNCATION.  Register byte operations
+   (eg movb) on this target always act on the register's high byte,
+   never the low byte, so truncating eg HImode to QImode by simply
+   reinterpreting a register's low bits as the narrower mode (what the
+   default "true unconditionally" implementation of this hook assumes
+   is always safe) picks up the wrong byte.  A real truncation needs
+   an actual instruction (trunchiqi2's swpb) to relocate the value
+   into the high byte first, so no truncation on this target is ever
+   a true no-op. */
+
+static bool
+tms9900_truly_noop_truncation (poly_uint64, poly_uint64)
+{
+  return false;
 }
 
 //==================================================================
