@@ -333,9 +333,8 @@ static rtx tms9900_function_arg (cumulative_args_t cum_v,
     /* Pick an arbitrary value for operand 2 of the call insn.  */
     return const0_rtx;
 
-  // TODO if named is no longer a param, how we do know a var param list?
-  if (/* Vararg argument, must live on stack */
-      // !named ||
+  if (/* Vararg argument, must live on stack so va_arg can walk it */
+      !arg.named ||
       /* No more argument registers left */
       cum->nregs >= TMS9900_ARG_REGS ||
       /* Argument doesn't completely fit in arg registers */
