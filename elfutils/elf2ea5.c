@@ -265,7 +265,14 @@ int main(int argc, char **argv)
       if(strcmp(name, ".data") == 0)     data_section   = section;
       if(strcmp(name, ".bss" ) == 0)     bss_section    = section;
       if(section->sh_type == SHT_SYMTAB) symtab_section = section;
-      if(section->sh_type == SHT_STRTAB) strtab_section = section;
+      /* Not strtab_section here: a file typically has two SHT_STRTAB
+         sections (.strtab for symbol names, .shstrtab for section
+         names), and matching by type alone picks whichever comes
+         last -- which may well be .shstrtab, causing symbol name
+         lookups (eg for "_init_data" below) to index into the wrong,
+         much smaller table.  Found via symtab_section->sh_link below
+         instead, which the ELF spec defines as the correct string
+         table for a given symbol table. */
 /*            
       printf("\n\nSECTION %d\n",i);
       printf("====================\n");
@@ -312,6 +319,10 @@ int main(int argc, char **argv)
    }
 
    // Try to find "_init_data" symbol
+   if(symtab_section != NULL && symtab_section->sh_link < (Elf32_Word) header.e_shnum)
+   {
+      strtab_section = &all_sections[symtab_section->sh_link];
+   }
    if(strtab_section == NULL)
    {
       printf("Warning: No string table section found\n");
