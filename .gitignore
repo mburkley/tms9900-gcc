@@ -16,4 +16,4 @@ elfutils/ea5split
 *.elf
 *.bin
 *.map
-
+*.c.*

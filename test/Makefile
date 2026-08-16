@@ -2,7 +2,7 @@
 #  Directories where tools are located.  Edit to reflect your setup
 ##
 LIBTI99DIR?=~/libTi99All/buildti
-GCCDIR=~/gcc4/bin/
+GCCDIR=~/gcc13/bin/
 
 ##
 #  Locations of tools relative to directories defined above
