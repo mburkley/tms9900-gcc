@@ -41,6 +41,53 @@ cd tms900-gcc
 
 Release Notes - current
 -----------------------
+binutils patch 2.0 (ports the tms9900 backend to binutils-2.44, alongside the
+existing binutils-2.19.1 support -- select via install.sh's version menu)
+* Ported bfd, gas, ld and opcodes tms9900 support to binutils-2.44, using the
+  modern `tms9900_elf32_vec` bfd target-vector naming convention
+* Fixed a long-standing binutils build-ordering bug where a fresh build could
+  fail with "'return' with no value" errors in the generated eelf32tms9900.c
+  -- install.sh now detects and retries this automatically
+* install.sh now prompts (or takes a command-line argument) to choose between
+  the gcc-4.4.0/binutils-2.19.1 and gcc-14.2.0/binutils-2.44 toolchain pairs
+* install.sh now builds with make -j (parallel across all CPU cores) instead
+  of single-threaded
+
+gcc patch 2.0 (ports the tms9900 backend to gcc-14.2.0, alongside the
+existing gcc-4.4.0 support -- select via install.sh's version menu)
+* Ported the tms9900 backend to gcc-14.2.0
+* install.sh now automatically fetches GCC's GMP/MPFR/MPC/ISL build
+  prerequisites, so a fresh build no longer fails with a
+  "Building GCC requires GMP 4.2+, MPFR 3.1.0+ and MPC 0.8.0+" configure error
+* Fixed a code generation bug where a computed goto through a table of label
+  pointers (`goto *table[i]`) could branch to the wrong address
+* Fixed a missing libgcc helper that caused link errors ("undefined reference
+  to `__divmodstart`/`__divmodend`") for any program using 32-bit (long)
+  division or modulo
+* Fixed a 32-bit value getting silently corrupted when moved between
+  overlapping register pairs (eg as part of passing it to a libcall)
+* Fixed variadic (`...`) arguments beyond the named parameters being passed
+  in registers the callee never reads, instead of on the stack where
+  `va_arg` expects to find them
+* Fixed a shift left by exactly 2, and a variable shift by exactly 16,
+  each silently computing the wrong result (or no shift at all) due to
+  how this CPU encodes a shift count of zero
+* Fixed truncating a 16-bit value down to 8 bits sometimes reading the
+  wrong byte (eg multiplying two negative `char`s could return garbage)
+* Fixed bitfield reads/writes losing data to neighbouring fields in the
+  same byte or word (an AND-with-mask step was being silently dropped)
+* Fixed the standalone `elf2cart`/`elf2ea5` tools (used to produce a
+  runnable cartridge image) finding the wrong internal table and
+  silently skipping RAM initialisation, which could manifest as
+  anything from wrong values to a crash at startup
+* Ported forward the `__TMS9900_PATCH_MAJOR__`/`__TMS9900_PATCH_MINOR__`
+  patch-level query macros
+* Known remaining issue: `%` (modulo) can return a remainder with the
+  wrong sign when the dividend is negative; the division itself is
+  unaffected
+* C++ support is present but not yet extensively tested; C is the
+  well-exercised path
+
 binutils patch 1.12
 * fix: adjust level 4 parse table (#79)
 * fix: missing parse error entries for level 4 instructions
