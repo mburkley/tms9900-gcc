@@ -3880,8 +3880,8 @@ diff -ru gcc-14.2.0-orig/gcc/config/tms9900/tms9900.h gcc-14.2.0/gcc/config/tms9
 +
 diff -ru gcc-14.2.0-orig/gcc/config/tms9900/tms9900.md gcc-14.2.0/gcc/config/tms9900/tms9900.md
 --- gcc-14.2.0-orig/gcc/config/tms9900/tms9900.md	2026-08-16 13:07:39.644934004 +0100
-+++ gcc-14.2.0/gcc/config/tms9900/tms9900.md	2026-08-16 21:46:39.687716837 +0100
-@@ -0,0 +1,2696 @@
++++ gcc-14.2.0/gcc/config/tms9900/tms9900.md	2026-08-16 23:15:43.939541698 +0100
+@@ -0,0 +1,2713 @@
 +;;- Machine description for the tms9900 for GNU C compiler
 +;; Copyright (C) 2010-2023 Free Software Foundation, Inc.
 +;; Contributed by Eric Welser and Mark Burkley (mark@burkley.net)
@@ -4351,8 +4351,25 @@ diff -ru gcc-14.2.0-orig/gcc/config/tms9900/tms9900.md gcc-14.2.0/gcc/config/tms
 +    {
 +      args[2] = gen_highpart (HImode, operands[1]);
 +      args[3] = gen_lowpart (HImode, operands[1]);
-+      output_asm_insn("mov  %2, %0", args);
-+      output_asm_insn("mov  %3, %1", args);
++
++      /* When both operands are hard registers, a register pair move
++         (eg [R2,R3] -> [R3,R4]) can have its low half overlap the
++         high half of the destination.  Moving high-word-first would
++         then clobber the source's low word before it's read.  Detect
++         that specific overlap and move low-word-first instead; any
++         other case (including the common non-overlapping case) is
++         safe with the usual high-word-first order. */
++      if (REG_P (operands[0]) && REG_P (operands[1]) &&
++          REGNO (args[0]) == REGNO (args[3]))
++      {
++        output_asm_insn("mov  %3, %1", args);
++        output_asm_insn("mov  %2, %0", args);
++      }
++      else
++      {
++        output_asm_insn("mov  %2, %0", args);
++        output_asm_insn("mov  %3, %1", args);
++      }
 +    }
 +    return("");
 +  }
@@ -6721,13 +6738,13 @@ diff -ru gcc-14.2.0-orig/gcc/cppbuiltin.cc gcc-14.2.0/gcc/cppbuiltin.cc
  
 diff -ru gcc-14.2.0-orig/gcc/DATESTAMP gcc-14.2.0/gcc/DATESTAMP
 --- gcc-14.2.0-orig/gcc/DATESTAMP	2026-08-16 13:07:39.644934004 +0100
-+++ gcc-14.2.0/gcc/DATESTAMP	2026-08-16 22:40:10.778730021 +0100
++++ gcc-14.2.0/gcc/DATESTAMP	2026-08-16 23:23:48.288622269 +0100
 @@ -1 +1 @@
 -20240801
 +20260816
 diff -ru gcc-14.2.0-orig/gcc/DEV-PHASE gcc-14.2.0/gcc/DEV-PHASE
 --- gcc-14.2.0-orig/gcc/DEV-PHASE	2026-08-16 13:07:39.644934004 +0100
-+++ gcc-14.2.0/gcc/DEV-PHASE	2026-08-16 22:40:10.778730021 +0100
++++ gcc-14.2.0/gcc/DEV-PHASE	2026-08-16 23:23:48.292622278 +0100
 @@ -0,0 +1 @@
 +TMS9900 patch
 diff -ru gcc-14.2.0-orig/gcc/Makefile.in gcc-14.2.0/gcc/Makefile.in
@@ -6757,7 +6774,7 @@ diff -ru gcc-14.2.0-orig/gcc/Makefile.in gcc-14.2.0/gcc/Makefile.in
  CFLAGS-cppdefault.o += $(PREPROCESSOR_DEFINES)
 diff -ru gcc-14.2.0-orig/gcc/REVISION gcc-14.2.0/gcc/REVISION
 --- gcc-14.2.0-orig/gcc/REVISION	2026-08-16 13:07:39.644934004 +0100
-+++ gcc-14.2.0/gcc/REVISION	2026-08-16 22:40:10.778730021 +0100
++++ gcc-14.2.0/gcc/REVISION	2026-08-16 23:23:48.292622278 +0100
 @@ -0,0 +1 @@
 +2.0
 diff -ru gcc-14.2.0-orig/libgcc/config/tms9900/atof.cc gcc-14.2.0/libgcc/config/tms9900/atof.cc
