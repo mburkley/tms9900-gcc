@@ -865,6 +865,14 @@ void tms9900_output_ascii(FILE* stream, const char* ptr, int len)
          fprintf (stream, "\tbyte %d\n", (unsigned char)c);
       }
    }
+
+   /* Close a TEXT statement left open by a run of printable characters
+      at the end of the string -- otherwise it runs on into whatever
+      directive is emitted next. */
+   if (in_text == 1)
+   {
+      fprintf (stream, "'\n");
+   }
 }
 
 
