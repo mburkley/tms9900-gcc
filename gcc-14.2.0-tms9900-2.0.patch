@@ -7464,9 +7464,9 @@ diff -ru gcc-14.2.0-orig/gcc/DEV-PHASE gcc-14.2.0/gcc/DEV-PHASE
 +TMS9900 patch
 diff -ru gcc-14.2.0-orig/gcc/REVISION gcc-14.2.0/gcc/REVISION
 --- gcc-14.2.0-orig/gcc/REVISION	2026-08-16 12:45:38.194245053 +0100
-+++ gcc-14.2.0/gcc/REVISION	2026-08-16 12:45:13.766197224 +0100
++++ gcc-14.2.0/gcc/REVISION	2026-08-16 13:02:59.508355789 +0100
 @@ -0,0 +1 @@
-+1.0
++2.0
 diff -ru gcc-14.2.0-orig/libgcc/config.host gcc-14.2.0/libgcc/config.host
 --- gcc-14.2.0-orig/libgcc/config.host	2026-08-16 12:44:03.658057237 +0100
 +++ gcc-14.2.0/libgcc/config.host	2026-08-16 12:44:59.390169150 +0100
