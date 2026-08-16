@@ -3880,8 +3880,8 @@ diff -ru gcc-14.2.0-orig/gcc/config/tms9900/tms9900.h gcc-14.2.0/gcc/config/tms9
 +
 diff -ru gcc-14.2.0-orig/gcc/config/tms9900/tms9900.md gcc-14.2.0/gcc/config/tms9900/tms9900.md
 --- gcc-14.2.0-orig/gcc/config/tms9900/tms9900.md	2026-08-16 13:07:39.644934004 +0100
-+++ gcc-14.2.0/gcc/config/tms9900/tms9900.md	2026-08-16 23:15:43.939541698 +0100
-@@ -0,0 +1,2713 @@
++++ gcc-14.2.0/gcc/config/tms9900/tms9900.md	2026-08-16 23:31:58.173708102 +0100
+@@ -0,0 +1,2772 @@
 +;;- Machine description for the tms9900 for GNU C compiler
 +;; Copyright (C) 2010-2023 Free Software Foundation, Inc.
 +;; Contributed by Eric Welser and Mark Burkley (mark@burkley.net)
@@ -4754,12 +4754,16 @@ diff -ru gcc-14.2.0-orig/gcc/config/tms9900/tms9900.md gcc-14.2.0/gcc/config/tms
 +;; shift by 16, so test for 0 and jump over the shift if true.  Do the same in
 +;; all other shift by register insns as well.
 +
-+;; If we are asked to shift by a constant 0 then we assert as the
-+;; compiler is being stupid.
-+
-+;; Removed the assert, the compiler actually is that
-+;; stupid when expanding 32-bit shifts.  Make it an alternative with 0 length that does nothing
-+
++;; NOTE: this used to special-case a constant shift count of 2 (the "O"
++;; alternative, matched below) to emit nothing, on the theory that the
++;; compiler could only ever generate that as a spurious artifact of
++;; expanding a 32-bit shift.  That's wrong -- a constant shift-by-2 is
++;; a completely ordinary HImode operation (eg it shows up multiplying
++;; an array index by 4 as part of scaling by a struct size that's a
++;; multiple of 4), and silently dropping it corrupted every one of
++;; those.  A constant 2 needs exactly the same "sla %0,%2" as any
++;; other constant shift count, so alternative "O" is now handled
++;; identically to alternative "i" below.
 +;;-------------------------------------------------------------------
 +(define_insn "ashlhi3"
 +  [(set (match_operand:HI 0 "register_operand" "=r,r,r,r")
@@ -4774,14 +4778,27 @@ diff -ru gcc-14.2.0-orig/gcc/config/tms9900/tms9900.md gcc-14.2.0/gcc/config/tms
 +      output_asm_insn("jeq  $+4",    operands);
 +      output_asm_insn("sla  %0, 0",  operands);
 +    }
-+    else if (which_alternative > 2)
++    else if (which_alternative == 2)
++    {
++      /* Constraint O only ever matches the literal constant 2, never
++         0, so this is always safe as a direct immediate shift. */
++      output_asm_insn("sla  %0, %2", operands);
++    }
++    else if (CONST_INT_P (operands[2]) && INTVAL (operands[2]) == 0)
++    {
++      /* True no-op.  A hardware-encoded "sla %0,0" does not mean
++         shift by zero here -- it means take the shift count from
++         the low 4 bits of R0, which GCC has no model of, so a
++         literal 0 must never reach the sla below. */
++    }
++    else
 +    {
 +      output_asm_insn("sla  %0, %2", operands);
 +    }
 +
 +    return(""); 
 +  }
-+  [(set_attr "length" "6,8,0,2")])
++  [(set_attr "length" "6,8,2,2")])
 +
 +;;-------------------------------------
 +;  Byte shift left differs in that we must ensure the lower byte is zeros
@@ -4800,7 +4817,23 @@ diff -ru gcc-14.2.0-orig/gcc/config/tms9900/tms9900.md gcc-14.2.0/gcc/config/tms
 +      output_asm_insn("andi %0, >FF00", operands);
 +      output_asm_insn("sla  %0, 0",     operands);
 +    }
-+    else if (which_alternative > 2)
++    else if (which_alternative == 2)
++    {
++      /* Constraint O only ever matches the literal constant 2, never
++         0, so this is always safe as a direct immediate shift. */
++      output_asm_insn("andi %0, >FF00", operands);
++      output_asm_insn("sla  %0, %2",    operands);
++    }
++    else if (CONST_INT_P (operands[2]) && INTVAL (operands[2]) == 0)
++    {
++      /* True no-op.  A hardware-encoded "sla %0,0" does not mean
++         shift by zero here -- it means take the shift count from
++         the low 4 bits of R0, which GCC has no model of, so a
++         literal 0 must never reach the sla below.  (Also must skip
++         the andi: with no shift actually happening, it would wrongly
++         clear the lower byte of an otherwise-untouched value.) */
++    }
++    else
 +    {
 +      output_asm_insn("andi %0, >FF00", operands);
 +      output_asm_insn("sla  %0, %2",    operands);
@@ -4808,7 +4841,7 @@ diff -ru gcc-14.2.0-orig/gcc/config/tms9900/tms9900.md gcc-14.2.0/gcc/config/tms
 +
 +    return(""); 
 +  }
-+  [(set_attr "length" "10,12,0,6")])
++  [(set_attr "length" "10,12,6,6")])
 +
 +;;-------------------------------------------------------------------
 +;; Arithmetic shift right
@@ -4830,14 +4863,27 @@ diff -ru gcc-14.2.0-orig/gcc/config/tms9900/tms9900.md gcc-14.2.0/gcc/config/tms
 +      output_asm_insn("jeq  $+4",    operands);
 +      output_asm_insn("sra  %0, 0",  operands);
 +    }
-+    else if (which_alternative > 2)
++    else if (which_alternative == 2)
++    {
++      /* Constraint O only ever matches the literal constant 2, never
++         0, so this is always safe as a direct immediate shift. */
++      output_asm_insn("sra  %0, %2", operands);
++    }
++    else if (CONST_INT_P (operands[2]) && INTVAL (operands[2]) == 0)
++    {
++      /* True no-op.  A hardware-encoded "sra %0,0" does not mean
++         shift by zero here -- it means take the shift count from
++         the low 4 bits of R0, which GCC has no model of, so a
++         literal 0 must never reach the sra below. */
++    }
++    else
 +    {
 +      output_asm_insn("sra  %0, %2", operands);
 +    }
 +
 +    return(""); 
 +  }
-+  [(set_attr "length" "6,8,0,2")])
++  [(set_attr "length" "6,8,2,2")])
 +
 +;; Logical shift right
 +(define_insn "lshr<mode>3"
@@ -4853,14 +4899,27 @@ diff -ru gcc-14.2.0-orig/gcc/config/tms9900/tms9900.md gcc-14.2.0/gcc/config/tms
 +      output_asm_insn("jeq  $+4",    operands);
 +      output_asm_insn("srl  %0, 0",  operands);
 +    }
-+    else if (which_alternative > 2)
++    else if (which_alternative == 2)
++    {
++      /* Constraint O only ever matches the literal constant 2, never
++         0, so this is always safe as a direct immediate shift. */
++      output_asm_insn("srl  %0, %2", operands);
++    }
++    else if (CONST_INT_P (operands[2]) && INTVAL (operands[2]) == 0)
++    {
++      /* True no-op.  A hardware-encoded "srl %0,0" does not mean
++         shift by zero here -- it means take the shift count from
++         the low 4 bits of R0, which GCC has no model of, so a
++         literal 0 must never reach the srl below. */
++    }
++    else
 +    {
 +      output_asm_insn("srl  %0, %2", operands);
 +    }
 +
 +    return(""); 
 +  }
-+  [(set_attr "length" "6,8,0,2")])
++  [(set_attr "length" "6,8,2,2")])
 +
 +
 +;;-------------------------------------------------------------------
@@ -6738,13 +6797,13 @@ diff -ru gcc-14.2.0-orig/gcc/cppbuiltin.cc gcc-14.2.0/gcc/cppbuiltin.cc
  
 diff -ru gcc-14.2.0-orig/gcc/DATESTAMP gcc-14.2.0/gcc/DATESTAMP
 --- gcc-14.2.0-orig/gcc/DATESTAMP	2026-08-16 13:07:39.644934004 +0100
-+++ gcc-14.2.0/gcc/DATESTAMP	2026-08-16 23:23:48.288622269 +0100
++++ gcc-14.2.0/gcc/DATESTAMP	2026-08-16 23:33:05.365855771 +0100
 @@ -1 +1 @@
 -20240801
 +20260816
 diff -ru gcc-14.2.0-orig/gcc/DEV-PHASE gcc-14.2.0/gcc/DEV-PHASE
 --- gcc-14.2.0-orig/gcc/DEV-PHASE	2026-08-16 13:07:39.644934004 +0100
-+++ gcc-14.2.0/gcc/DEV-PHASE	2026-08-16 23:23:48.292622278 +0100
++++ gcc-14.2.0/gcc/DEV-PHASE	2026-08-16 23:33:05.365855771 +0100
 @@ -0,0 +1 @@
 +TMS9900 patch
 diff -ru gcc-14.2.0-orig/gcc/Makefile.in gcc-14.2.0/gcc/Makefile.in
@@ -6774,7 +6833,7 @@ diff -ru gcc-14.2.0-orig/gcc/Makefile.in gcc-14.2.0/gcc/Makefile.in
  CFLAGS-cppdefault.o += $(PREPROCESSOR_DEFINES)
 diff -ru gcc-14.2.0-orig/gcc/REVISION gcc-14.2.0/gcc/REVISION
 --- gcc-14.2.0-orig/gcc/REVISION	2026-08-16 13:07:39.644934004 +0100
-+++ gcc-14.2.0/gcc/REVISION	2026-08-16 23:23:48.292622278 +0100
++++ gcc-14.2.0/gcc/REVISION	2026-08-16 23:33:05.365855771 +0100
 @@ -0,0 +1 @@
 +2.0
 diff -ru gcc-14.2.0-orig/libgcc/config/tms9900/atof.cc gcc-14.2.0/libgcc/config/tms9900/atof.cc
