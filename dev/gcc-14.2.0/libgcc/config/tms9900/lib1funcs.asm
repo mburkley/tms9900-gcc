@@ -453,27 +453,36 @@ __divmodsi3:
 
   /* Save return register */
   mov  r11, @-2(r10)
+
+  /* Save the ORIGINAL dividend high word.  The remainder must take its
+     sign, per C semantics, which is NOT the numerator^denominator sign
+     that __divmodstart leaves at @-4(r10) for correcting the quotient
+     below via __divmodend. */
+  mov  r1, @-8(r10)
+
   bl   @__divmodstart
 
   /* Caclulate result */
 calc:
   bl   @__udivmod32
 
-  /* Negate modulus if needed */
-  mov  @-4(r10), r0
+  /* Negate modulus if the ORIGINAL dividend was negative */
+  mov  @-8(r10), r0
   jlt  savemod
   inv  r3
   neg  r4
   jnc  savemod
   inc  r3
-  
+
   /* Save modulus */
 savemod:
   mov  @-6(r10), r0
   mov  r3, *r0
   mov  r4, *r0+
 
-  /* Complete operatons */
+  /* Complete operatons: __divmodend corrects the quotient using the
+     numerator^denominator sign at @-4(r10), which is correct for the
+     quotient (unlike the modulus above). */
   b    @__divmodend
 #endif
 
@@ -517,6 +526,13 @@ calc:
 __modsi3:
   /* Save return register */
   mov  r11, @-2(r10)
+
+  /* Save the ORIGINAL dividend high word.  Its sign is the sign the
+     remainder must take (C semantics: the remainder has the sign of the
+     dividend), which is NOT the numerator^denominator sign that
+     __divmodstart leaves at @-4(r10) for __divmodend to apply to a
+     quotient, so we can't just tail-call __divmodend here. */
+  mov  r1, @-6(r10)
   bl   @__divmodstart
 
   /* Caclulate result */
@@ -524,7 +540,19 @@ calc:
   bl   @__udivmod32
   mov  r3, r1
   mov  r4, r2
-  b    @__divmodend
+
+  /* Negate the remainder if the original dividend was negative */
+  mov  @-6(r10), r0
+  jlt  modneg
+  jmp  moddone
+modneg:
+  inv  r1
+  neg  r2
+  jnc  moddone
+  inc  r1
+moddone:
+  mov  @-2(r10), r11
+  b    *r11
 #endif
 
 

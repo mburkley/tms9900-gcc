@@ -39,8 +39,11 @@ along with GCC; see the file COPYING3.  If not see
 /* Options for the linker. 
    We need to tell the linker the target elf format.
    This can be overridden by -Wl option of gcc.  */
+/* binutils-2.44's ld names this emulation elf32tms9900 (bfd/gas/ld target
+   vector names all switched to the <arch>_elf32_vec convention there),
+   not the bare "tms9900" binutils-2.19.1 used.  */
 #ifndef LINK_SPEC
-#define LINK_SPEC "-m tms9900"
+#define LINK_SPEC "-m elf32tms9900"
 #endif
 
 /* More linker options, these are used at the beginning of the command */
@@ -579,6 +582,45 @@ enum reg_class
   ((COUNT) == 0								\
    ? gen_rtx_MEM (Pmode, arg_pointer_rtx)                               \
    : 0)
+
+/* Before the prologue runs, the return address set by BL is still sitting
+   in R11 (CALL_RETURN_REGNUM) -- it hasn't been spilled to the frame yet,
+   so this is a plain REG, unlike RETURN_ADDR_RTX above which describes the
+   post-prologue (spilled to the stack) view.  Needed for DWARF2 CFI/unwind
+   info generation: without it, dwarf2cfi.cc's create_cie_data() hits its
+   "target forgot to define this" trap (gcc_unreachable()) for every
+   function compiled with -g.  CALL_RETURN_REGNUM (not the dead
+   HARD_LR_REGNUM above -- see the "MGB Moved to tms9900.md" #if 0 block)
+   is the live constant: it comes from insn-constants.h, generated from
+   tms9900.md's define_constants, and is what tms9900.cc itself already
+   uses for this register.  */
+#define INCOMING_RETURN_ADDR_RTX	gen_rtx_REG (Pmode, CALL_RETURN_REGNUM)
+#define DWARF_FRAME_RETURN_COLUMN	DWARF_FRAME_REGNUM (CALL_RETURN_REGNUM)
+
+/* defaults.h auto-enables DWARF2_UNWIND_INFO once INCOMING_RETURN_ADDR_RTX
+   is defined (it assumes "the rest of the DWARF2 frame unwind support is
+   also provided"), which in turn defaults EH_FRAME_SECTION_NAME, which
+   makes libgcc2.c's __do_global_ctors/__do_global_dtors call
+   __register_frame_info/__deregister_frame_info -- functions that only
+   exist if unwind-dw2*.c is built into libgcc.  We deliberately don't
+   build those (see libgcc/config/tms9900/t-tms9900's LIB2ADDEH), so left
+   on its own this default leaves __main.o with undefined references at
+   link time.  INCOMING_RETURN_ADDR_RTX above is only needed for
+   -g's .debug_frame (CIE) generation, not for actual runtime unwinding,
+   so explicitly opt out of the latter.  */
+#define DWARF2_UNWIND_INFO 0
+
+/* No .init_array/.init section support here (yet).  Left alone, GCC's
+   default is to make every main() call bl @__main, whose libgcc2.c body
+   (__do_global_ctors, running static C++ constructors) unconditionally
+   calls atexit() -- which doesn't exist on this freestanding, no-libc
+   target, so it's an undefined reference at link time.  Defining
+   HAS_INIT_SECTION stops both the auto-inserted call *and* the
+   compilation of that libgcc2.c body, at the cost of static C++
+   constructors not running automatically -- an acceptable trade-off
+   here since real .init_array support (linker script + crt changes)
+   is future work, not something this target has ever had.  */
+#define HAS_INIT_SECTION
 
 /* Before the prologue, the top of the frame is at 2(sp).  */
 #define INCOMING_FRAME_SP_OFFSET        0

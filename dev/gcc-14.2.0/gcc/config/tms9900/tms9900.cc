@@ -53,6 +53,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "explow.h"
 #include "expmed.h"
 #include "calls.h"
+#include "targhooks.h"
 #include "tms9900-protos.h"
 #include "dfp.h"
 #include "decimal128.h"
@@ -269,8 +270,11 @@ pad_direction tms9900_function_arg_padding (machine_mode mode,
     return PAD_UPWARD;
 }
 
-  /* Fall back to the default.  */
-  return TARGET_FUNCTION_ARG_PADDING (mode, type);
+  /* Fall back to the default.  Note this must call the generic
+     default_function_arg_padding(), not the TARGET_FUNCTION_ARG_PADDING
+     macro -- that macro expands to this very function on this target, so
+     calling it here would recurse forever. */
+  return default_function_arg_padding (mode, type);
 }
 
 
@@ -1536,5 +1540,36 @@ extern void tms9900_debug_operands (const char *name, rtx ops[], int count)
                  GET_MODE_NAME (GET_MODE (ops[i])));
     }
     fprintf (file, "\n");
+}
+
+/* A constant-address call builds (mem:FUNCTION_MODE (const_int N)), which is
+   bit-identical to a data load at N (FUNCTION_MODE == HImode).  CSE then
+   forwards a known data value into the call target.  Mark such call MEMs
+   volatile so they are never value-numbered/forwarded -- same mechanism as a
+   volatile source access.  Only const-int addresses can collide, so leave
+   symbol and register targets alone.  */
+rtx tms9900_fixup_call_target (rtx target)
+{
+    rtx addr;
+    if (!MEM_P (target)) {
+        return target;
+    }
+
+    addr = XEXP (target, 0);
+
+    /* A numeric call address -- or a register that may have been
+       value-numbered to one -- collides with a same-address data load
+       (FUNCTION_MODE == HImode).  Mark such call targets volatile so
+       CSE/gcse won't forward a data value in.  Symbol/label targets can't
+       collide, so leave them fully optimizable.  */
+
+    if (REG_P (addr) || CONST_INT_P (addr))
+    {
+        rtx mem = gen_rtx_MEM (GET_MODE (target), addr);
+        MEM_VOLATILE_P (mem) = 1;
+        return mem;
+    }
+
+    return target;
 }
 

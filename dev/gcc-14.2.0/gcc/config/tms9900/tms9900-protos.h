@@ -48,3 +48,4 @@ extern void tms9900_asm_output_dwarf_offset (FILE *file, int size, const char * 
 extern void tms9900_register_mode_set (rtx operand, int mode);
 extern void tms9900_inline_debug (const char *fmt,...);
 extern void tms9900_debug_operands (const char *name, rtx ops[], int count);
+extern rtx tms9900_fixup_call_target (rtx);
