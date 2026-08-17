@@ -3899,8 +3899,8 @@ diff -ru gcc-14.2.0-orig/gcc/config/tms9900/tms9900.h gcc-14.2.0/gcc/config/tms9
 +
 diff -ru gcc-14.2.0-orig/gcc/config/tms9900/tms9900.md gcc-14.2.0/gcc/config/tms9900/tms9900.md
 --- gcc-14.2.0-orig/gcc/config/tms9900/tms9900.md	2026-08-16 13:07:39.644934004 +0100
-+++ gcc-14.2.0/gcc/config/tms9900/tms9900.md	2026-08-16 23:56:26.720782772 +0100
-@@ -0,0 +1,2799 @@
++++ gcc-14.2.0/gcc/config/tms9900/tms9900.md	2026-08-17 15:32:09.964018758 +0100
+@@ -0,0 +1,2836 @@
 +;;- Machine description for the tms9900 for GNU C compiler
 +;; Copyright (C) 2010-2023 Free Software Foundation, Inc.
 +;; Contributed by Eric Welser and Mark Burkley (mark@burkley.net)
@@ -5678,6 +5678,11 @@ diff -ru gcc-14.2.0-orig/gcc/config/tms9900/tms9900.md gcc-14.2.0/gcc/config/tms
 +    emit_insn(gen_extendqihi2 (operands[2], operands[2]));
 +    emit_insn(gen_xorhi3(sign, sign, operands[2]));
 +
++    /* C99: the remainder always takes the dividend's sign, regardless of
++       the divisor's sign, so track it separately from the quotient sign. */
++    rtx dividend_sign = gen_reg_rtx (HImode);
++    emit_insn(gen_extendqihi2 (dividend_sign, operands[1]));
++
 +    /* Use temp for operand2 and get abs value */
 +    rtx divisor = gen_reg_rtx (HImode);
 +    emit_move_insn(divisor, operands[2]);
@@ -5711,6 +5716,10 @@ diff -ru gcc-14.2.0-orig/gcc/config/tms9900/tms9900.md gcc-14.2.0/gcc/config/tms
 +    /* Convert and store remainder from HI to QI */
 +    rtx remainder = gen_reg_rtx (HImode);
 +    emit_move_insn (remainder, gen_lowpart (HImode, dividend));
++
++    /* Correct sign of remainder */
++    emit_insn(gen_divfixuphi2(remainder, dividend_sign));
++
 +    emit_insn(gen_trunchiqi2 (operands[3], remainder));
 +
 +    DONE;
@@ -5737,6 +5746,11 @@ diff -ru gcc-14.2.0-orig/gcc/config/tms9900/tms9900.md gcc-14.2.0/gcc/config/tms
 +    emit_move_insn(sign, operands[1]);
 +    emit_insn(gen_xorhi3(sign, sign, operands[2]));
 +
++    /* C99: the remainder always takes the dividend's sign, regardless of
++       the divisor's sign, so track it separately from the quotient sign. */
++    rtx dividend_sign = gen_reg_rtx (HImode);
++    emit_move_insn(dividend_sign, operands[1]);
++
 +    /* Use temp for operand2 and get abs value */
 +    rtx divisor = gen_reg_rtx (HImode);
 +    emit_move_insn(divisor, operands[2]);
@@ -5761,6 +5775,9 @@ diff -ru gcc-14.2.0-orig/gcc/config/tms9900/tms9900.md gcc-14.2.0/gcc/config/tms
 +
 +    /* Correct sign of quotient */
 +    emit_insn(gen_divfixuphi2(operands[0], sign));
++
++    /* Correct sign of remainder */
++    emit_insn(gen_divfixuphi2(operands[3], dividend_sign));
 +
 +    DONE;
 +  }
@@ -5792,21 +5809,41 @@ diff -ru gcc-14.2.0-orig/gcc/config/tms9900/tms9900.md gcc-14.2.0/gcc/config/tms
 +
 +
 +
++;; Negate operand 0 in place iff operand 1 (the sign register, read-only
++;; here) is negative.  The TMS9900 has no direct "jump if >= 0", so the
++;; sign test is done on a scratch copy of operand 1 inverted first (NOT
++;; flips which side of zero a value falls on), leaving operand 1 itself
++;; untouched.
++;;
++;; Operand 0 is read (via match_dup, for the "leave unchanged"/negate
++;; choice) as well as written, so its constraint must be "+r", not
++;; "=r".  With a bare "=r", reload is told operand 0 is a pure write
++;; with no required incoming value, so it's free to allocate it an
++;; arbitrary hard register unconnected to whatever previously computed
++;; the value we're meant to be correcting -- silently discarding the
++;; real input.  That single-character bug only showed up once a second
++;; caller existed (the remainder-sign fix, alongside the pre-existing
++;; quotient-sign one): reload's register choice for the quotient case
++;; happened to line up by luck, but for the remainder case it picked a
++;; register with no producer, and DCE then deleted the division whose
++;; result was never actually being read.
 +(define_insn "divfixuphi2"
-+  [(set (match_operand:HI 1 "register_operand" "=r")
-+        (not:HI (match_dup 1)))
-+   (set (match_operand:HI 0 "register_operand" "=r")
-+        (if_then_else:HI (lt:HI (match_dup 1) (const_int 0))
-+           (neg:HI (match_dup 0)) (match_dup 0)))]
++  [(set (match_operand:HI 0 "register_operand" "+r")
++        (if_then_else:HI (lt:HI (not:HI (match_operand:HI 1 "register_operand" "r"))
++                                 (const_int 0))
++           (match_dup 0) (neg:HI (match_dup 0))))
++   (clobber (match_scratch:HI 2 "=r"))
++   (clobber (reg:CC CC_REGNUM))]
 +  ""
 +  {
 +    tms9900_debug_operands ("divfixuphi2", operands, 2);
-+    output_asm_insn("inv  %1", operands);
++    output_asm_insn("mov  %1, %2", operands);
++    output_asm_insn("inv  %2", operands);
 +    output_asm_insn("jlt  $+4", operands);
 +    output_asm_insn("neg  %0", operands);
 +    return("");
 +  }
-+  [(set_attr "length" "6")])
++  [(set_attr "length" "8")])
 +
 +
 +
@@ -6843,13 +6880,13 @@ diff -ru gcc-14.2.0-orig/gcc/cppbuiltin.cc gcc-14.2.0/gcc/cppbuiltin.cc
  
 diff -ru gcc-14.2.0-orig/gcc/DATESTAMP gcc-14.2.0/gcc/DATESTAMP
 --- gcc-14.2.0-orig/gcc/DATESTAMP	2026-08-16 13:07:39.644934004 +0100
-+++ gcc-14.2.0/gcc/DATESTAMP	2026-08-16 23:57:34.792929793 +0100
++++ gcc-14.2.0/gcc/DATESTAMP	2026-08-17 16:32:30.187998542 +0100
 @@ -1 +1 @@
 -20240801
-+20260816
++20260817
 diff -ru gcc-14.2.0-orig/gcc/DEV-PHASE gcc-14.2.0/gcc/DEV-PHASE
 --- gcc-14.2.0-orig/gcc/DEV-PHASE	2026-08-16 13:07:39.644934004 +0100
-+++ gcc-14.2.0/gcc/DEV-PHASE	2026-08-16 23:57:34.792929793 +0100
++++ gcc-14.2.0/gcc/DEV-PHASE	2026-08-17 16:32:30.187998542 +0100
 @@ -0,0 +1 @@
 +TMS9900 patch
 diff -ru gcc-14.2.0-orig/gcc/Makefile.in gcc-14.2.0/gcc/Makefile.in
@@ -6879,7 +6916,7 @@ diff -ru gcc-14.2.0-orig/gcc/Makefile.in gcc-14.2.0/gcc/Makefile.in
  CFLAGS-cppdefault.o += $(PREPROCESSOR_DEFINES)
 diff -ru gcc-14.2.0-orig/gcc/REVISION gcc-14.2.0/gcc/REVISION
 --- gcc-14.2.0-orig/gcc/REVISION	2026-08-16 13:07:39.644934004 +0100
-+++ gcc-14.2.0/gcc/REVISION	2026-08-16 23:57:34.792929793 +0100
++++ gcc-14.2.0/gcc/REVISION	2026-08-17 16:32:30.187998542 +0100
 @@ -0,0 +1 @@
 +2.0
 diff -ru gcc-14.2.0-orig/libgcc/config/tms9900/atof.cc gcc-14.2.0/libgcc/config/tms9900/atof.cc
