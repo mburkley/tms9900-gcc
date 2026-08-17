@@ -50,7 +50,13 @@
 #define OP_LWPI 0x02E0
 #define OP_LIMI 0x0300
 
+#define OP_IDLE 0x0340
+#define OP_RSET 0x0360
 #define OP_RTWP 0x0380
+#define OP_CKON 0x03A0
+#define OP_CKOF 0x03C0
+#define OP_LREX 0x03E0
+
 
 #define OP_BLWP 0x0400
 #define OP_B	0x0440

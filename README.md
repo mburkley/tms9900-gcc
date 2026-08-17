@@ -16,13 +16,20 @@ tms9900 support.  This differences are much smaller.
 Patch files are archived in the main branch which are used by an install script
 to create modified sources for gcc and binutils.
 
-The branch **main** in the repo contains The latest scripts and patch files. The patch files are:
+The branch **main** in the repo contains the latest scripts and patch files for version 1.x.
+The patch files are:
 * binutils-2.19.1-tms9900-1.12.patch
 * gcc-4.4.0-tms9900-1.34.patch
 
+This branch also contains version 2.x of the patch files which can be applied to
+newer versions of gcc and binutils.  These are:
+* binutils-2.44-tms9900-2.0.patch
+* gcc-14.2.0-tms9900-2.0.patch
+
 Patch files are cumulative.  The latest version of the patch file includes all
 previous updates as well.  Only the latest patch file is stored in the repo.
-The install script will find the latest patch and apply it.
+The install script will find the latest patch and apply it.  It will also ask which
+version of gcc you want to use, or you can add a 1 or 2 parameter to specify 1.x or 2.x
 
 User download and install
 -------------------------
@@ -52,6 +59,9 @@ existing binutils-2.19.1 support -- select via install.sh's version menu)
   the gcc-4.4.0/binutils-2.19.1 and gcc-14.2.0/binutils-2.44 toolchain pairs
 * install.sh now builds with make -j (parallel across all CPU cores) instead
   of single-threaded
+* Fixed a disassembler opcode-table misalignment that made it decode `idle`
+  as `rset`, and every opcode after it (`rtwp`/`ckon`/`ckof`/`lrex`) one
+  slot early
 
 gcc patch 2.0 (ports the tms9900 backend to gcc-14.2.0, alongside the
 existing gcc-4.4.0 support -- select via install.sh's version menu)
@@ -82,9 +92,8 @@ existing gcc-4.4.0 support -- select via install.sh's version menu)
   anything from wrong values to a crash at startup
 * Ported forward the `__TMS9900_PATCH_MAJOR__`/`__TMS9900_PATCH_MINOR__`
   patch-level query macros
-* Known remaining issue: `%` (modulo) can return a remainder with the
-  wrong sign when the dividend is negative; the division itself is
-  unaffected
+* Fixed `%` (modulo) returning a remainder with the wrong sign whenever the
+  dividend was negative
 * C++ support is present but not yet extensively tested; C is the
   well-exercised path
 

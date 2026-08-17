@@ -4,7 +4,7 @@
 
 void t_vdpwa (void)
 {
-    volatile char *ptr = 0x8800;
+    volatile char *ptr = (char*)0x8800;
 
     *ptr = 0x12;
     *ptr=0x34;
