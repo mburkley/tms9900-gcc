@@ -1,6 +1,6 @@
 diff -ru binutils-2.44-orig/bfd/archures.c binutils-2.44/bfd/archures.c
---- binutils-2.44-orig/bfd/archures.c	2026-08-16 12:23:43.371496263 +0100
-+++ binutils-2.44/bfd/archures.c	2026-08-16 12:24:06.067543836 +0100
+--- binutils-2.44-orig/bfd/archures.c	2026-08-16 13:07:39.540933789 +0100
++++ binutils-2.44/bfd/archures.c	2026-08-16 13:07:39.560933831 +0100
 @@ -574,6 +574,8 @@
  .#define bfd_mach_amdgcn_gfx1100 0x041
  .#define bfd_mach_amdgcn_gfx1101 0x046
@@ -27,8 +27,8 @@ diff -ru binutils-2.44-orig/bfd/archures.c binutils-2.44/bfd/archures.c
      &bfd_v850_rh850_arch,
      &bfd_vax_arch,
 diff -ru binutils-2.44-orig/bfd/bfd-in2.h binutils-2.44/bfd/bfd-in2.h
---- binutils-2.44-orig/bfd/bfd-in2.h	2026-08-16 12:31:01.048414225 +0100
-+++ binutils-2.44/bfd/bfd-in2.h	2026-08-16 12:31:01.048414225 +0100
+--- binutils-2.44-orig/bfd/bfd-in2.h	2026-08-16 13:07:39.544933798 +0100
++++ binutils-2.44/bfd/bfd-in2.h	2026-08-16 13:07:39.560933831 +0100
 @@ -1842,6 +1842,8 @@
  #define bfd_mach_amdgcn_gfx1100 0x041
  #define bfd_mach_amdgcn_gfx1101 0x046
@@ -39,8 +39,8 @@ diff -ru binutils-2.44-orig/bfd/bfd-in2.h binutils-2.44/bfd/bfd-in2.h
    };
  
 diff -ru binutils-2.44-orig/bfd/config.bfd binutils-2.44/bfd/config.bfd
---- binutils-2.44-orig/bfd/config.bfd	2026-08-16 12:23:43.375496271 +0100
-+++ binutils-2.44/bfd/config.bfd	2026-08-16 12:24:30.019594038 +0100
+--- binutils-2.44-orig/bfd/config.bfd	2026-08-16 13:07:39.544933798 +0100
++++ binutils-2.44/bfd/config.bfd	2026-08-16 13:07:39.560933831 +0100
 @@ -219,6 +219,7 @@
  spu*)            targ_archs=bfd_spu_arch ;;
  tilegx*)	 targ_archs=bfd_tilegx_arch ;;
@@ -61,8 +61,8 @@ diff -ru binutils-2.44-orig/bfd/config.bfd binutils-2.44/bfd/config.bfd
      targ_defvec=v850_elf32_vec
      targ_selvecs="v800_elf32_vec"
 diff -ru binutils-2.44-orig/bfd/configure binutils-2.44/bfd/configure
---- binutils-2.44-orig/bfd/configure	2026-08-16 12:28:21.672079841 +0100
-+++ binutils-2.44/bfd/configure	2026-08-16 12:28:26.668090321 +0100
+--- binutils-2.44-orig/bfd/configure	2026-08-16 13:07:39.548933806 +0100
++++ binutils-2.44/bfd/configure	2026-08-16 13:07:39.564933839 +0100
 @@ -16062,6 +16062,7 @@
      tilegx_elf64_be_vec)	 tb="$tb elf64-tilegx.lo elfxx-tilegx.lo elf64.lo $elf" ; target_size=64 ;;
      tilegx_elf64_le_vec)	 tb="$tb elf64-tilegx.lo elfxx-tilegx.lo elf64.lo $elf" ; target_size=64 ;;
@@ -72,8 +72,8 @@ diff -ru binutils-2.44-orig/bfd/configure binutils-2.44/bfd/configure
      v850_elf32_vec)		 tb="$tb elf32-v850.lo elf32.lo $elf" ;;
      vax_aout_1knbsd_vec)	 tb="$tb vax1knetbsd.lo aout32.lo" ;;
 diff -ru binutils-2.44-orig/bfd/configure.ac binutils-2.44/bfd/configure.ac
---- binutils-2.44-orig/bfd/configure.ac	2026-08-16 12:28:21.672079841 +0100
-+++ binutils-2.44/bfd/configure.ac	2026-08-16 12:28:26.652090288 +0100
+--- binutils-2.44-orig/bfd/configure.ac	2026-08-16 13:07:39.548933806 +0100
++++ binutils-2.44/bfd/configure.ac	2026-08-16 13:07:39.564933839 +0100
 @@ -648,6 +648,7 @@
      tilegx_elf64_be_vec)	 tb="$tb elf64-tilegx.lo elfxx-tilegx.lo elf64.lo $elf" ; target_size=64 ;;
      tilegx_elf64_le_vec)	 tb="$tb elf64-tilegx.lo elfxx-tilegx.lo elf64.lo $elf" ; target_size=64 ;;
@@ -83,8 +83,8 @@ diff -ru binutils-2.44-orig/bfd/configure.ac binutils-2.44/bfd/configure.ac
      v850_elf32_vec)		 tb="$tb elf32-v850.lo elf32.lo $elf" ;;
      vax_aout_1knbsd_vec)	 tb="$tb vax1knetbsd.lo aout32.lo" ;;
 diff -ru binutils-2.44-orig/bfd/cpu-tms9900.c binutils-2.44/bfd/cpu-tms9900.c
---- binutils-2.44-orig/bfd/cpu-tms9900.c	2026-08-16 12:23:35.163479059 +0100
-+++ binutils-2.44/bfd/cpu-tms9900.c	2026-08-16 12:23:04.219414210 +0100
+--- binutils-2.44-orig/bfd/cpu-tms9900.c	2026-08-16 13:07:39.548933806 +0100
++++ binutils-2.44/bfd/cpu-tms9900.c	2026-08-16 13:07:39.564933839 +0100
 @@ -0,0 +1,59 @@
 +/* BFD library support routines for the TMS9900 architecture.
 +   Copyright 2009 Eric Welser
@@ -146,8 +146,8 @@ diff -ru binutils-2.44-orig/bfd/cpu-tms9900.c binutils-2.44/bfd/cpu-tms9900.c
 +  0                      /* Maximum offset of a reloc from the start of an insn */
 +};
 diff -ru binutils-2.44-orig/bfd/elf32-tms9900.c binutils-2.44/bfd/elf32-tms9900.c
---- binutils-2.44-orig/bfd/elf32-tms9900.c	2026-08-16 12:23:35.163479059 +0100
-+++ binutils-2.44/bfd/elf32-tms9900.c	2026-08-16 12:23:20.223447743 +0100
+--- binutils-2.44-orig/bfd/elf32-tms9900.c	2026-08-16 13:07:39.548933806 +0100
++++ binutils-2.44/bfd/elf32-tms9900.c	2026-08-16 13:07:39.564933839 +0100
 @@ -0,0 +1,139 @@
 +#include "sysdep.h"
 +#include "bfd.h"
@@ -289,8 +289,8 @@ diff -ru binutils-2.44-orig/bfd/elf32-tms9900.c binutils-2.44/bfd/elf32-tms9900.
 +
 +#include "elf32-target.h"
 diff -ru binutils-2.44-orig/bfd/Makefile.am binutils-2.44/bfd/Makefile.am
---- binutils-2.44-orig/bfd/Makefile.am	2026-08-16 12:28:42.104122702 +0100
-+++ binutils-2.44/bfd/Makefile.am	2026-08-16 12:28:47.756134558 +0100
+--- binutils-2.44-orig/bfd/Makefile.am	2026-08-16 13:07:39.540933789 +0100
++++ binutils-2.44/bfd/Makefile.am	2026-08-16 13:07:39.556933823 +0100
 @@ -345,6 +345,7 @@
  	elf32-tic6x.lo \
  	elf32-tilegx.lo \
@@ -308,8 +308,8 @@ diff -ru binutils-2.44-orig/bfd/Makefile.am binutils-2.44/bfd/Makefile.am
  	elf32-vax.c \
  	elf32-visium.c \
 diff -ru binutils-2.44-orig/bfd/Makefile.in binutils-2.44/bfd/Makefile.in
---- binutils-2.44-orig/bfd/Makefile.in	2026-08-16 12:28:42.108122711 +0100
-+++ binutils-2.44/bfd/Makefile.in	2026-08-16 12:28:47.772134591 +0100
+--- binutils-2.44-orig/bfd/Makefile.in	2026-08-16 13:07:39.540933789 +0100
++++ binutils-2.44/bfd/Makefile.in	2026-08-16 13:07:39.556933823 +0100
 @@ -812,6 +812,7 @@
  	elf32-tic6x.lo \
  	elf32-tilegx.lo \
@@ -327,8 +327,8 @@ diff -ru binutils-2.44-orig/bfd/Makefile.in binutils-2.44/bfd/Makefile.in
  	elf32-vax.c \
  	elf32-visium.c \
 diff -ru binutils-2.44-orig/bfd/targets.c binutils-2.44/bfd/targets.c
---- binutils-2.44-orig/bfd/targets.c	2026-08-16 12:23:43.379496280 +0100
-+++ binutils-2.44/bfd/targets.c	2026-08-16 12:24:41.207617492 +0100
+--- binutils-2.44-orig/bfd/targets.c	2026-08-16 13:07:39.548933806 +0100
++++ binutils-2.44/bfd/targets.c	2026-08-16 13:07:39.564933839 +0100
 @@ -926,6 +926,7 @@
  extern const bfd_target tilegx_elf64_be_vec;
  extern const bfd_target tilegx_elf64_le_vec;
@@ -346,8 +346,8 @@ diff -ru binutils-2.44-orig/bfd/targets.c binutils-2.44/bfd/targets.c
  	&ft32_elf32_vec,
  
 diff -ru binutils-2.44-orig/binutils/readelf.c binutils-2.44/binutils/readelf.c
---- binutils-2.44-orig/binutils/readelf.c	2026-08-16 12:23:43.391496305 +0100
-+++ binutils-2.44/binutils/readelf.c	2026-08-16 12:26:17.023818409 +0100
+--- binutils-2.44-orig/binutils/readelf.c	2026-08-16 13:07:39.552933814 +0100
++++ binutils-2.44/binutils/readelf.c	2026-08-16 13:07:39.564933839 +0100
 @@ -159,6 +159,7 @@
  #include "elf/tic6x.h"
  #include "elf/tilegx.h"
@@ -376,8 +376,8 @@ diff -ru binutils-2.44-orig/binutils/readelf.c binutils-2.44/binutils/readelf.c
      case EM_CYGNUS_FRV:		return "Fujitsu FR-V";
      case EM_S12Z:               return "Freescale S12Z";
 diff -ru binutils-2.44-orig/config.sub binutils-2.44/config.sub
---- binutils-2.44-orig/config.sub	2026-08-16 12:27:23.331957467 +0100
-+++ binutils-2.44/config.sub	2026-08-16 12:27:32.243976158 +0100
+--- binutils-2.44-orig/config.sub	2026-08-16 13:07:39.552933814 +0100
++++ binutils-2.44/config.sub	2026-08-16 13:07:39.564933839 +0100
 @@ -1058,6 +1058,9 @@
  	pdp11-unknown)
  		vendor=dec
@@ -407,8 +407,8 @@ diff -ru binutils-2.44-orig/config.sub binutils-2.44/config.sub
  		os=ultrix4.2
  		;;
 diff -ru binutils-2.44-orig/gas/app.c binutils-2.44/gas/app.c
---- binutils-2.44-orig/gas/app.c	2026-08-16 12:23:43.383496287 +0100
-+++ binutils-2.44/gas/app.c	2026-08-16 12:25:08.459674628 +0100
+--- binutils-2.44-orig/gas/app.c	2026-08-16 13:07:39.552933814 +0100
++++ binutils-2.44/gas/app.c	2026-08-16 13:07:39.568933848 +0100
 @@ -738,6 +738,10 @@
  
  	    default:
@@ -421,8 +421,8 @@ diff -ru binutils-2.44-orig/gas/app.c binutils-2.44/gas/app.c
  #endif
  	      break;
 diff -ru binutils-2.44-orig/gas/config/tc-tms9900.c binutils-2.44/gas/config/tc-tms9900.c
---- binutils-2.44-orig/gas/config/tc-tms9900.c	2026-08-16 12:23:35.163479059 +0100
-+++ binutils-2.44/gas/config/tc-tms9900.c	2026-08-16 12:40:27.749603852 +0100
+--- binutils-2.44-orig/gas/config/tc-tms9900.c	2026-08-16 13:07:39.552933814 +0100
++++ binutils-2.44/gas/config/tc-tms9900.c	2026-08-16 13:07:39.568933848 +0100
 @@ -0,0 +1,1287 @@
 +/* tc-tms9900.c -- Assemble code for the Texas Instruments TMS9900
 +   Copyright 2009 Eric Welser
@@ -1712,8 +1712,8 @@ diff -ru binutils-2.44-orig/gas/config/tc-tms9900.c binutils-2.44/gas/config/tc-
 +}
 +
 diff -ru binutils-2.44-orig/gas/config/tc-tms9900.h binutils-2.44/gas/config/tc-tms9900.h
---- binutils-2.44-orig/gas/config/tc-tms9900.h	2026-08-16 12:23:35.163479059 +0100
-+++ binutils-2.44/gas/config/tc-tms9900.h	2026-08-16 12:32:04.556547486 +0100
+--- binutils-2.44-orig/gas/config/tc-tms9900.h	2026-08-16 13:07:39.552933814 +0100
++++ binutils-2.44/gas/config/tc-tms9900.h	2026-08-16 13:07:39.568933848 +0100
 @@ -0,0 +1,119 @@
 +/* this is tc-tms9900.h
 +   Copyright 2009 Eric Welser
@@ -1835,8 +1835,8 @@ diff -ru binutils-2.44-orig/gas/config/tc-tms9900.h binutils-2.44/gas/config/tc-
 +
 +#endif
 diff -ru binutils-2.44-orig/gas/configure.tgt binutils-2.44/gas/configure.tgt
---- binutils-2.44-orig/gas/configure.tgt	2026-08-16 12:23:43.379496280 +0100
-+++ binutils-2.44/gas/configure.tgt	2026-08-16 12:25:01.311659642 +0100
+--- binutils-2.44-orig/gas/configure.tgt	2026-08-16 13:07:39.552933814 +0100
++++ binutils-2.44/gas/configure.tgt	2026-08-16 13:07:39.568933848 +0100
 @@ -112,6 +112,7 @@
    sparc*)		cpu_type=sparc arch=sparclite ;; # ??? See tc-sparc.c.
    tilegx*be)		cpu_type=tilegx endian=big ;;
@@ -1855,8 +1855,8 @@ diff -ru binutils-2.44-orig/gas/configure.tgt binutils-2.44/gas/configure.tgt
  
    vax-*-netbsdaout)			fmt=aout em=nbsd ;;
 diff -ru binutils-2.44-orig/include/elf/common.h binutils-2.44/include/elf/common.h
---- binutils-2.44-orig/include/elf/common.h	2026-08-16 12:23:43.391496305 +0100
-+++ binutils-2.44/include/elf/common.h	2026-08-16 12:26:01.879786647 +0100
+--- binutils-2.44-orig/include/elf/common.h	2026-08-16 13:07:39.552933814 +0100
++++ binutils-2.44/include/elf/common.h	2026-08-16 13:07:39.568933848 +0100
 @@ -459,6 +459,8 @@
     architecture was derived.  */
  #define EM_CSKY_OLD		EM_MCORE
@@ -1867,8 +1867,8 @@ diff -ru binutils-2.44-orig/include/elf/common.h binutils-2.44/include/elf/commo
  
  /* Values for e_version.  */
 diff -ru binutils-2.44-orig/include/elf/tms9900.h binutils-2.44/include/elf/tms9900.h
---- binutils-2.44-orig/include/elf/tms9900.h	2026-08-16 12:23:35.167479067 +0100
-+++ binutils-2.44/include/elf/tms9900.h	2026-08-16 12:23:25.231458238 +0100
+--- binutils-2.44-orig/include/elf/tms9900.h	2026-08-16 13:07:39.552933814 +0100
++++ binutils-2.44/include/elf/tms9900.h	2026-08-16 13:07:39.568933848 +0100
 @@ -0,0 +1,32 @@
 +/* ix86 ELF support for BFD.
 +   Copyright 1998, 1999, 2000, 2002, 2004, 2005, 2006
@@ -1903,8 +1903,8 @@ diff -ru binutils-2.44-orig/include/elf/tms9900.h binutils-2.44/include/elf/tms9
 +
 +#endif
 diff -ru binutils-2.44-orig/ld/configure.tgt binutils-2.44/ld/configure.tgt
---- binutils-2.44-orig/ld/configure.tgt	2026-08-16 12:23:43.383496287 +0100
-+++ binutils-2.44/ld/configure.tgt	2026-08-16 12:25:21.119701174 +0100
+--- binutils-2.44-orig/ld/configure.tgt	2026-08-16 13:07:39.552933814 +0100
++++ binutils-2.44/ld/configure.tgt	2026-08-16 13:07:39.568933848 +0100
 @@ -985,6 +985,8 @@
  			;;
  tilepro-*-*)		targ_emul=elf32tilepro
@@ -1915,8 +1915,8 @@ diff -ru binutils-2.44-orig/ld/configure.tgt binutils-2.44/ld/configure.tgt
  			targ_extra_emuls=v850
  			;;
 diff -ru binutils-2.44-orig/ld/emulparams/elf32tms9900.sh binutils-2.44/ld/emulparams/elf32tms9900.sh
---- binutils-2.44-orig/ld/emulparams/elf32tms9900.sh	2026-08-16 12:23:35.167479067 +0100
-+++ binutils-2.44/ld/emulparams/elf32tms9900.sh	2026-08-16 12:23:31.415471203 +0100
+--- binutils-2.44-orig/ld/emulparams/elf32tms9900.sh	2026-08-16 13:07:39.552933814 +0100
++++ binutils-2.44/ld/emulparams/elf32tms9900.sh	2026-08-16 13:07:39.568933848 +0100
 @@ -0,0 +1,6 @@
 +SCRIPT_NAME=elf
 +OUTPUT_FORMAT="elf32-tms9900"
@@ -1925,8 +1925,8 @@ diff -ru binutils-2.44-orig/ld/emulparams/elf32tms9900.sh binutils-2.44/ld/emulp
 +TARGET_PAGE_SIZE=512
 +ARCH=tms9900
 diff -ru binutils-2.44-orig/ld/scripttempl/tms9900.sc binutils-2.44/ld/scripttempl/tms9900.sc
---- binutils-2.44-orig/ld/scripttempl/tms9900.sc	2026-08-16 12:23:35.167479067 +0100
-+++ binutils-2.44/ld/scripttempl/tms9900.sc	2026-08-16 12:23:25.231458238 +0100
+--- binutils-2.44-orig/ld/scripttempl/tms9900.sc	2026-08-16 13:07:39.552933814 +0100
++++ binutils-2.44/ld/scripttempl/tms9900.sc	2026-08-16 13:07:39.568933848 +0100
 @@ -0,0 +1,35 @@
 +if [ x${LD_FLAG} = x ]
 +then
@@ -1964,8 +1964,8 @@ diff -ru binutils-2.44-orig/ld/scripttempl/tms9900.sc binutils-2.44/ld/scripttem
 +}
 +EOF
 diff -ru binutils-2.44-orig/opcodes/configure binutils-2.44/opcodes/configure
---- binutils-2.44-orig/opcodes/configure	2026-08-16 12:29:24.116210841 +0100
-+++ binutils-2.44/opcodes/configure	2026-08-16 12:29:24.144210901 +0100
+--- binutils-2.44-orig/opcodes/configure	2026-08-16 13:07:39.556933823 +0100
++++ binutils-2.44/opcodes/configure	2026-08-16 13:07:39.572933856 +0100
 @@ -14519,6 +14519,7 @@
  	bfd_tic6x_arch)		ta="$ta tic6x-dis.lo" ;;
  	bfd_tilegx_arch)	ta="$ta tilegx-dis.lo tilegx-opc.lo" ;;
@@ -1975,8 +1975,8 @@ diff -ru binutils-2.44-orig/opcodes/configure binutils-2.44/opcodes/configure
  	bfd_v850e_arch)		ta="$ta v850-opc.lo v850-dis.lo" ;;
  	bfd_v850ea_arch)	ta="$ta v850-opc.lo v850-dis.lo" ;;
 diff -ru binutils-2.44-orig/opcodes/configure.ac binutils-2.44/opcodes/configure.ac
---- binutils-2.44-orig/opcodes/configure.ac	2026-08-16 12:29:24.116210841 +0100
-+++ binutils-2.44/opcodes/configure.ac	2026-08-16 12:29:24.128210867 +0100
+--- binutils-2.44-orig/opcodes/configure.ac	2026-08-16 13:07:39.556933823 +0100
++++ binutils-2.44/opcodes/configure.ac	2026-08-16 13:07:39.572933856 +0100
 @@ -335,6 +335,7 @@
  	bfd_tic6x_arch)		ta="$ta tic6x-dis.lo" ;;
  	bfd_tilegx_arch)	ta="$ta tilegx-dis.lo tilegx-opc.lo" ;;
@@ -1986,8 +1986,8 @@ diff -ru binutils-2.44-orig/opcodes/configure.ac binutils-2.44/opcodes/configure
  	bfd_v850e_arch)		ta="$ta v850-opc.lo v850-dis.lo" ;;
  	bfd_v850ea_arch)	ta="$ta v850-opc.lo v850-dis.lo" ;;
 diff -ru binutils-2.44-orig/opcodes/disassemble.c binutils-2.44/opcodes/disassemble.c
---- binutils-2.44-orig/opcodes/disassemble.c	2026-08-16 12:23:43.387496296 +0100
-+++ binutils-2.44/opcodes/disassemble.c	2026-08-16 12:25:32.195724400 +0100
+--- binutils-2.44-orig/opcodes/disassemble.c	2026-08-16 13:07:39.556933823 +0100
++++ binutils-2.44/opcodes/disassemble.c	2026-08-16 13:07:39.572933856 +0100
 @@ -93,6 +93,7 @@
  #define ARCH_tic54x
  #define ARCH_tic6x
@@ -2009,8 +2009,8 @@ diff -ru binutils-2.44-orig/opcodes/disassemble.c binutils-2.44/opcodes/disassem
      case bfd_arch_v850:
      case bfd_arch_v850_rh850:
 diff -ru binutils-2.44-orig/opcodes/disassemble.h binutils-2.44/opcodes/disassemble.h
---- binutils-2.44-orig/opcodes/disassemble.h	2026-08-16 12:25:50.035761810 +0100
-+++ binutils-2.44/opcodes/disassemble.h	2026-08-16 12:25:56.975776363 +0100
+--- binutils-2.44-orig/opcodes/disassemble.h	2026-08-16 13:07:39.556933823 +0100
++++ binutils-2.44/opcodes/disassemble.h	2026-08-16 13:07:39.572933856 +0100
 @@ -88,6 +88,7 @@
  extern int print_insn_tic6x		(bfd_vma, disassemble_info *);
  extern int print_insn_tilegx		(bfd_vma, disassemble_info *);
@@ -2020,8 +2020,8 @@ diff -ru binutils-2.44-orig/opcodes/disassemble.h binutils-2.44/opcodes/disassem
  extern int print_insn_vax		(bfd_vma, disassemble_info *);
  extern int print_insn_visium		(bfd_vma, disassemble_info *);
 diff -ru binutils-2.44-orig/opcodes/Makefile.am binutils-2.44/opcodes/Makefile.am
---- binutils-2.44-orig/opcodes/Makefile.am	2026-08-16 12:29:47.732260386 +0100
-+++ binutils-2.44/opcodes/Makefile.am	2026-08-16 12:29:47.748260421 +0100
+--- binutils-2.44-orig/opcodes/Makefile.am	2026-08-16 13:07:39.552933814 +0100
++++ binutils-2.44/opcodes/Makefile.am	2026-08-16 13:07:39.568933848 +0100
 @@ -248,6 +248,7 @@
  	tic6x-dis.c \
  	tilepro-dis.c \
@@ -2031,8 +2031,8 @@ diff -ru binutils-2.44-orig/opcodes/Makefile.am binutils-2.44/opcodes/Makefile.a
  	v850-opc.c \
  	vax-dis.c \
 diff -ru binutils-2.44-orig/opcodes/Makefile.in binutils-2.44/opcodes/Makefile.in
---- binutils-2.44-orig/opcodes/Makefile.in	2026-08-16 12:29:47.736260395 +0100
-+++ binutils-2.44/opcodes/Makefile.in	2026-08-16 12:29:47.748260421 +0100
+--- binutils-2.44-orig/opcodes/Makefile.in	2026-08-16 13:07:39.552933814 +0100
++++ binutils-2.44/opcodes/Makefile.in	2026-08-16 13:07:39.568933848 +0100
 @@ -651,6 +651,7 @@
  	tic6x-dis.c \
  	tilepro-dis.c \
@@ -2050,9 +2050,9 @@ diff -ru binutils-2.44-orig/opcodes/Makefile.in binutils-2.44/opcodes/Makefile.i
  @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/v850-dis.Plo@am__quote@
  @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/v850-opc.Plo@am__quote@
 diff -ru binutils-2.44-orig/opcodes/tms9900-dis.c binutils-2.44/opcodes/tms9900-dis.c
---- binutils-2.44-orig/opcodes/tms9900-dis.c	2026-08-16 12:23:35.167479067 +0100
-+++ binutils-2.44/opcodes/tms9900-dis.c	2026-08-16 12:23:25.231458238 +0100
-@@ -0,0 +1,387 @@
+--- binutils-2.44-orig/opcodes/tms9900-dis.c	2026-08-16 13:07:39.556933823 +0100
++++ binutils-2.44/opcodes/tms9900-dis.c	2026-08-17 14:28:52.455972377 +0100
+@@ -0,0 +1,389 @@
 +/* Print TMS9900 instructions
 +   Copyright 2009 Eric Welser
 +
@@ -2306,6 +2306,8 @@ diff -ru binutils-2.44-orig/opcodes/tms9900-dis.c binutils-2.44/opcodes/tms9900-
 +  {parse_type_8b, "lwpi"},
 +  {parse_error,   ""},
 +  {parse_type_8b, "limi"},
++  {parse_error,   ""},
++  {parse_error,   ""}, // Illegal instruction 0x320
 +  {parse_error,   ""},
 +  {parse_type_7,  "idle"},
 +  {parse_error,   ""},
