@@ -252,6 +252,8 @@ static struct parse_table level_4[] =
   {parse_error,   ""},
   {parse_type_8b, "limi"},
   {parse_error,   ""},
+  {parse_error,   ""}, // Illegal instruction 0x320
+  {parse_error,   ""},
   {parse_type_7,  "idle"},
   {parse_error,   ""},
   {parse_type_7,  "rset"},
