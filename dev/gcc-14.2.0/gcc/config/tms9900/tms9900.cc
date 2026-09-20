@@ -95,6 +95,7 @@ tms9900_ok_for_sibcall (tree decl ATTRIBUTE_UNUSED, tree exp ATTRIBUTE_UNUSED);
 
 static bool tms9900_fixed_condition_code_regs (unsigned int *, unsigned int *);
 static bool tms9900_truly_noop_truncation (poly_uint64, poly_uint64);
+void override_options (void);
 
 static int tms9900_dwarf_label_counter;
 
@@ -162,6 +163,14 @@ static int tms9900_dwarf_label_counter;
 
 #undef TARGET_TRULY_NOOP_TRUNCATION
 #define TARGET_TRULY_NOOP_TRUNCATION tms9900_truly_noop_truncation
+
+/* The old OVERRIDE_OPTIONS target macro was removed upstream; this hook is
+   its replacement.  Without it, override_options() (below) is never called,
+   so tms9900_real_format never gets installed and DFmode constants are
+   encoded as plain IEEE-754 instead of the TI console ROM's radix-100
+   format. */
+#undef TARGET_OPTION_OVERRIDE
+#define TARGET_OPTION_OVERRIDE override_options
 
 /*  Is it ok for us to make a tail call to a sibling function?  I don't know of
  *  any reason why not. */
@@ -238,9 +247,6 @@ const struct real_format tms9900_real_format =
     false       // Don't have that last thing
   };
 
-
-// TODO this needs to be refactored for gcc13.  THe OVERRIDE_OPTIONS macro is
-// poisoned
 
 void override_options (void)
 {
