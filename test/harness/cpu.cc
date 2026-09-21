@@ -457,8 +457,10 @@ void TMS9900::_executeSingle (uint16_t opcode, uint16_t mode, uint16_t reg)
 
     case OP_NEG:
         param = _memReadW (addr);
-        _statusCarry (param == 0x8000);
-        _statusOverflow (param & 0x8000);
+        /* NEG is 0 - x, so carry (no borrow) is set when x is zero.  Overflow
+           is the x == 0x8000 case. */
+        _statusCarry (param == 0);
+        _statusOverflow (param == 0x8000);
         param = -param;
         _unasmPostExec ("=%04X", param);
         _memWriteW (addr, param);
