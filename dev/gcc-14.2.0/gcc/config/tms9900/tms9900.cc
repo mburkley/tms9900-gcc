@@ -254,6 +254,14 @@ void override_options (void)
   // printf ("TI99_FLOAT is %d\n", TARGET_NO_TI99_FLOAT);
   if (!TARGET_NO_TI99_FLOAT)
     REAL_MODE_FORMAT (DFmode) = &tms9900_real_format;
+
+  /* INSN_SCHEDULING is only defined (see defines.md) for the side effect on
+     general_operand; there is no real scheduling model so don't run the
+     scheduler unless the user explicitly asks for it.  */
+  if (!global_options_set.x_flag_schedule_insns)
+    flag_schedule_insns = 0;
+  if (!global_options_set.x_flag_schedule_insns_after_reload)
+    flag_schedule_insns_after_reload = 0;
 }
 
 /* Non-volatile registers to be saved across function calls.  R13-R15 are

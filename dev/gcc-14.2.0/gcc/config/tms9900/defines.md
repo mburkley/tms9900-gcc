@@ -83,6 +83,21 @@
    (set_attr "length" "256")])
 
 ;;-------------------------------------------------------------------
+;;  Dummy scheduling description
+;;
+;;  The CPU has no pipeline worth modelling, but defining any insn reservation
+;;  makes genattr define INSN_SCHEDULING.  That macro makes general_operand
+;;  reject paradoxical SUBREGs of MEM before reload.  Without it combine can
+;;  turn (and:HI (zero_extend:HI (mem:QI)) (const_int 1)) into
+;;  (and:HI (subreg:HI (mem:QI) 0) (const_int 1)), and reload then loads the
+;;  byte with movb, which leaves it in the HIGH half of the register, where the
+;;  HImode operation does not expect it.  The scheduling passes themselves are
+;;  switched off in override_options.
+(define_automaton "tms9900")
+(define_cpu_unit "tms9900_cpu" "tms9900")
+(define_insn_reservation "tms9900_insn" 1 (const_int 1) "tms9900_cpu")
+
+;;-------------------------------------------------------------------
 ;;  UNSPEC Definitions
 ;;-------------------------------------------------------------------
 (define_constants
