@@ -1044,16 +1044,21 @@ int tms9900_reg_ok_for_base(int strict, rtx reg)
 
 
 /* Determine if the specified address is a valid operand */
-int tms9900_go_if_legitimate_address(enum machine_mode mode ATTRIBUTE_UNUSED, rtx operand, int strict)
+int tms9900_go_if_legitimate_address(enum machine_mode mode, rtx operand, int strict)
 {
   /* Accept *R0 */
   if (GET_CODE (operand) == REG &&
       tms9900_reg_ok_for_base(strict, operand))
     return 1;
 
-  /* Accept *R0+ */
+  /* Accept *R0+, but only for accesses of at most a word.  A multi-word
+     access (eg SImode) is split into one instruction per word, and a single
+     *R0+ steps R0 by only 2, not the size of the whole access that the
+     compiler assumes, and the low half of such an access can't be addressed
+     as "address + 2" either (that is what made gen_lowpart ICE in movsi). */
   if (GET_CODE (operand) == POST_INC      &&
       GET_CODE (XEXP (operand, 0)) == REG &&
+      GET_MODE_SIZE (mode) <= UNITS_PER_WORD &&
       tms9900_reg_ok_for_base(strict, XEXP (operand, 0)))
     return 1;
 
