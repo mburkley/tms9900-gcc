@@ -846,3 +846,148 @@ __umodsi3:
   b    *r11
 #endif
 
+
+
+#ifdef L_ashlsi3
+/******************************************************************************
+*                               __ashlsi3
+*******************************************************************************
+* Arithmetic left shift of 32 bit value
+*
+* Inputs:  [R1,R2] - 32-bit value
+*          [R3]    - Shift count
+*
+* Returns: [R1,R2] - 32-bit result
+******************************************************************************/
+  def __ashlsi3
+__ashlsi3:
+  mov  r15, @-2(r10)     /* Scratch reg. No need to modify SP, not used and no siblings */
+
+  /* Variable shift */
+  mov  r3, r0
+  ci   r0, 16
+  jlt  ashllt16
+  jeq  ashleq16
+     
+  /* Shift count greater than 16 */
+  sla  r2, 0 
+
+  /* eq_16: Shift count equals 16 */
+ashleq16:
+  mov  r2, r1
+  clr  r2
+  jmp  ashldone
+
+  /* lt_16: Shift count less than 16 */
+ashllt16:      
+  abs  r0
+  jeq  ashldone
+  mov  r2, r15
+  sla  r1, 0
+  sla  r2, 0
+  neg  r0
+  srl  r15, 0
+  soc  r15, r1
+
+ashldone:
+  mov  @-2(r10), r15
+  b    *r11
+#endif
+
+
+#ifdef L_ashrsi3
+/******************************************************************************
+*                               __ashrsi3
+*******************************************************************************
+* Arithmetic left shift of 32 bit value
+*
+* Inputs:  [R1,R2] - 32-bit value
+*          [R3]    - Shift count
+*
+* Returns: [R1,R2] - 32-bit result
+******************************************************************************/
+  def __ashrsi3
+__ashrsi3:
+  mov  r15, @-2(r10)     /* Scratch reg */
+
+  /* Variable shift */
+  mov  r3, r0
+  ci   r0, 16
+  jlt  ashrlt16
+  jeq  ashreq16
+
+  /* Shift count greater than 16 */
+  sra  r1, 0
+
+ashreq16:
+  /* eq_16: Shift count equals 16 */
+  mov  r1, r2
+  seto r1
+  jlt  ashrdone
+  clr  r1
+  jmp  ashrdone
+
+ashrlt16:
+  /* lt_16: Shift count less than 16 */
+  abs  r0
+  jeq  ashrdone
+  mov  r1, r15   /* bits shifted out of the high word go into the low word */
+  sra  r1, 0
+  srl  r2, 0
+  neg  r0
+  sla  r15, 0
+  soc  r15, r2
+
+ashrdone:
+  mov  @-2(r10), r15
+  b    *r11
+#endif
+
+
+#ifdef L_lshrsi3
+/******************************************************************************
+*                               __lshrsi3
+*******************************************************************************
+* Arithmetic left shift of 32 bit value
+*
+* Inputs:  [R1,R2] - 32-bit value
+*          [R3]    - Shift count
+*
+* Returns: [R1,R2] - 32-bit result
+******************************************************************************/
+  def __lshrsi3
+__lshrsi3:
+  mov  r15, @-2(r10)     /* Scratch reg */
+
+  /* Variable shift */
+  mov  r3, r0
+  ci   r0, 16
+  jlt  lshrlt16
+  jeq  lshreq16
+
+  /* Shift count greater than 16 */
+  srl  r1, 0
+
+lshreq16:
+  /* eq_16: Shift count equals 16 */
+  mov  r1, r2
+  clr  r1
+  jmp  lshrdone
+
+lshrlt16:
+  /* lt_16: Shift count less than 16 */
+  abs  r0
+  jeq  lshrdone
+  mov  r1, r15   /* bits shifted out of the high word go into the low word */
+  srl  r1, 0
+  srl  r2, 0
+  neg  r0
+  sla  r15, 0
+  soc  r15, r2
+
+lshrdone:
+  mov  @-2(r10), r15
+  b    *r11
+#endif
+
+
