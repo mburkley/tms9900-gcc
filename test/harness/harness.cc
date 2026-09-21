@@ -29,6 +29,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <string>
 #include <stdlib.h>
 #include <unistd.h>
 
@@ -149,6 +150,12 @@ int main (int argc, char *argv[])
                 "\t       -f=disassemble only failed tests\n", argv[0]);
         return 1;
     }
+
+    /*  Load the console ROM, which is in the same directory as the harness
+     *  executable, so tests can call the ROM floating point routines. */
+    std::string romPath = argv[0];
+    romPath = romPath.substr (0, romPath.find_last_of ('/') + 1) + "994arom.bin";
+    memLoad ((char *) romPath.c_str(), 0x0000, 0);
 
     memLoad (argv[optind], 0x6000, 0);
 

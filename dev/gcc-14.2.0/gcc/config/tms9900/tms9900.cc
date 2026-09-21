@@ -256,13 +256,17 @@ void override_options (void)
     REAL_MODE_FORMAT (DFmode) = &tms9900_real_format;
 }
 
-/* Non-volatile registers to be saved across function calls */
-#define MAX_SAVED_REGS 2
+/* Non-volatile registers to be saved across function calls.  R13-R15 are
+ * marked as call-saved in CALL_USED_REGISTERS, so they must be listed here or
+ * a callee that uses them will silently clobber its caller's values. */
+#define MAX_SAVED_REGS 5
 
-/* Non-volatile registers to be saved across function calls */
 static int nvolregs[]={
    CALL_RETURN_REGNUM,
-   FRAME_POINTER_REGNUM};
+   FRAME_POINTER_REGNUM,
+   R13_REGNUM,
+   R14_REGNUM,
+   R15_REGNUM};
 
 
 /* If defined, a C expression which determines whether, and in which direction,

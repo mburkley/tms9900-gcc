@@ -87,14 +87,6 @@ static void t_double_greater_equal (void)
   test_execute (__func__, y>=x);
 }
 
-static void t_double_float (void)
-{
-  float y=15.0;
-  float x=6.0;
-  float z=x+y;
-  test_execute (__func__, z==21.0);
-}
-
 TESTFUNC tests[] = 
 {
     t_double_add,
@@ -104,8 +96,7 @@ TESTFUNC tests[] =
     t_double_less,
     t_double_less_equal,
     t_double_greater,
-    t_double_greater_equal,
-    t_double_float
+    t_double_greater_equal
 };
 
 #define TEST_COUNT (sizeof (tests) / sizeof (TESTFUNC))

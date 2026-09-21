@@ -25,9 +25,9 @@ CRT0=$(LIBTI99DIR)/crt0_ea5.o
 # Generate a list of targets based on any file in the directory match test_*.c
 FILELIST=$(patsubst %.c,%,$(wildcard test_*.c))
 
-# test_float is not tested by this framework as it uses the console ROM
-# floating point routines so remove it from the list
-TARGETS=$(subst test_float,,$(FILELIST))
+# test_float uses the console ROM floating point routines, which the harness
+# loads from harness/994arom.bin
+TARGETS=$(FILELIST)
 
 BINTARGETS=$(TARGETS:=.bin)
 ELFTARGETS=$(TARGETS:=.elf)
