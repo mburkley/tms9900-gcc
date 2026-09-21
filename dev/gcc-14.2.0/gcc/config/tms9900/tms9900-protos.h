@@ -36,6 +36,8 @@ extern rtx tms9900_function_value (const_tree valtype);
 extern void tms9900_output_ascii(FILE* stream, const char* ptr, int len);
 extern void tms9900_expand_prologue (void);
 extern void tms9900_expand_epilogue (bool is_sibcall);
+extern bool tms9900_operand_subreg_offset (rtx operand, int mode);
+extern void tms9900_extend_subreg_operand (rtx_insn *insn, rtx *op, bool in_place);
 extern int tms9900_starting_frame_offset(void);
 extern int tms9900_reg_ok_for_base(int strict, rtx reg);
 extern int tms9900_go_if_legitimate_address(enum machine_mode mode ATTRIBUTE_UNUSED, rtx operand, int strict);

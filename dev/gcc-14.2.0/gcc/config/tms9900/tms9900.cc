@@ -1213,6 +1213,67 @@ tms9900_truly_noop_truncation (poly_uint64, poly_uint64)
   return false;
 }
 
+
+/* On the TMS9900 a byte lives in the HIGH half of its register.  When combine
+ * removes a zero/sign extend it can leave a paradoxical (subreg:HI (reg:QI)),
+ * which reload replaces by a hard register carrying REG_OFFSET -1.  The byte is
+ * then in the wrong half for the HImode operation that uses it and must be
+ * moved to the low half first.  (Same scheme as the gcc-4.4 port.)
+ *
+ * Return true if OPERAND is such a register and needs that correction for MODE
+ * (HImode: needs extending; QImode: +1 offset, a downgraded HImode). */
+bool tms9900_operand_subreg_offset (rtx operand, int mode)
+{
+  if (!REG_P (operand) || !REG_ATTRS (operand))
+    return false;
+
+  poly_int64 offset = REG_ATTRS (operand)->offset;
+
+  if (mode == QImode)
+    return known_eq (offset, 1) && ORIGINAL_REGNO (operand) == REGNO (operand);
+
+  if (mode != HImode || !known_eq (offset, -1))
+    return false;
+
+  /* The offset only describes the byte position when this rtx is reload's
+     replacement of a paradoxical (subreg:HI (reg:QI ...)): either it is the
+     original register, or the original pseudo was QImode.  If the original
+     pseudo was itself HImode the value is already correctly positioned. */
+  if (ORIGINAL_REGNO (operand) != REGNO (operand))
+    {
+      unsigned int orig = ORIGINAL_REGNO (operand);
+      if (orig < FIRST_PSEUDO_REGISTER
+          || regno_reg_rtx[orig] == NULL_RTX
+          || GET_MODE (regno_reg_rtx[orig]) != QImode)
+        return false;
+    }
+
+  return true;
+}
+
+/* If *OP needs correcting (see above) emit the instruction to move the byte
+ * to the low half.  If IN_PLACE the register may be modified (it is the tied
+ * destination, or dies here); otherwise it is copied to R0 first and *OP is
+ * replaced by R0. */
+void tms9900_extend_subreg_operand (rtx_insn *insn, rtx *op, bool in_place)
+{
+  if (!tms9900_operand_subreg_offset (*op, HImode))
+    return;
+
+  if (in_place || find_regno_note (insn, REG_DEAD, REGNO (*op)))
+    {
+      rtx args[1] = { *op };
+      output_asm_insn ("sra  %0, 8 ; subreg extend", args);
+    }
+  else
+    {
+      rtx args[2] = { gen_rtx_REG (HImode, R0_REGNUM), *op };
+      output_asm_insn ("mov  %1, %0 ; subreg extend to scratch", args);
+      output_asm_insn ("sra  %0, 8", args);
+      *op = args[0];
+    }
+}
+
 //==================================================================
 // Code for tms9900_subreg pass
 
