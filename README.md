@@ -18,13 +18,13 @@ to create modified sources for gcc and binutils.
 
 The branch **main** in the repo contains the latest scripts and patch files for version 1.x.
 The patch files are:
-* binutils-2.19.1-tms9900-1.12.patch
-* gcc-4.4.0-tms9900-1.34.patch
+* binutils-2.19.1-tms9900-1.13.patch
+* gcc-4.4.0-tms9900-1.35.patch
 
 This branch also contains version 2.x of the patch files which can be applied to
 newer versions of gcc and binutils.  These are:
-* binutils-2.44-tms9900-2.0.patch
-* gcc-14.2.0-tms9900-2.0.patch
+* binutils-2.44-tms9900-2.1.patch
+* gcc-14.2.0-tms9900-2.10.patch
 
 Patch files are cumulative.  The latest version of the patch file includes all
 previous updates as well.  Only the latest patch file is stored in the repo.
@@ -48,7 +48,7 @@ cd tms900-gcc
 
 Release Notes - current
 -----------------------
-binutils patch 2.0 (ports the tms9900 backend to binutils-2.44, alongside the
+binutils patch 2.1 (2.0 ported the tms9900 backend to binutils-2.44, alongside the
 existing binutils-2.19.1 support -- select via install.sh's version menu)
 * Ported bfd, gas, ld and opcodes tms9900 support to binutils-2.44, using the
   modern `tms9900_elf32_vec` bfd target-vector naming convention
@@ -62,8 +62,11 @@ existing binutils-2.19.1 support -- select via install.sh's version menu)
 * Fixed a disassembler opcode-table misalignment that made it decode `idle`
   as `rset`, and every opcode after it (`rtwp`/`ckon`/`ckof`/`lrex`) one
   slot early
+* Fixed the linker placing `.text.startup` (where gcc puts `main` at -O2)
+  ahead of the cartridge header, which produced a malformed cartridge for any
+  program built with -O2 or -Os
 
-gcc patch 2.0 (ports the tms9900 backend to gcc-14.2.0, alongside the
+gcc patch 2.10 (2.0 ported the tms9900 backend to gcc-14.2.0, alongside the
 existing gcc-4.4.0 support -- select via install.sh's version menu)
 * Ported the tms9900 backend to gcc-14.2.0
 * install.sh now automatically fetches GCC's GMP/MPFR/MPC/ISL build
@@ -94,8 +97,38 @@ existing gcc-4.4.0 support -- select via install.sh's version menu)
   patch-level query macros
 * Fixed `%` (modulo) returning a remainder with the wrong sign whenever the
   dividend was negative
+* Fixed floating point constants (eg `double x = 3.14;`) being encoded as
+  IEEE-754 instead of the console ROM's radix-100 format, and ported the
+  `__DBL_*__` float.h macro fixes from gcc-4.4.0
+* Ported double-precision `+ - * /` and comparisons (which call the console
+  ROM) to gcc-14, along with the ASCII/TI-real conversion helpers.  These
+  restore the workspace with `lwpi >8300` (override with
+  `-DPROGRAM_WORKSPACE`); float (single precision), int/double conversion
+  and negating a double are not supported, as in gcc-4.4.0
+* Fixed R13-R15 not being saved by functions that use them, which silently
+  corrupted values held in those registers by a caller
+* Fixed tail calls being emitted as `bl` instead of `b`, which returned into
+  whatever followed the call (most tests crashed at -O2)
+* Fixed branch-range estimation (some instructions reported the wrong
+  length), which could produce out-of-range short jumps at -O2
+* Fixed an internal compiler error on `*Rn+` addressing of 32-bit values
+* Added `__ashlsi3`, `__ashrsi3` and `__lshrsi3` (used at -Os), and fixed the
+  right shifts, which were wrong for counts of 1-15
+* Fixed a byte left in the wrong half of a register when combine dropped a
+  zero/sign extend (wrong bitfield reads, `char` arguments and results at
+  -O2), restoring the correction that gcc-4.4.0 had
+* Fixed a signed 16x16->32 multiply using the unsigned `mpy` (negative
+  operands), and a 32-bit load clobbering its own base register, both
+  reachable at -O2
+* Every unit test now passes at no optimisation, -O2 and -Os
+* Added unit tests for K&R char parameters, 32-bit shifts, widening multiply
+  and division by 5; `test_float` now runs against the console ROM
+  (`test/harness/994arom.bin`)
 * C++ support is present but not yet extensively tested; C is the
   well-exercised path
+
+binutils patch 1.13
+* fix: level 4 disassembler table misalignment (`idle`/`rset`/`rtwp`/`ckon`/`ckof`/`lrex` decoded one slot early)
 
 binutils patch 1.12
 * fix: adjust level 4 parse table (#79)
