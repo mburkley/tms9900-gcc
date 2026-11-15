@@ -17,7 +17,7 @@ Patch files are archived in the main branch which are used by an install script
 to create modified sources for gcc and binutils.
 
 The branch **main** in the repo contains The latest scripts and patch files. The patch files are:
-* binutils-2.19.1-tms9900-1.12.patch
+* binutils-2.19.1-tms9900-1.13.patch
 * gcc-4.4.0-tms9900-1.34.patch
 
 Patch files are cumulative.  The latest version of the patch file includes all
@@ -41,10 +41,9 @@ cd tms900-gcc
 
 Release Notes - current
 -----------------------
-binutils patch 1.12
-* fix: adjust level 4 parse table (#79)
-* fix: missing parse error entries for level 4 instructions
-* fix: curl does not work properly
+binutils patch 1.13
+* fix: retain relocations in the final ELF when linking with --emit-relocs
+* fix: emit program headers for linked executables
 
 gcc patch 1.35
 * add two more tests that cover long modulo
@@ -54,6 +53,11 @@ gcc patch 1.35
 
 Release Notes - historical
 --------------------------
+
+binutils patch 1.12
+* fix: adjust level 4 parse table (#79)
+* fix: missing parse error entries for level 4 instructions
+* fix: curl does not work properly
 
 binutils patch 1.11
 * Updates to .texi files
