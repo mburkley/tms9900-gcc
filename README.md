@@ -70,6 +70,8 @@ existing binutils-2.19.1 support -- select via install.sh's version menu)
 * Fixed a long-standing binutils build-ordering bug where a fresh build could
   fail with "'return' with no value" errors in the generated eelf32tms9900.c
   -- install.sh now detects and retries this automatically
+* fix: retain relocations in the final ELF with `--emit-relocs`/`-q`, and set
+  `TEMPLATE_NAME=elf` so the 2.44 linker maps segments instead of warning
 * install.sh now prompts (or takes a command-line argument) to choose between
   the gcc-4.4.0/binutils-2.19.1 and gcc-14.2.0/binutils-2.44 toolchain pairs
 * install.sh now builds with make -j (parallel across all CPU cores) instead
