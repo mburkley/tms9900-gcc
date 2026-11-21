@@ -44,14 +44,14 @@ if [ -z $PREFIX ] ; then
 fi
 
 # Pick which gcc/binutils pair to build.  Patches for more than one
-# version can be present in this directory at once (a stable version
-# and an in-development one), so we can't just always pick the patch
+# version can be present in this directory at once (an old stable version
+# and a latest stable one), so we can't just always pick the patch
 # with the highest revision number as "latest" any more.
 VERSION_CHOICE=$2
 if [ -z "$VERSION_CHOICE" ] ; then
   echo "Which version would you like to install?"
-  echo "  1) gcc-4.4.0 / binutils-2.19.1 (stable)"
-  echo "  2) gcc-14.2.0 / binutils-2.44 (in development)"
+  echo "  1) gcc-4.4.0 / binutils-2.19.1 (old stable)"
+  echo "  2) gcc-14.2.0 / binutils-2.44 (current)"
   printf "Enter 1 or 2 [1]: "
   read VERSION_CHOICE
   if [ -z "$VERSION_CHOICE" ] ; then

@@ -1,7 +1,12 @@
 tms9900-gcc: TI 99 cross compiler backend for gcc
 =================================================
 This repo for the **gcc cross-compiler for TMS9900** was created from files posted
-by insomnia and others to atariage [here][1].  It is based on [gcc-4.4.0][2] and
+by insomnia and others to atariage [here][1].  
+
+The latest version (2.x) is based on [gcc-14.2.0][8] and
+[binutils-2.44.1][9].
+
+Older versions (1.x) are based on [gcc-4.4.0][2] and
 [binutils-2.19.1][3].
 
 The development blog is [here][7].
@@ -16,19 +21,12 @@ tms9900 support.  This differences are much smaller.
 Patch files are archived in the main branch which are used by an install script
 to create modified sources for gcc and binutils.
 
-The branch **main** in the repo contains The latest scripts and patch files. The patch files are:
+The branch **main** in the repo contains the latest scripts and patch files for versions 1.x and 2.x.
+The patch files are:
+* binutils-2.44-tms9900-2.1.patch
+* gcc-14.2.0-tms9900-2.1.patch
 * binutils-2.19.1-tms9900-1.13.patch
 * gcc-4.4.0-tms9900-1.34.patch
-
-The branch **main** in the repo contains the latest scripts and patch files for version 1.x.
-The patch files are:
-* binutils-2.19.1-tms9900-1.13.patch
-* gcc-4.4.0-tms9900-1.35.patch
-
-This branch also contains version 2.x of the patch files which can be applied to
-newer versions of gcc and binutils.  These are:
-* binutils-2.44-tms9900-2.1.patch
-* gcc-14.2.0-tms9900-2.10.patch
 
 Patch files are cumulative.  The latest version of the patch file includes all
 previous updates as well.  Only the latest patch file is stored in the repo.
@@ -63,7 +61,7 @@ gcc patch 1.35
 * fix for signed division on longs
 * added two tests that reproduced the issue
 
-binutils patch 2.1 (2.0 ported the tms9900 backend to binutils-2.44, alongside the
+binutils patch 2.2 (2.0 ported the tms9900 backend to binutils-2.44, alongside the
 existing binutils-2.19.1 support -- select via install.sh's version menu)
 * Ported bfd, gas, ld and opcodes tms9900 support to binutils-2.44, using the
   modern `tms9900_elf32_vec` bfd target-vector naming convention
@@ -83,7 +81,7 @@ existing binutils-2.19.1 support -- select via install.sh's version menu)
   ahead of the cartridge header, which produced a malformed cartridge for any
   program built with -O2 or -Os
 
-gcc patch 2.10 (2.0 ported the tms9900 backend to gcc-14.2.0, alongside the
+gcc patch 2.1 (2.0 ported the tms9900 backend to gcc-14.2.0, alongside the
 existing gcc-4.4.0 support -- select via install.sh's version menu)
 * Ported the tms9900 backend to gcc-14.2.0
 * install.sh now automatically fetches GCC's GMP/MPFR/MPC/ISL build
@@ -401,3 +399,5 @@ Open issues are tracked [here][6]
 [5]: git@github.com:mburkley/tms9900-gcc.git
 [6]: https://github.com/mburkley/tms9900-gcc/issues
 [7]: https://tms9900-gcc.blogspot.com/2023/12/scope-gcc-versions-one-aspect-of.html
+[8]: https://ftp.gnu.org/gnu/binutils/binutils-2.44.1.tar.bz2
+[9]: https://ftp.gnu.org/gnu/gcc/gcc-14.2.0/gcc-14.2.0.tar.gz
