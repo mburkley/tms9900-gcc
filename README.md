@@ -52,9 +52,16 @@ cd tms900-gcc
 
 Release Notes - current
 -----------------------
-binutils patch 1.13
+binutils patch 1.15
+* fix: level 4 disassembler table misalignment (`idle`/`rset`/`rtwp`/`ckon`/`ckof`/`lrex` decoded one slot early)
 * fix: retain relocations in the final ELF when linking with --emit-relocs
 * fix: emit program headers for linked executables
+
+gcc patch 1.35
+* add two more tests that cover long modulo
+* sign fix for long modulo
+* fix for signed division on longs
+* added two tests that reproduced the issue
 
 binutils patch 2.1 (2.0 ported the tms9900 backend to binutils-2.44, alongside the
 existing binutils-2.19.1 support -- select via install.sh's version menu)
@@ -134,20 +141,6 @@ existing gcc-4.4.0 support -- select via install.sh's version menu)
   (`test/harness/994arom.bin`)
 * C++ support is present but not yet extensively tested; C is the
   well-exercised path
-
-binutils patch 1.13
-* fix: level 4 disassembler table misalignment (`idle`/`rset`/`rtwp`/`ckon`/`ckof`/`lrex` decoded one slot early)
-
-binutils patch 1.12
-* fix: adjust level 4 parse table (#79)
-* fix: missing parse error entries for level 4 instructions
-* fix: curl does not work properly
-
-gcc patch 1.35
-* add two more tests that cover long modulo
-* sign fix for long modulo
-* fix for signed division on longs
-* added two tests that reproduced the issue
 
 Release Notes - historical
 --------------------------
