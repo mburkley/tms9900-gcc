@@ -20,7 +20,7 @@ void t_version (void)
             __TMS9900_PATCH_MAJOR__,
             __TMS9900_PATCH_MINOR__);
 
-    test_execute (__func__, __TMS9900_PATCH_MAJOR__==1);
+    test_execute (__func__, __TMS9900_PATCH_MAJOR__==1 || __TMS9900_PATCH_MAJOR__==2);
 }
 
 /*  Take a variable number of params, verify they are in ascending order, sum

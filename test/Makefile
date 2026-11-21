@@ -2,7 +2,7 @@
 #  Directories where tools are located.  Edit to reflect your setup
 ##
 LIBTI99DIR?=~/libTi99All/buildti
-GCCDIR=~/gcc4/bin/
+GCCDIR=~/gcc14/bin/
 
 ##
 #  Locations of tools relative to directories defined above
@@ -10,7 +10,7 @@ GCCDIR=~/gcc4/bin/
 GAS=$(GCCDIR)tms9900-as
 LD=$(GCCDIR)tms9900-ld
 CC=$(GCCDIR)tms9900-gcc
-LIBGCC=$(GCCDIR)../lib/gcc/tms9900/4.4.0/libgcc.a
+LIBGCC=$(GCCDIR)../lib/gcc/tms9900/14.2.0/libgcc.a
 CRT0=$(LIBTI99DIR)/crt0_ea5.o
 
 ##
@@ -25,9 +25,9 @@ CRT0=$(LIBTI99DIR)/crt0_ea5.o
 # Generate a list of targets based on any file in the directory match test_*.c
 FILELIST=$(patsubst %.c,%,$(wildcard test_*.c))
 
-# test_float is not tested by this framework as it uses the console ROM
-# floating point routines so remove it from the list
-TARGETS=$(subst test_float,,$(FILELIST))
+# test_float uses the console ROM floating point routines, which the harness
+# loads from harness/994arom.bin
+TARGETS=$(FILELIST)
 
 BINTARGETS=$(TARGETS:=.bin)
 ELFTARGETS=$(TARGETS:=.elf)

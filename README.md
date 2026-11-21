@@ -20,9 +20,20 @@ The branch **main** in the repo contains The latest scripts and patch files. The
 * binutils-2.19.1-tms9900-1.13.patch
 * gcc-4.4.0-tms9900-1.34.patch
 
+The branch **main** in the repo contains the latest scripts and patch files for version 1.x.
+The patch files are:
+* binutils-2.19.1-tms9900-1.13.patch
+* gcc-4.4.0-tms9900-1.35.patch
+
+This branch also contains version 2.x of the patch files which can be applied to
+newer versions of gcc and binutils.  These are:
+* binutils-2.44-tms9900-2.1.patch
+* gcc-14.2.0-tms9900-2.10.patch
+
 Patch files are cumulative.  The latest version of the patch file includes all
 previous updates as well.  Only the latest patch file is stored in the repo.
-The install script will find the latest patch and apply it.
+The install script will find the latest patch and apply it.  It will also ask which
+version of gcc you want to use, or you can add a 1 or 2 parameter to specify 1.x or 2.x
 
 User download and install
 -------------------------
@@ -44,6 +55,93 @@ Release Notes - current
 binutils patch 1.13
 * fix: retain relocations in the final ELF when linking with --emit-relocs
 * fix: emit program headers for linked executables
+
+binutils patch 2.1 (2.0 ported the tms9900 backend to binutils-2.44, alongside the
+existing binutils-2.19.1 support -- select via install.sh's version menu)
+* Ported bfd, gas, ld and opcodes tms9900 support to binutils-2.44, using the
+  modern `tms9900_elf32_vec` bfd target-vector naming convention
+* Fixed a long-standing binutils build-ordering bug where a fresh build could
+  fail with "'return' with no value" errors in the generated eelf32tms9900.c
+  -- install.sh now detects and retries this automatically
+* install.sh now prompts (or takes a command-line argument) to choose between
+  the gcc-4.4.0/binutils-2.19.1 and gcc-14.2.0/binutils-2.44 toolchain pairs
+* install.sh now builds with make -j (parallel across all CPU cores) instead
+  of single-threaded
+* Fixed a disassembler opcode-table misalignment that made it decode `idle`
+  as `rset`, and every opcode after it (`rtwp`/`ckon`/`ckof`/`lrex`) one
+  slot early
+* Fixed the linker placing `.text.startup` (where gcc puts `main` at -O2)
+  ahead of the cartridge header, which produced a malformed cartridge for any
+  program built with -O2 or -Os
+
+gcc patch 2.10 (2.0 ported the tms9900 backend to gcc-14.2.0, alongside the
+existing gcc-4.4.0 support -- select via install.sh's version menu)
+* Ported the tms9900 backend to gcc-14.2.0
+* install.sh now automatically fetches GCC's GMP/MPFR/MPC/ISL build
+  prerequisites, so a fresh build no longer fails with a
+  "Building GCC requires GMP 4.2+, MPFR 3.1.0+ and MPC 0.8.0+" configure error
+* Fixed a code generation bug where a computed goto through a table of label
+  pointers (`goto *table[i]`) could branch to the wrong address
+* Fixed a missing libgcc helper that caused link errors ("undefined reference
+  to `__divmodstart`/`__divmodend`") for any program using 32-bit (long)
+  division or modulo
+* Fixed a 32-bit value getting silently corrupted when moved between
+  overlapping register pairs (eg as part of passing it to a libcall)
+* Fixed variadic (`...`) arguments beyond the named parameters being passed
+  in registers the callee never reads, instead of on the stack where
+  `va_arg` expects to find them
+* Fixed a shift left by exactly 2, and a variable shift by exactly 16,
+  each silently computing the wrong result (or no shift at all) due to
+  how this CPU encodes a shift count of zero
+* Fixed truncating a 16-bit value down to 8 bits sometimes reading the
+  wrong byte (eg multiplying two negative `char`s could return garbage)
+* Fixed bitfield reads/writes losing data to neighbouring fields in the
+  same byte or word (an AND-with-mask step was being silently dropped)
+* Fixed the standalone `elf2cart`/`elf2ea5` tools (used to produce a
+  runnable cartridge image) finding the wrong internal table and
+  silently skipping RAM initialisation, which could manifest as
+  anything from wrong values to a crash at startup
+* Ported forward the `__TMS9900_PATCH_MAJOR__`/`__TMS9900_PATCH_MINOR__`
+  patch-level query macros
+* Fixed `%` (modulo) returning a remainder with the wrong sign whenever the
+  dividend was negative
+* Fixed floating point constants (eg `double x = 3.14;`) being encoded as
+  IEEE-754 instead of the console ROM's radix-100 format, and ported the
+  `__DBL_*__` float.h macro fixes from gcc-4.4.0
+* Ported double-precision `+ - * /` and comparisons (which call the console
+  ROM) to gcc-14, along with the ASCII/TI-real conversion helpers.  These
+  restore the workspace with `lwpi >8300` (override with
+  `-DPROGRAM_WORKSPACE`); float (single precision), int/double conversion
+  and negating a double are not supported, as in gcc-4.4.0
+* Fixed R13-R15 not being saved by functions that use them, which silently
+  corrupted values held in those registers by a caller
+* Fixed tail calls being emitted as `bl` instead of `b`, which returned into
+  whatever followed the call (most tests crashed at -O2)
+* Fixed branch-range estimation (some instructions reported the wrong
+  length), which could produce out-of-range short jumps at -O2
+* Fixed an internal compiler error on `*Rn+` addressing of 32-bit values
+* Added `__ashlsi3`, `__ashrsi3` and `__lshrsi3` (used at -Os), and fixed the
+  right shifts, which were wrong for counts of 1-15
+* Fixed a byte left in the wrong half of a register when combine dropped a
+  zero/sign extend (wrong bitfield reads, `char` arguments and results at
+  -O2), restoring the correction that gcc-4.4.0 had
+* Fixed a signed 16x16->32 multiply using the unsigned `mpy` (negative
+  operands), and a 32-bit load clobbering its own base register, both
+  reachable at -O2
+* Every unit test now passes at no optimisation, -O2 and -Os
+* Added unit tests for K&R char parameters, 32-bit shifts, widening multiply
+  and division by 5; `test_float` now runs against the console ROM
+  (`test/harness/994arom.bin`)
+* C++ support is present but not yet extensively tested; C is the
+  well-exercised path
+
+binutils patch 1.13
+* fix: level 4 disassembler table misalignment (`idle`/`rset`/`rtwp`/`ckon`/`ckof`/`lrex` decoded one slot early)
+
+binutils patch 1.12
+* fix: adjust level 4 parse table (#79)
+* fix: missing parse error entries for level 4 instructions
+* fix: curl does not work properly
 
 gcc patch 1.35
 * add two more tests that cover long modulo
